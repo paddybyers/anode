@@ -125,6 +125,11 @@ public class AnodeActivity extends Activity implements StateListener {
 		stateText.setText(getStateString(state));
 		startButton.setEnabled(state == Runtime.STATE_CREATED);
 		stopButton.setEnabled(state == Runtime.STATE_STARTED);
+		/* exit the activity if the runtime has exited */
+		if(state == Runtime.STATE_STOPPED) {
+			finish();
+			java.lang.Runtime.getRuntime().exit(0);
+		}
 	}
 	
 	private String getStateString(int state) {
