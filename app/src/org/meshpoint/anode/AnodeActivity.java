@@ -12,8 +12,10 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnKeyListener;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -27,6 +29,7 @@ public class AnodeActivity extends Activity implements StateListener {
 	private EditText argsText;
 	private TextView stateText;
 	private Handler viewHandler = new Handler();
+	private long uiThread;
 
 	/** Called when the activity is first created. */
     @Override
@@ -36,6 +39,7 @@ public class AnodeActivity extends Activity implements StateListener {
         ctx = getApplicationContext();
         initUI();
         initRuntime();
+        uiThread = viewHandler.getLooper().getThread().getId();
     }
     
     private Runtime runtime;
@@ -47,6 +51,18 @@ public class AnodeActivity extends Activity implements StateListener {
     	stopButton.setOnClickListener(new StopClickListener());
     	argsText = (EditText)findViewById(R.id.args_editText);
     	stateText = (TextView)findViewById(R.id.args_stateText);
+    	argsText.setOnKeyListener(new OnKeyListener() {
+    	    public boolean onKey(View v, int keyCode, KeyEvent event) {
+    	        /* If the event is a key-down event on the "enter" button */
+    	        if ((event.getAction() == KeyEvent.ACTION_DOWN) &&
+    	            (keyCode == KeyEvent.KEYCODE_ENTER)) {
+    	          startAction();
+    	          return true;
+    	        }
+    	        return false;
+    	    }
+    	});
+    	__stateChanged(Runtime.STATE_CREATED);
     }
     
     private void initRuntime() {
@@ -59,39 +75,56 @@ public class AnodeActivity extends Activity implements StateListener {
 		}
     }
     
+    private void startAction() {
+		String args = argsText.getText().toString();
+		try {
+			runtime.start(args.split("\\s"));
+		} catch (IllegalStateException e) {
+			Log.v(TAG, "runtime start: exception: " + e + "cause: " + e.getCause());
+		} catch (NodeException e) {
+			Log.v(TAG, "runtime start: exception: " + e);
+		}
+    }
+    
+    private void stopAction() {
+		try {
+			runtime.stop();
+		} catch (IllegalStateException e) {
+			Log.v(TAG, "runtime start: exception: " + e + "cause: " + e.getCause());
+		} catch (NodeException e) {
+			Log.v(TAG, "runtime start: exception: " + e);
+		}
+    }
+    
     class StartClickListener implements OnClickListener {
-		@Override
 		public void onClick(View arg0) {
-			String args = argsText.getText().toString();
-			try {
-				runtime.start(args.split("\\s"));
-			} catch (IllegalStateException e) {
-				Log.v(TAG, "runtime start: exception: " + e + "cause: " + e.getCause());
-			} catch (NodeException e) {
-				Log.v(TAG, "runtime start: exception: " + e);
-			}
+			startAction();
 		}
     }
 
     class StopClickListener implements OnClickListener {
-		@Override
 		public void onClick(View arg0) {
-			try {
-				runtime.stop();
-			} catch (IllegalStateException e) {
-				Log.v(TAG, "runtime stop: exception: " + e + "cause: " + e.getCause());
-			} catch (NodeException e) {
-				Log.v(TAG, "runtime stop: exception: " + e);
-			}
+			stopAction();
 		}
     }
 
 	@Override
 	public void stateChanged(final int state) {
-		viewHandler.post(new Runnable() {
-			public void run() {
-				stateText.setText(getStateString(state));
-			}});
+		if(Thread.currentThread().getId() == uiThread) {
+			__stateChanged(state);
+		} else {
+			viewHandler.post(new Runnable() {
+				public void run() {
+					__stateChanged(state);
+				}
+			});
+		}
+	}
+	
+	private void __stateChanged(final int state) {
+		stateText.setText(getStateString(state));
+		startButton.setEnabled(state == Runtime.STATE_CREATED);
+		stopButton.setEnabled(state == Runtime.STATE_STARTED);
 	}
 	
 	private String getStateString(int state) {
