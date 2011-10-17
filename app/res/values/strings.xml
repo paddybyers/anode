@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Anode</string>
+    <string name="start">Start</string>
+    <string name="stop">Stop</string>
+    <string name="arguments">Arguments:</string>
+    <string name="run_state">Run state</string>
+    <string name="created">Created</string>
+    <string name="started">Started</string>
+    <string name="stopping">Stopping</string>
+    <string name="stopped">Stopped</string>
+</resources>
