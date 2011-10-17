@@ -1,5 +1,10 @@
 package org.meshpoint.anode;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 import android.content.Context;
 import android.util.Log;
 
@@ -10,8 +15,11 @@ import android.util.Log;
  */
 final class RuntimeNative {
 	
+	private static String PACKAGE_NAME = "org.meshpoint.anode";
 	private static String TAG = "anode::RuntimeNative";
 	private static String LIBRARY_NAME = "jninode";
+	private static String LIBRARY_FILE = "libjninode.so";
+	private static String LIBRARY_PATH = "/data/data/" + PACKAGE_NAME + "/app";
 	
 	static final int SIGINT  = 2;
 	static final int SIGKILL = 9;
@@ -24,11 +32,15 @@ final class RuntimeNative {
 	 * @throws IOException if there was a problem accessing the native library file
 	 * @throws UnsatisifiedLinkError if there was a problem initialising the native library
 	 */
-	static void init(Context ctx) {
+	static void init(Context ctx) throws IOException {
 		try {
-			System.loadLibrary(LIBRARY_NAME);
+			extractLib(ctx);
+			System.load(LIBRARY_PATH + '/' + LIBRARY_FILE);
 		} catch(UnsatisfiedLinkError e) {
 			Log.v(TAG, "init: unable to load library: " + e);
+			throw e;
+		} catch (IOException e) {
+			Log.v(TAG, "init: unable to write library to file: " + e);
 			throw e;
 		}
 	}
@@ -58,4 +70,27 @@ final class RuntimeNative {
 	 * @return 0 if successful, error code otherwise
 	 */
 	static native int stop(int signum);
+	
+	/**
+	 * Extract the library from assets to the default library location.
+	 * @throws IOException 
+	 */
+	private static void extractLib(Context ctx) throws IOException {
+		File dir, so;
+		if(!(dir = new File(LIBRARY_PATH)).exists())
+			dir.mkdirs();
+		
+		if(!(so = new File(dir, LIBRARY_FILE)).exists()) {
+			InputStream in = ctx.getAssets().open(LIBRARY_FILE);
+			FileOutputStream out = new FileOutputStream(so);
+			int read;
+			byte[] buf = new byte[8192];
+			while((read = in.read(buf)) != -1)
+					out.write(buf, 0, read);
+			in.close();
+			out.flush();
+			out.close();
+			so.setExecutable(true);
+		}
+	}
 }
