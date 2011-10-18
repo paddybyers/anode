@@ -22,6 +22,7 @@ final class RuntimeNative {
 	private static String LIBRARY_PATH = "/data/data/" + PACKAGE_NAME + "/app";
 	
 	static final int SIGINT  = 2;
+	static final int SIGABRT = 6;
 	static final int SIGKILL = 9;
 	static final int SIGTERM = 15;
 	
@@ -59,13 +60,15 @@ final class RuntimeNative {
 	
 	/**
 	 * Stop a running runtime. An event will be delivered to the runtime that
-	 * corresponds to the action associated with the specified signal.
+	 * simulates the delivery of the specified signal.
 	 * The supported events/signals are:
 	 * SIGINT:  interrupt a current blocked operation; may be caught by a handler
 	 *          in the runtime 
 	 * SIGTERM: request termination of the runtime; may be caught by a handler
 	 *          in the runtime 
-	 * SIGKILL: forcibly terminate the runtime instance 
+	 * SIGKILL: request termination of the runtime; may be caught by a handler
+	 *          in the runtime 
+	 * SIGABRT: forcibly terminate the runtime instance 
 	 * @param signum the signal number
 	 * @return 0 if successful, error code otherwise
 	 */

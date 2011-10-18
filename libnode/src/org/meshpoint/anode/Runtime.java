@@ -80,7 +80,7 @@ public class Runtime {
 			case STATE_STARTED:
 				/* expected case, the instance is running normally */
 				setState(STATE_STOPPING);
-				RuntimeNative.stop(RuntimeNative.SIGKILL);
+				RuntimeNative.stop(RuntimeNative.SIGABRT);
 				try{runner.wait();}catch(InterruptedException e){}
 			case STATE_STOPPED:
 				/* already stopped, throw error if
