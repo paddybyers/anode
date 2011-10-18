@@ -61,9 +61,13 @@ public class AnodeService extends IntentService implements StateListener {
 			return;
 		}
 
-		/* otherwise, launch directly */
+		/* otherwise, process args */
+		ArgProcessor argProcessor = new ArgProcessor(intent.getExtras(), args );
+		String[] processedArgs = argProcessor.process();
+
+		/* launch directly */
 		try {
-			runtime.start(args.split("\\s"));
+			runtime.start(processedArgs);
 		} catch (IllegalStateException e) {
 			Log.v(TAG, "AnodeReceiver.onReceive::start: exception: " + e + "; cause: " + e.getCause());
 		} catch (NodeException e) {
