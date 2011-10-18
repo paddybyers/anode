@@ -18,7 +18,6 @@ public class AnodeReceiver extends BroadcastReceiver {
 	
 	public AnodeReceiver() {
 		super();
-		Log.v(TAG, "*********** AnodeReceiver.init() ***************");
 	}
 
 	@Override
