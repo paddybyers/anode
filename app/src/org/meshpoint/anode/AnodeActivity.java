@@ -71,7 +71,7 @@ public class AnodeActivity extends Activity implements StateListener {
     		if(runtime != null)
     			runtime.addStateListener(this);
 		} catch (InitialisationException e) {
-			Log.v(TAG, "initRuntime: exception: " + e + "cause: " + e.getCause());
+			Log.v(TAG, "initRuntime: exception: " + e + "; cause: " + e.getCause());
 		}
     }
     
@@ -80,7 +80,7 @@ public class AnodeActivity extends Activity implements StateListener {
 		try {
 			runtime.start(args.split("\\s"));
 		} catch (IllegalStateException e) {
-			Log.v(TAG, "runtime start: exception: " + e + "cause: " + e.getCause());
+			Log.v(TAG, "runtime start: exception: " + e + "; cause: " + e.getCause());
 		} catch (NodeException e) {
 			Log.v(TAG, "runtime start: exception: " + e);
 		}
@@ -90,7 +90,7 @@ public class AnodeActivity extends Activity implements StateListener {
 		try {
 			runtime.stop();
 		} catch (IllegalStateException e) {
-			Log.v(TAG, "runtime start: exception: " + e + "cause: " + e.getCause());
+			Log.v(TAG, "runtime start: exception: " + e + "; cause: " + e.getCause());
 		} catch (NodeException e) {
 			Log.v(TAG, "runtime start: exception: " + e);
 		}

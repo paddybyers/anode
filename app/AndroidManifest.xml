@@ -15,7 +15,29 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </activity>
+        <receiver android:enabled="true" android:label="@string/anode_receiver" android:exported="true" android:description="@string/anode_receiver_description" android:name="org.meshpoint.anode.AnodeReceiver">
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.START" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.STOP" />
+            </intent-filter>
+        </receiver>
+        <service android:exported="true" android:enabled="true" android:name=".AnodeService" android:description="@string/anode_service_description" android:label="@string/anode_service">
+            <!-- disabled until we work out how to get a valid context for a Service triggered by these
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.START" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.STOP" />
+            </intent-filter>
+             -->
+        </service>
 
     </application>
 </manifest>

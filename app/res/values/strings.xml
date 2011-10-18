@@ -9,4 +9,8 @@
     <string name="started">Started</string>
     <string name="stopping">Stopping</string>
     <string name="stopped">Stopped</string>
+    <string name="anode_receiver">Anode Receiver</string>
+    <string name="anode_receiver_description">A broadcast receiver for controlling invocations of node.js</string>
+    <string name="anode_service">Anode Service</string>
+    <string name="anode_service_description">A service that permits the running of node.js invocations in the background</string>
 </resources>
