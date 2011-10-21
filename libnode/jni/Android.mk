@@ -30,20 +30,20 @@ LOCAL_SHARED_LIBRARIES += \
 
 LOCAL_STATIC_LIBRARIES := \
 	node \
-	c-ares \
-	libev \
-	libeio \
+	uv \
 	http_parser \
 	v8 \
 	pty
 
+LOCAL_LDLIBS += \
+	-lz
+
 include $(BUILD_SHARED_LIBRARY)
 
-$(call import-module,deps/c-ares)
-$(call import-module,deps/libev)
-$(call import-module,deps/libeio)
+$(call import-module,deps/uv)
 $(call import-module,deps/http_parser)
 $(call import-module,deps/v8)
 $(call import-module,pty)
 $(call import-module,openssl-android)
+#$(call import-module,z)
 $(call import-module,node)
