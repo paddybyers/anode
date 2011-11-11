@@ -113,9 +113,9 @@ JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_start
 JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_stop
   (JNIEnv *, jclass, jlong handle, jint signum) {
 	node::Isolate *isolate = reinterpret_cast<node::Isolate *>(handle);
-	LOGV("Java_org_meshpoint_anode_RuntimeNative_start: ent\n");
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_stop: ent\n");
   	int result = isolate->Stop(signum);
-  	LOGV("Java_org_meshpoint_anode_RuntimeNative_start: ret %d\n", result);
+  	LOGV("Java_org_meshpoint_anode_RuntimeNative_stop: ret %d\n", result);
   	return result;
 }
 
