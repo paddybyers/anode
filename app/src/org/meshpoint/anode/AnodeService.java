@@ -19,7 +19,7 @@ public class AnodeService extends IntentService {
 	 * Instance table
 	 ***********************/
 	private static int counter;
-	private static HashMap<String, Isolate> instances;
+	private static HashMap<String, Isolate> instances = new HashMap<String, Isolate>();
 	
 	static synchronized String addInstance(Isolate isolate) {
 		String instance = String.valueOf(counter++);
@@ -93,7 +93,7 @@ public class AnodeService extends IntentService {
 		/* launch directly */
 		try {
 			Isolate isolate = Runtime.createIsolate();
-			isolate.addStateListener(new ServiceListener(Anode.addInstance(isolate)));
+			isolate.addStateListener(new ServiceListener(addInstance(isolate)));
 			isolate.start(processedArgs);
 		} catch (IllegalStateException e) {
 			Log.v(TAG, "AnodeReceiver.onReceive::start: exception: " + e + "; cause: " + e.getCause());
@@ -113,7 +113,7 @@ public class AnodeService extends IntentService {
 		public void stateChanged(final int state) {
 			/* exit remove the instance if exited */
 			if(state == Runtime.STATE_STOPPED) {
-				Anode.removeInstance(instance);
+				removeInstance(instance);
 			}
 		}
 	}

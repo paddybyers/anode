@@ -80,7 +80,7 @@ public class AnodeActivity extends Activity implements StateListener {
 		try {
 			isolate = Runtime.createIsolate();
 			isolate.addStateListener(this);
-			instance = Anode.addInstance(isolate);
+			instance = AnodeService.addInstance(isolate);
 			isolate.start(args.split("\\s"));
 		} catch (IllegalStateException e) {
 			Log.v(TAG, "isolate start: exception: " + e + "; cause: " + e.getCause());

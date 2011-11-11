@@ -39,13 +39,13 @@ public class AnodeReceiver extends BroadcastReceiver {
 		if(ACTION_STOP.equals(action)) {
 			String instance = intent.getStringExtra(INST);
 			if(instance == null) {
-				instance = Anode.soleInstance();
+				instance = AnodeService.soleInstance();
 				if(instance == null) {
 					Log.v(TAG, "AnodeReceiver.onReceive::stop: no instance specified");
 					return;
 				}
 			}
-			Isolate isolate = Anode.getInstance(instance);
+			Isolate isolate = AnodeService.getInstance(instance);
 			if(isolate == null) {
 				Log.v(TAG, "AnodeReceiver.onReceive::stop: instance " + instance + " not found");
 				return;
