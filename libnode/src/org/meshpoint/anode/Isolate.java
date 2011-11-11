@@ -1,0 +1,154 @@
+package org.meshpoint.anode;
+
+import java.util.HashSet;
+import java.util.Set;
+
+import org.meshpoint.anode.Runtime.IllegalStateException;
+import org.meshpoint.anode.Runtime.NodeException;
+import org.meshpoint.anode.Runtime.StateListener;
+
+public class Isolate {
+
+	/**************************
+	 * private state
+	 **************************/
+	
+	private long handle;
+	private int state;
+	private int exitval;
+	private RuntimeThread runner;
+	private Set<StateListener> listeners = new HashSet<StateListener>();
+
+	/**************************
+	 * public API
+	 **************************/
+	
+	/**
+	 * Start the Isolate.
+	 * This is a non-blocking call.
+	 * @param argv the command-line arguments to pass to the runtime
+	 * @throws IllegalStateException if the runtime is already started,
+	 * or is otherwise in a state that prevents it from starting
+	 * @throws NodeException if the runtime exited with an error
+	 */
+	public void start(String[] argv) throws IllegalStateException, NodeException {
+		synchronized(runner) {
+			if(state != Runtime.STATE_CREATED) {
+				throw new IllegalStateException(
+					"Attempting to start Runtime when not in CREATED state"
+				);
+			}
+			runner.start(argv);
+			try{runner.wait();}catch(InterruptedException e){}
+			if(state == Runtime.STATE_STOPPED)
+				handleExitval();
+		}
+	}
+	
+	/**
+	 * Stop a running Runtime instance.
+	 * This is a non-blocking call.
+	 * @throws IllegalStateException if the runtime was not previously started,
+	 * or is otherwise in a state that prevents it from being stopped
+	 * @throws NodeException if the runtime exited with an error
+	 */
+	public void stop() throws IllegalStateException, NodeException {
+		synchronized(runner) {
+			switch(state) {
+			case Runtime.STATE_STARTED:
+				/* expected case, the instance is running normally */
+				setState(Runtime.STATE_STOPPING);
+				RuntimeNative.stop(handle, RuntimeNative.SIGKILL);
+				try{runner.wait();}catch(InterruptedException e){}
+			case Runtime.STATE_STOPPED:
+				/* already stopped, throw error if
+				 * there was one, otherwise silently succeed */
+				handleExitval();
+				return;
+			default:
+				throw new IllegalStateException(
+					"Attempting to stop Runtime when not in STARTED state"
+				);
+			}
+		}
+	}
+
+	/**
+	 * Get the current runtime state
+	 * @return
+	 */
+	public int getState() {
+		synchronized(runner) {
+			return state;
+		}
+	}
+
+	/**************************
+	 * private
+	 **************************/
+	
+	Isolate() {
+		runner = new RuntimeThread();
+		handle = RuntimeNative.create();
+		state = Runtime.STATE_CREATED;
+	}
+	
+	private void setState(int state) {
+		/* note that this is only ever called with the runner already locked */
+		this.state = state;
+		runner.notify();
+		synchronized(listeners) {
+			for(StateListener listener : listeners) {
+				listener.stateChanged(state);
+			}
+		}
+	}
+	
+	/**
+	 * Listener interface for being notified of state changes
+	 */
+	public void addStateListener(StateListener listener) {
+		synchronized(listeners) {
+			listeners.add(listener);
+		}
+	}
+	
+	public void removeStateListener(StateListener listener) {
+		synchronized(listeners) {
+			listeners.remove(listener);
+		}
+	}
+	
+	private void handleExitval() throws NodeException {
+		if(exitval != 0) {
+			 /* clear exitval because we have consumed that error here */
+			exitval = 0;
+			throw new NodeException(exitval);
+		}
+	}
+
+	private class RuntimeThread extends Thread {
+		private String[] argv;
+		
+		public void start(String[] argv) {
+			this.argv = argv;
+			super.start();
+		}
+
+		public void run() {
+			try {
+				synchronized(this) {
+					setState(Runtime.STATE_STARTED);
+				}
+				int exitval = RuntimeNative.start(handle, argv);
+				synchronized(this) {
+					setState(Runtime.STATE_STOPPED);
+					Isolate.this.exitval = exitval;
+				}
+			} catch(Throwable t) {
+				t.printStackTrace();
+			}
+		}
+	}
+
+}
