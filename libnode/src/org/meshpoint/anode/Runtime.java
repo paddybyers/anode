@@ -1,26 +1,19 @@
 package org.meshpoint.anode;
 
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 
 import android.content.Context;
 
 /**
- * Public API to obtain an manage an instance of a node.js runtime
- * There is a singleton runtime instance, with a strict lifecycle management.
+ * Public API to obtain and manage Isolate instances of node.js
  * @author paddy
  */
 public class Runtime {
-	
+
 	/**************************
 	 * private state
 	 **************************/
 	
-	private int state;
-	private int exitval;
-	private RuntimeThread runner;
-	private Set<StateListener> listeners = new HashSet<StateListener>();
 	private static Runtime theRuntime;
 
 	/**************************
@@ -28,71 +21,25 @@ public class Runtime {
 	 **************************/
 	
 	/**
-	 * Public factory method to get the runtime instance.
-	 * There is only a single Runtime instance per application context.
+	 * Public factory method to initialise the runtime environment.
 	 * @param ctx the Context associated with the invoking activity,
 	 * used to locate the assets
-	 * @return the Runtime
 	 * @throws InitialisationException if there was a problem initialising the Runtime
 	 */
-	public static synchronized Runtime getRuntime(Context ctx) throws InitialisationException {
+	public static synchronized void initRuntime(Context ctx, String[] argv) throws InitialisationException {
 		if(theRuntime == null) {
 			try {
-				theRuntime = new Runtime(ctx);
+				theRuntime = new Runtime(ctx, argv);
 			} catch (IOException e) {
 				throw new InitialisationException(e);			}
 		}
-		return theRuntime;
 	}
 
-	/**
-	 * Start the Runtime instance.
-	 * This is a non-blocking call.
-	 * @param argv the command-line arguments to pass to the runtime
-	 * @throws IllegalStateException if the runtime is already started,
-	 * or is otherwise in a state that prevents it from starting
-	 * @throws NodeException if the runtime exited with an error
-	 */
-	public void start(String[] argv) throws IllegalStateException, NodeException {
-		synchronized(runner) {
-			if(state != STATE_CREATED) {
-				throw new IllegalStateException(
-					"Attempting to start Runtime when not in CREATED state"
-				);
-			}
-			runner.start(argv);
-			try{runner.wait();}catch(InterruptedException e){}
-			if(state == STATE_STOPPED)
-				handleExitval();
+	public static Isolate createIsolate() throws IllegalStateException {
+		if(theRuntime == null) {
+			throw new IllegalStateException("Runtime has not beed initialised");
 		}
-	}
-	
-	/**
-	 * Stop a running Runtime instance.
-	 * This is a non-blocking call.
-	 * @throws IllegalStateException if the runtime was not previously started,
-	 * or is otherwise in a state that prevents it from being stopped
-	 * @throws NodeException if the runtime exited with an error
-	 */
-	public void stop() throws IllegalStateException, NodeException {
-		synchronized(runner) {
-			switch(state) {
-			case STATE_STARTED:
-				/* expected case, the instance is running normally */
-				setState(STATE_STOPPING);
-				RuntimeNative.stop(RuntimeNative.SIGABRT);
-				try{runner.wait();}catch(InterruptedException e){}
-			case STATE_STOPPED:
-				/* already stopped, throw error if
-				 * there was one, otherwise silently succeed */
-				handleExitval();
-				return;
-			default:
-				throw new IllegalStateException(
-					"Attempting to stop Runtime when not in STARTED state"
-				);
-			}
-		}
+		return new Isolate();
 	}
 
 	/**
@@ -105,32 +52,10 @@ public class Runtime {
 	public static final int STATE_STOPPED       = 4;
 
 	/**
-	 * Get the current runtime state
-	 * @return
-	 */
-	public int getState() {
-		synchronized(runner) {
-			return state;
-		}
-	}
-
-	/**
 	 * Listener interface for being notified of state changes
 	 */
 	public interface StateListener {
 		public void stateChanged(int state);
-	}
-	
-	public void addStateListener(StateListener listener) {
-		synchronized(listeners) {
-			listeners.add(listener);
-		}
-	}
-	
-	public void removeStateListener(StateListener listener) {
-		synchronized(listeners) {
-			listeners.remove(listener);
-		}
 	}
 	
 	/**
@@ -139,8 +64,8 @@ public class Runtime {
 	 */
 	public static class InitialisationException extends Exception {
 		private static final long serialVersionUID = 2496406014266651847L;
-		private InitialisationException(Throwable cause) {super(cause);}
-		private InitialisationException(String msg) {super(msg);}
+		InitialisationException(Throwable cause) {super(cause);}
+		InitialisationException(String msg) {super(msg);}
 	}
 
 	/**
@@ -149,7 +74,7 @@ public class Runtime {
 	 */
 	public static class IllegalStateException extends Exception {
 		private static final long serialVersionUID = -8553913470826899835L;
-		private IllegalStateException(String msg) {super(msg);}
+		IllegalStateException(String msg) {super(msg);}
 	}
 
 	/**
@@ -158,60 +83,18 @@ public class Runtime {
 	 */
 	public static class NodeException extends Exception {
 		private static final long serialVersionUID = 5950820713527212317L;
-		private NodeException(int exitval) {super("node exited with error code: " + exitval);}
+		NodeException(int exitval) {super("node exited with error code: " + exitval);}
 	}
 	
 	/**************************
 	 * private
 	 **************************/
 	
-	private Runtime(Context ctx) throws IOException {
-		RuntimeNative.init(ctx);
-		runner = new RuntimeThread();
-		state = STATE_CREATED;
+	Runtime(Context ctx, String[] argv) throws IOException {
+		RuntimeNative.init(ctx, argv);
 	}
 	
-	private void setState(int state) {
-		/* note that this is only ever called with the runner already locked */
-		this.state = state;
-		runner.notify();
-		synchronized(listeners) {
-			for(StateListener listener : listeners) {
-				listener.stateChanged(state);
-			}
-		}
+	public void finalize() {
+		RuntimeNative.nodeDispose();
 	}
-	
-	private void handleExitval() throws NodeException {
-		if(exitval != 0) {
-			 /* clear exitval because we have consumed that error here */
-			exitval = 0;
-			throw new NodeException(exitval);
-		}
-	}
-
-	private class RuntimeThread extends Thread {
-		private String[] argv;
-		
-		public void start(String[] argv) {
-			this.argv = argv;
-			super.start();
-		}
-
-		public void run() {
-			try {
-				synchronized(this) {
-					Runtime.this.setState(STATE_STARTED);
-				}
-				int exitval = RuntimeNative.start(argv);
-				synchronized(this) {
-					Runtime.this.setState(STATE_STOPPED);
-					Runtime.this.exitval = exitval;
-				}
-			} catch(Throwable t) {
-				t.printStackTrace();
-			}
-		}
-	}
-
 }

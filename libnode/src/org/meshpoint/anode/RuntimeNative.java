@@ -33,10 +33,11 @@ final class RuntimeNative {
 	 * @throws IOException if there was a problem accessing the native library file
 	 * @throws UnsatisifiedLinkError if there was a problem initialising the native library
 	 */
-	static void init(Context ctx) throws IOException {
+	static void init(Context ctx, String[] argv) throws IOException {
 		try {
 			extractLib(ctx);
 			System.load(LIBRARY_PATH + '/' + LIBRARY_FILE);
+			nodeInit(argv);
 		} catch(UnsatisfiedLinkError e) {
 			Log.v(TAG, "init: unable to load library: " + e);
 			throw e;
@@ -47,16 +48,33 @@ final class RuntimeNative {
 	}
 	
 	/**
+	 * Initialise the native node runtime
+	 */
+	static native void nodeInit(String[] argv);
+	
+	/**
+	 * Dispose the native node runtime
+	 */
+	static native void nodeDispose();
+	
+	/**
+	 * Create a node.js isolate
+	 * @return isolate handle, or 0 if error
+	 */
+	static native long create();
+	
+	/**
 	 * Launch the node.js runtime. The thread that enters this method
 	 * will block until the runtime exits.
 	 * It is critical that a thread blocked in this method is not forcibly
 	 * terminated by the calling application, except in the case that the
 	 * entire application is about to exit, or native library resources
 	 * may be leaked
+	 * @param isolate the isolate handle
 	 * @param argv the options and arguments to pass to the node.js invocation
 	 * @return 0 if successful, else an error code
 	 */
-	static native int start(String[] argv);
+	static native int start(long isolate, String[] argv);
 	
 	/**
 	 * Stop a running runtime. An event will be delivered to the runtime that
@@ -69,10 +87,16 @@ final class RuntimeNative {
 	 * SIGKILL: request termination of the runtime; may be caught by a handler
 	 *          in the runtime 
 	 * SIGABRT: forcibly terminate the runtime instance 
+	 * @param isolate the isolate handle
 	 * @param signum the signal number
 	 * @return 0 if successful, error code otherwise
 	 */
-	static native int stop(int signum);
+	static native int stop(long isolate, int signum);
+	
+	/**
+	 * Dispose a native isolate instance
+	 */
+	static native void isolateDispose(long isolate);
 	
 	/**
 	 * Extract the library from assets to the default library location.

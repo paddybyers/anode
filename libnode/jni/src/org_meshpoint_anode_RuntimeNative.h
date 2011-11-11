@@ -9,25 +9,59 @@ extern "C" {
 #endif
 #undef org_meshpoint_anode_RuntimeNative_SIGINT
 #define org_meshpoint_anode_RuntimeNative_SIGINT 2L
+#undef org_meshpoint_anode_RuntimeNative_SIGABRT
+#define org_meshpoint_anode_RuntimeNative_SIGABRT 6L
 #undef org_meshpoint_anode_RuntimeNative_SIGKILL
 #define org_meshpoint_anode_RuntimeNative_SIGKILL 9L
 #undef org_meshpoint_anode_RuntimeNative_SIGTERM
 #define org_meshpoint_anode_RuntimeNative_SIGTERM 15L
 /*
  * Class:     org_meshpoint_anode_RuntimeNative
- * Method:    start
- * Signature: ([Ljava/lang/String;)I
+ * Method:    nodeInit
+ * Signature: ([Ljava/lang/String;)V
  */
-JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_start
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeInit
   (JNIEnv *, jclass, jobjectArray);
 
 /*
  * Class:     org_meshpoint_anode_RuntimeNative
+ * Method:    nodeDispose
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeDispose
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_meshpoint_anode_RuntimeNative
+ * Method:    create
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_RuntimeNative_create
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     org_meshpoint_anode_RuntimeNative
+ * Method:    start
+ * Signature: (J[Ljava/lang/String;)I
+ */
+JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_start
+  (JNIEnv *, jclass, jlong, jobjectArray);
+
+/*
+ * Class:     org_meshpoint_anode_RuntimeNative
  * Method:    stop
- * Signature: (I)I
+ * Signature: (JI)I
  */
 JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_stop
-  (JNIEnv *, jclass, jint);
+  (JNIEnv *, jclass, jlong, jint);
+
+/*
+ * Class:     org_meshpoint_anode_RuntimeNative
+ * Method:    isolateDispose
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_isolateDispose
+  (JNIEnv *, jclass, jlong);
 
 #ifdef __cplusplus
 }

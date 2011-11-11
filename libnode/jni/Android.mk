@@ -21,7 +21,10 @@ LOCAL_MODULE := jninode
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH) \
 	$(NODE_PATH)/src
-	
+
+LOCAL_CFLAGS +=  \
+	-include sys/select.h
+		
 LOCAL_SRC_FILES += src/org_meshpoint_anode_RuntimeNative.cpp
 
 LOCAL_SHARED_LIBRARIES += \
