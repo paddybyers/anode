@@ -21,8 +21,8 @@ public class AnodeService extends IntentService {
 	private static int counter;
 	private static HashMap<String, Isolate> instances = new HashMap<String, Isolate>();
 	
-	static synchronized String addInstance(Isolate isolate) {
-		String instance = String.valueOf(counter++);
+	static synchronized String addInstance(String instance, Isolate isolate) {
+		if(instance == null) instance = String.valueOf(counter++);
 		instances.put(instance, isolate);
 		return instance;
 	}
@@ -59,12 +59,13 @@ public class AnodeService extends IntentService {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
+		/* get system options */
 		String options = intent.getStringExtra(AnodeReceiver.OPTS);
 		String[] opts = options == null ? null : options.split("\\s");
 		initRuntime(opts);
-		String action = intent.getAction();
 
 		/* we should not get a stop action; should have been intercepted by the receiver */
+		String action = intent.getAction();
 		if(AnodeReceiver.ACTION_STOP.equals(action)) {
 			Log.v(TAG, "AnodeService.onHandleIntent::stop: internal error");
 			return;
@@ -80,12 +81,6 @@ public class AnodeService extends IntentService {
 			return;
 		}
 
-		/* if an instance id was specified, this is an error */
-		String instance = intent.getStringExtra(AnodeReceiver.INST);
-		if(instance != null) {
-			Log.v(TAG, "AnodeService.onHandleIntent:: instance specified for START action; ignoring");
-		}
-
 		/* create a new instance based on the supplied args */
 		ArgProcessor argProcessor = new ArgProcessor(intent.getExtras(), args);
 		String[] processedArgs = argProcessor.process();
@@ -93,7 +88,8 @@ public class AnodeService extends IntentService {
 		/* launch directly */
 		try {
 			Isolate isolate = Runtime.createIsolate();
-			isolate.addStateListener(new ServiceListener(addInstance(isolate)));
+			String instance = intent.getStringExtra(AnodeReceiver.INST);
+			isolate.addStateListener(new ServiceListener(addInstance(instance, isolate)));
 			isolate.start(processedArgs);
 		} catch (IllegalStateException e) {
 			Log.v(TAG, "AnodeReceiver.onReceive::start: exception: " + e + "; cause: " + e.getCause());

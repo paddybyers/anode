@@ -24,7 +24,7 @@ public class AnodeReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context ctx, Intent intent) {
-		String action = intent.getAction();
+		/* get the system options */
 		String options = intent.getStringExtra(OPTS);
 		String[] opts = options == null ? null : options.split("\\s");
 
@@ -36,6 +36,7 @@ public class AnodeReceiver extends BroadcastReceiver {
 		}
 
 		/* unconditionally do a stop action */
+		String action = intent.getAction();
 		if(ACTION_STOP.equals(action)) {
 			String instance = intent.getStringExtra(INST);
 			if(instance == null) {

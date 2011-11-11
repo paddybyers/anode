@@ -74,13 +74,14 @@ public class AnodeActivity extends Activity implements StateListener {
     
     private void startAction() {
 		String options = getIntent().getStringExtra(AnodeReceiver.OPTS);
+		String instance = getIntent().getStringExtra(AnodeReceiver.INST);
 		String[] opts = options == null ? null : options.split("\\s");
 		initRuntime(opts);
 		String args = argsText.getText().toString();
 		try {
 			isolate = Runtime.createIsolate();
 			isolate.addStateListener(this);
-			instance = AnodeService.addInstance(isolate);
+			this.instance = AnodeService.addInstance(instance, isolate);
 			isolate.start(args.split("\\s"));
 		} catch (IllegalStateException e) {
 			Log.v(TAG, "isolate start: exception: " + e + "; cause: " + e.getCause());
@@ -92,11 +93,6 @@ public class AnodeActivity extends Activity implements StateListener {
     private void stopAction() {
     	if(instance == null) {
 			Log.v(TAG, "AnodeReceiver.onReceive::stop: no instance currently running for this activity");
-			return;
-		}
-		String intent_instance = getIntent().getStringExtra(AnodeReceiver.INST);
-		if(intent_instance != instance) {
-			Log.v(TAG, "AnodeReceiver.onReceive::stop: specified instance does not match that currently running for this activity");
 			return;
 		}
 		try {
