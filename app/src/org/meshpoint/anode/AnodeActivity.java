@@ -30,6 +30,8 @@ public class AnodeActivity extends Activity implements StateListener {
 	private TextView stateText;
 	private Handler viewHandler = new Handler();
 	private long uiThread;
+	private String instance;
+	private Isolate isolate;
 
 	/** Called when the activity is first created. */
     @Override
@@ -38,11 +40,8 @@ public class AnodeActivity extends Activity implements StateListener {
         setContentView(R.layout.main);
         ctx = getApplicationContext();
         initUI();
-        initRuntime();
         uiThread = viewHandler.getLooper().getThread().getId();
     }
-    
-    private Runtime runtime;
     
     private void initUI() {
     	startButton = (Button)findViewById(R.id.start_button);
@@ -65,34 +64,47 @@ public class AnodeActivity extends Activity implements StateListener {
     	__stateChanged(Runtime.STATE_CREATED);
     }
     
-    private void initRuntime() {
+    private void initRuntime(String[] opts) {
     	try {
-    		runtime = Runtime.getRuntime(ctx);
-    		if(runtime != null)
-    			runtime.addStateListener(this);
+    		Runtime.initRuntime(ctx, opts);
 		} catch (InitialisationException e) {
 			Log.v(TAG, "initRuntime: exception: " + e + "; cause: " + e.getCause());
 		}
     }
     
     private void startAction() {
+		String options = getIntent().getStringExtra(AnodeReceiver.OPTS);
+		String[] opts = options == null ? null : options.split("\\s");
+		initRuntime(opts);
 		String args = argsText.getText().toString();
 		try {
-			runtime.start(args.split("\\s"));
+			isolate = Runtime.createIsolate();
+			isolate.addStateListener(this);
+			instance = Anode.addInstance(isolate);
+			isolate.start(args.split("\\s"));
 		} catch (IllegalStateException e) {
-			Log.v(TAG, "runtime start: exception: " + e + "; cause: " + e.getCause());
+			Log.v(TAG, "isolate start: exception: " + e + "; cause: " + e.getCause());
 		} catch (NodeException e) {
-			Log.v(TAG, "runtime start: exception: " + e);
+			Log.v(TAG, "isolate start: exception: " + e);
 		}
     }
     
     private void stopAction() {
+    	if(instance == null) {
+			Log.v(TAG, "AnodeReceiver.onReceive::stop: no instance currently running for this activity");
+			return;
+		}
+		String intent_instance = getIntent().getStringExtra(AnodeReceiver.INST);
+		if(intent_instance != instance) {
+			Log.v(TAG, "AnodeReceiver.onReceive::stop: specified instance does not match that currently running for this activity");
+			return;
+		}
 		try {
-			runtime.stop();
+			isolate.stop();
 		} catch (IllegalStateException e) {
-			Log.v(TAG, "runtime start: exception: " + e + "; cause: " + e.getCause());
+			Log.v(TAG, "isolate stop : exception: " + e + "; cause: " + e.getCause());
 		} catch (NodeException e) {
-			Log.v(TAG, "runtime start: exception: " + e);
+			Log.v(TAG, "isolate stop: exception: " + e);
 		}
     }
     
@@ -128,7 +140,6 @@ public class AnodeActivity extends Activity implements StateListener {
 		/* exit the activity if the runtime has exited */
 		if(state == Runtime.STATE_STOPPED) {
 			finish();
-			java.lang.Runtime.getRuntime().exit(0);
 		}
 	}
 	

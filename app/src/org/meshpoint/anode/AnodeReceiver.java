@@ -15,6 +15,8 @@ public class AnodeReceiver extends BroadcastReceiver {
 	public static final String ACTION_START = "org.meshpoint.anode.START";
 	public static final String ACTION_STOP = "org.meshpoint.anode.STOP";
 	public static final String CMD = "cmdline";
+	public static final String INST = "instance";
+	public static final String OPTS = "options";
 	
 	public AnodeReceiver() {
 		super();
@@ -22,11 +24,12 @@ public class AnodeReceiver extends BroadcastReceiver {
 
 	@Override
 	public void onReceive(Context ctx, Intent intent) {
-		Runtime runtime;
 		String action = intent.getAction();
+		String options = intent.getStringExtra(OPTS);
+		String[] opts = options == null ? null : options.split("\\s");
 
 		try {
-			runtime = Runtime.getRuntime(ctx);
+			Runtime.initRuntime(ctx, opts);
 		} catch (InitialisationException e) {
 			Log.v(TAG, "AnodeReceiver.onReceive::getRuntime: exception: " + e + "; cause: " + e.getCause());
 			return;
@@ -34,8 +37,21 @@ public class AnodeReceiver extends BroadcastReceiver {
 
 		/* unconditionally do a stop action */
 		if(ACTION_STOP.equals(action)) {
+			String instance = intent.getStringExtra(INST);
+			if(instance == null) {
+				instance = Anode.soleInstance();
+				if(instance == null) {
+					Log.v(TAG, "AnodeReceiver.onReceive::stop: no instance specified");
+					return;
+				}
+			}
+			Isolate isolate = Anode.getInstance(instance);
+			if(isolate == null) {
+				Log.v(TAG, "AnodeReceiver.onReceive::stop: instance " + instance + " not found");
+				return;
+			}
 			try {
-				runtime.stop();
+				isolate.stop();
 			} catch (IllegalStateException e) {
 				Log.v(TAG, "AnodeReceiver.onReceive::stop: exception: " + e + "; cause: " + e.getCause());
 				return;
@@ -45,7 +61,7 @@ public class AnodeReceiver extends BroadcastReceiver {
 			}
 			return;
 		}
-		
+
 		/* get the launch commandline */
 		String args = intent.getStringExtra(CMD);
 		
