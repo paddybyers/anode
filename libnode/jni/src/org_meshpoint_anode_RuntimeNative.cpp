@@ -2,6 +2,14 @@
 
 #include <string.h>
 #include "node.h"
+#define DEBUG
+#ifdef DEBUG
+# include <android/log.h>
+# define DEBUG_TAG "libjninode"
+# define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, DEBUG_TAG, __VA_ARGS__)
+#else
+# define LOGV(...)
+#endif
 
 static void freeNativeArgs(jint argc, char **argv) {
 	for(int i = 0; i < argc; i++)
@@ -10,29 +18,32 @@ static void freeNativeArgs(jint argc, char **argv) {
 }
 
 static int getNativeArgs(JNIEnv *jniEnv, jobjectArray jargv, char ***pargv) {
+	LOGV("getNativeArgs: ent\n");
   	jint argc = jargv ? jniEnv->GetArrayLength(jargv) : 0;
-	if(!argc) { *pargv = 0; return 0; }
 
 	/* convert jargv to native */
   	char **argv = new char*[argc + 2];
   	if(!argv) return -1;
   	argv[0] = strdup((char *)"node");
   	if(!argv[0]) { freeNativeArgs(0, argv); return -1; }
-	for(int i = 0; i < argc; i++) {
-		jstring jarg = (jstring)jniEnv->GetObjectArrayElement(jargv, i);
-		if(!jarg)  { freeNativeArgs(i, argv); return -1; }
-		char *argCopy = 0;
-		const char *arg = jniEnv->GetStringUTFChars(jarg, 0);
-		int argLen = jniEnv->GetStringUTFLength(jarg);
-		argCopy = new char[argLen + 1];
-		if(!argCopy)  { freeNativeArgs(i, argv); return -1; }
-		memcpy(argCopy, arg, argLen);
-		argCopy[argLen] = 0;
-		jniEnv->ReleaseStringUTFChars(jarg, arg);
-		argv[i + 1] = argCopy;
+  	if(jargv) {
+		for(int i = 0; i < argc; i++) {
+			jstring jarg = (jstring)jniEnv->GetObjectArrayElement(jargv, i);
+			if(!jarg)  { freeNativeArgs(i, argv); return -1; }
+			char *argCopy = 0;
+			const char *arg = jniEnv->GetStringUTFChars(jarg, 0);
+			int argLen = jniEnv->GetStringUTFLength(jarg);
+			argCopy = new char[argLen + 1];
+			if(!argCopy)  { freeNativeArgs(i, argv); return -1; }
+			memcpy(argCopy, arg, argLen);
+			argCopy[argLen] = 0;
+			jniEnv->ReleaseStringUTFChars(jarg, arg);
+			argv[i + 1] = argCopy;
+		}
 	}
 	argv[++argc] = 0;
 	*pargv = argv;
+	LOGV("getNativeArgs: ret %d\n", argc);
 	return argc;
 }
 
@@ -43,10 +54,12 @@ static int getNativeArgs(JNIEnv *jniEnv, jobjectArray jargv, char ***pargv) {
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeInit
   (JNIEnv *jniEnv, jclass, jobjectArray jargv) {
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeInit: ent\n");
   char **argv;
   int argc;
   if((argc = getNativeArgs(jniEnv, jargv, &argv)) >= 0)
 	  node::Initialize(argc, argv);
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeInit: ret\n");
 }
 
 /*
@@ -56,7 +69,9 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeInit
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeDispose
   (JNIEnv *, jclass) {
-  node::Dispose();
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeDispose: ent\n");
+	node::Dispose();
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeDispose: ret\n");
 }
 
 /*
@@ -66,6 +81,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeDispose
  */
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_RuntimeNative_create
   (JNIEnv *, jclass) {
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_create\n");
   	return (jlong)node::Isolate::New();
 }
 
@@ -76,6 +92,7 @@ JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_RuntimeNative_create
  */
 JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_start
   (JNIEnv *jniEnv, jclass, jlong handle, jobjectArray jargv) {
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_start: ent\n");
 	node::Isolate *isolate = reinterpret_cast<node::Isolate *>(handle);
 	char **argv;
 	int argc;
@@ -84,6 +101,7 @@ JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_start
 		freeNativeArgs(argc, argv);
 		argc = result;
 	}
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_start: ret %d\n", argc);
 	return argc;
 }
 
@@ -95,7 +113,10 @@ JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_start
 JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_stop
   (JNIEnv *, jclass, jlong handle, jint signum) {
 	node::Isolate *isolate = reinterpret_cast<node::Isolate *>(handle);
-  	return isolate->Stop(signum);
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_start: ent\n");
+  	int result = isolate->Stop(signum);
+  	LOGV("Java_org_meshpoint_anode_RuntimeNative_start: ret %d\n", result);
+  	return result;
 }
 
 /*
@@ -106,5 +127,7 @@ JNIEXPORT jint JNICALL Java_org_meshpoint_anode_RuntimeNative_stop
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_isolateDispose
   (JNIEnv *, jclass, jlong handle) {
 	node::Isolate *isolate = reinterpret_cast<node::Isolate *>(handle);
-  	return isolate->Dispose();
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_isolateDispose: ent\n");
+  	isolate->Dispose();
+  	LOGV("Java_org_meshpoint_anode_RuntimeNative_isolateDispose: ret\n");
 }

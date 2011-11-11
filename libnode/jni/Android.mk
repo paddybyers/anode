@@ -39,7 +39,8 @@ LOCAL_STATIC_LIBRARIES := \
 	pty
 
 LOCAL_LDLIBS += \
-	-lz
+	-lz \
+	-llog
 
 include $(BUILD_SHARED_LIBRARY)
 
