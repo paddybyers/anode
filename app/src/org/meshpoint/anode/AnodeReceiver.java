@@ -14,6 +14,7 @@ public class AnodeReceiver extends BroadcastReceiver {
 	private static String TAG = "anode::AnodeReceiver";
 	public static final String ACTION_START = "org.meshpoint.anode.START";
 	public static final String ACTION_STOP = "org.meshpoint.anode.STOP";
+	public static final String ACTION_STOPALL = "org.meshpoint.anode.STOPALL";
 	public static final String CMD = "cmdline";
 	public static final String INST = "instance";
 	public static final String OPTS = "options";
@@ -35,8 +36,13 @@ public class AnodeReceiver extends BroadcastReceiver {
 			return;
 		}
 
-		/* unconditionally do a stop action */
+		/* unconditionally do any stop action */
 		String action = intent.getAction();
+		if(ACTION_STOPALL.equals(action)) {
+			for(Isolate isolate : AnodeService.getAll())
+				stopInstance(isolate);
+			return;
+		}
 		if(ACTION_STOP.equals(action)) {
 			String instance = intent.getStringExtra(INST);
 			if(instance == null) {
@@ -51,15 +57,7 @@ public class AnodeReceiver extends BroadcastReceiver {
 				Log.v(TAG, "AnodeReceiver.onReceive::stop: instance " + instance + " not found");
 				return;
 			}
-			try {
-				isolate.stop();
-			} catch (IllegalStateException e) {
-				Log.v(TAG, "AnodeReceiver.onReceive::stop: exception: " + e + "; cause: " + e.getCause());
-				return;
-			} catch (NodeException e) {
-				Log.v(TAG, "AnodeReceiver.onReceive::stop: exception: " + e + "; cause: " + e.getCause());
-				return;
-			}
+			stopInstance(isolate);
 			return;
 		}
 
@@ -79,4 +77,13 @@ public class AnodeReceiver extends BroadcastReceiver {
 		ctx.startService(intent);
 	}
 
+	private void stopInstance(Isolate isolate) {
+		try {
+			isolate.stop();
+		} catch (IllegalStateException e) {
+			Log.v(TAG, "AnodeReceiver.onReceive::stop: exception: " + e + "; cause: " + e.getCause());
+		} catch (NodeException e) {
+			Log.v(TAG, "AnodeReceiver.onReceive::stop: exception: " + e + "; cause: " + e.getCause());
+		}
+	}
 }
