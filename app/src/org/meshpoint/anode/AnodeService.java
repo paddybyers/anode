@@ -1,5 +1,6 @@
 package org.meshpoint.anode;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 import org.meshpoint.anode.Runtime.IllegalStateException;
@@ -40,6 +41,10 @@ public class AnodeService extends IntentService {
 		if(instances.size() == 1)
 			instance = instances.keySet().iterator().next();
 		return instance;
+	}
+	
+	static synchronized Collection<Isolate> getAll() {
+		return instances.values();
 	}
 
 	/**********************

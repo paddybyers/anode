@@ -27,6 +27,9 @@
             <intent-filter>
                 <action android:name="org.meshpoint.anode.STOP" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.STOPALL" />
+            </intent-filter>
         </receiver>
         <service android:exported="true" android:enabled="true" android:name=".AnodeService" android:description="@string/anode_service_description" android:label="@string/anode_service">
             <!-- disabled until we work out how to get a valid context for a Service triggered by these
@@ -35,6 +38,9 @@
             </intent-filter>
             <intent-filter>
                 <action android:name="org.meshpoint.anode.STOP" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.STOPALL" />
             </intent-filter>
              -->
         </service>
