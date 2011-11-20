@@ -27,10 +27,6 @@ LOCAL_CFLAGS +=  \
 		
 LOCAL_SRC_FILES += src/org_meshpoint_anode_RuntimeNative.cpp
 
-LOCAL_SHARED_LIBRARIES += \
-	crypto \
-	ssl
-
 LOCAL_STATIC_LIBRARIES := \
 	node \
 	uv \
@@ -40,7 +36,9 @@ LOCAL_STATIC_LIBRARIES := \
 
 LOCAL_LDLIBS += \
 	-lz \
-	-llog
+	-llog \
+	-lssl \
+	-lcrypto
 
 include $(BUILD_SHARED_LIBRARY)
 
