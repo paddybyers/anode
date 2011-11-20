@@ -1,7 +1,12 @@
 #include "org_meshpoint_anode_RuntimeNative.h"
 
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+
+#include "defines.h"
 #include "node.h"
+
 #define DEBUG
 #ifdef DEBUG
 # include <android/log.h>
@@ -55,6 +60,15 @@ static int getNativeArgs(JNIEnv *jniEnv, jobjectArray jargv, char ***pargv) {
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeInit
   (JNIEnv *jniEnv, jclass, jobjectArray jargv) {
 	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeInit: ent\n");
+	
+  /* set environment variable to support modules */
+  const char *modPath = APP_PATH;
+  mkdir(APP_PATH, DEFAULT_MODE);
+  modPath = MODULE_PATH;
+  mkdir(modPath, DEFAULT_MODE);
+  setenv("NODE_PATH", modPath, 0);
+  
+  /* process node arguments */
   char **argv;
   int argc;
   if((argc = getNativeArgs(jniEnv, jargv, &argv)) >= 0)
