@@ -6,18 +6,26 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
+# Modify this line to configure to the module name.
 LOCAL_MODULE := hello
 
+# Add any additional defines or compiler flags.
+# Do not delete these existing flags as these are required
+# for the included node header files.
 LOCAL_CFLAGS := \
     -D__POSIX__ \
 	-DBUILDING_NODE_EXTENSION
 
 LOCAL_CPPFLAGS :=
 
+# Add any additional required directories for the include path.
+# Do not delete these existing directories as these are required
+# for the included node header files.
 LOCAL_C_INCLUDES := $(NODE_ROOT)/src \
 	$(NODE_ROOT)/deps/v8/include \
 	$(NODE_ROOT)/deps/uv/include
 
+# Add any additional required shared libraries that the addon depends on.
 LOCAL_LDLIBS := \
 	$(ANODE_ROOT)/libnode/libs/armeabi/libjninode.so
 
@@ -28,5 +36,6 @@ LOCAL_SRC_FILES :=\
 
 LOCAL_STATIC_LIBRARIES := 
 
+# Do not edit this line.
 include $(ANODE_ROOT)/sdk/addon/build-node-addon.mk
 
