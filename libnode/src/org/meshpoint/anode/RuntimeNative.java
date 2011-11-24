@@ -103,21 +103,32 @@ final class RuntimeNative {
 	 * @throws IOException 
 	 */
 	private static void extractLib(Context ctx) throws IOException {
-		File dir, so;
+		File dir, so, pkg;
 		if(!(dir = new File(LIBRARY_PATH)).exists())
 			dir.mkdirs();
 		
-		if(!(so = new File(dir, LIBRARY_FILE)).exists()) {
-			InputStream in = ctx.getAssets().open(LIBRARY_FILE);
-			FileOutputStream out = new FileOutputStream(so);
-			int read;
-			byte[] buf = new byte[8192];
-			while((read = in.read(buf)) != -1)
-					out.write(buf, 0, read);
-			in.close();
-			out.flush();
-			out.close();
-			so.setExecutable(true);
+		if((so = new File(dir, LIBRARY_FILE)).exists()) {
+			/* check to see if this timestamp pre-dates
+			 * the current package */
+			if((pkg = new File(ctx.getPackageResourcePath())).exists()) {
+				if(pkg.lastModified() < so.lastModified()) {
+					Log.v(TAG, "extractLib: library up to date");
+					return;
+				}
+			}
+			Log.v(TAG, "extractLib: library present but out of date");
+			so.delete();
 		}
+		Log.v(TAG, "extractLib: copying library");
+		InputStream in = ctx.getAssets().open(LIBRARY_FILE);
+		FileOutputStream out = new FileOutputStream(so);
+		int read;
+		byte[] buf = new byte[8192];
+		while((read = in.read(buf)) != -1)
+				out.write(buf, 0, read);
+		in.close();
+		out.flush();
+		out.close();
+		so.setExecutable(true);
 	}
 }
