@@ -1,4 +1,4 @@
-package org.meshpoint.anode;
+package org.meshpoint.anode.util;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -60,7 +60,7 @@ public class ArgProcessor {
 	 * @param extras an optional bundle containing the mapping parameters
 	 * @param cmdline the commandline to process
 	 */
-	ArgProcessor(Bundle extras, String cmdline) {
+	public ArgProcessor(Bundle extras, String cmdline) {
 		this.extras = extras;
 		this.cmdline = cmdline;
 		uriMap = new HashMap<String, URI>();
@@ -71,7 +71,7 @@ public class ArgProcessor {
 	 * Process the commandline
 	 * @return the processed commandline, with 
 	 */
-	String[] process() {
+	public String[] process() {
 		if(extras != null) {
 			/* extract list of args to get */
 			try {

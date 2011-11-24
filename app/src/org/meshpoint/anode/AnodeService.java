@@ -7,6 +7,7 @@ import org.meshpoint.anode.Runtime.IllegalStateException;
 import org.meshpoint.anode.Runtime.InitialisationException;
 import org.meshpoint.anode.Runtime.NodeException;
 import org.meshpoint.anode.Runtime.StateListener;
+import org.meshpoint.anode.util.ArgProcessor;
 
 import android.app.IntentService;
 import android.content.Intent;
