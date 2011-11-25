@@ -34,6 +34,10 @@ public class Runtime {
 				throw new InitialisationException(e);			}
 		}
 	}
+	
+	public static boolean isInitialised() {
+		return theRuntime != null;
+	}
 
 	public static Isolate createIsolate() throws IllegalStateException {
 		if(theRuntime == null) {
