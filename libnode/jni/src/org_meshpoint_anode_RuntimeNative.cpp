@@ -62,11 +62,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeInit
 	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeInit: ent\n");
 	
   /* set environment variable to support modules */
-  const char *modPath = APP_PATH;
-  mkdir(APP_PATH, DEFAULT_MODE);
-  modPath = MODULE_PATH;
-  mkdir(modPath, DEFAULT_MODE);
-  setenv("NODE_PATH", modPath, 0);
+  setenv("NODE_PATH", MODULE_PATH, 0);
   
   /* process node arguments */
   char **argv;
@@ -95,8 +91,10 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeDispose
  */
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_RuntimeNative_create
   (JNIEnv *, jclass) {
-	LOGV("Java_org_meshpoint_anode_RuntimeNative_create\n");
-  	return (jlong)node::Isolate::New();
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_create ent\n");
+  	jlong result = (jlong)node::Isolate::New();
+	LOGV("Java_org_meshpoint_anode_RuntimeNative_create ret\n");
+	return result;
 }
 
 /*
