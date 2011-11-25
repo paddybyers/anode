@@ -1,20 +1,13 @@
 package org.meshpoint.anode.util;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.meshpoint.anode.Constants;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -47,31 +40,29 @@ public class ArgProcessor {
 	
 	private static String TAG = "anode::ArgsProcessor";
 	private static final String GET_PREFIX   = "get:";
-	private static final String RESOURCE_DIR = "/data/data/org.meshpoint.anode/uriCache";
-	private static final int    HASH_LEN     = 20;
 
 	private Bundle extras;
-	private String cmdline;
+	private String text;
 	private Map<String, URI> uriMap;
 	private Map<String, String> filenameMap;
 
 	/**
 	 * Constructs an instance of ArgProcessor
 	 * @param extras an optional bundle containing the mapping parameters
-	 * @param cmdline the commandline to process
+	 * @param text the string to process
 	 */
-	public ArgProcessor(Bundle extras, String cmdline) {
+	public ArgProcessor(Bundle extras, String text) {
 		this.extras = extras;
-		this.cmdline = cmdline;
+		this.text = text;
 		uriMap = new HashMap<String, URI>();
 		filenameMap = new HashMap<String, String>();
 	}
 	
 	/**
-	 * Process the commandline
-	 * @return the processed commandline, with 
+	 * Process the text string
+	 * @return the processed string, with downloaded resource names substituted
 	 */
-	public String[] process() {
+	public String processString() {
 		if(extras != null) {
 			/* extract list of args to get */
 			try {
@@ -81,7 +72,7 @@ public class ArgProcessor {
 						String rawUri = extras.getString(key);
 						String rawKey = key.substring(GET_PREFIX.length());
 						URI uri = new URI(rawUri);
-						String filename = getResourceUriHash(rawUri);
+						String filename = ModuleUtils.getResourceUriHash(rawUri);
 						uriMap.put(rawKey, uri);
 						filenameMap.put(rawKey, filename);
 					}
@@ -91,27 +82,10 @@ public class ArgProcessor {
 				return null;
 			}
 	
-			/* get target directory for downloaded assets */
-			File resourceDir = new File(RESOURCE_DIR);
-			resourceDir.mkdirs();
-			
 			/* download each asset */
 			for(String key : uriMap.keySet()) {
 				try {
-					HttpClient http = new DefaultHttpClient();
-					HttpGet request = new HttpGet();
-					request.setURI(uriMap.get(key));
-					HttpEntity entity = http.execute(request).getEntity();
-					InputStream in = entity.getContent();
-					FileOutputStream out = new FileOutputStream(new File(resourceDir, filenameMap.get(key)));
-					byte[] buf = new byte[1024];
-					int read;
-					while((read = in.read(buf)) != -1) {
-						out.write(buf, 0, read);
-					}
-					in.close();
-					out.flush();
-					out.close();
+					ModuleUtils.getResource(uriMap.get(key), filenameMap.get(key));
 				} catch(IOException e) {
 					Log.v(TAG, "process exception: aborting; exception: " + e + "; resource = " + uriMap.get(key).toString());
 					return null;
@@ -119,35 +93,17 @@ public class ArgProcessor {
 			}
 			
 			/* process the commandline */
-			String resourcePath = resourceDir.getAbsolutePath() + '/';
 			for(String key : filenameMap.keySet()) {
-				cmdline = cmdline.replace("%" + key, resourcePath + filenameMap.get(key));
+				text = text.replace("%" + key, Constants.RESOURCE_DIR + '/' + filenameMap.get(key));
 			}
 		}
-		
+		return text;
+	}
+
+	public String[] processArray() {
 		/* split the commandline at whitespace */
-		return cmdline.split("\\s");		
+		processString();
+		return text.split("\\s");		
 	}
 	
-	private String getResourceUriHash(String id) {
-		try {
-			MessageDigest sha = MessageDigest.getInstance("SHA-1");
-			sha.update(id.getBytes("iso-8859-1"));
-			return digest2Hex(sha.digest());
-		}
-		catch(Exception e) {
-			return null;
-		}
-	}
-
-	private String digest2Hex(byte[] digest) {
-		StringBuilder hash = new StringBuilder(HASH_LEN * 2);
-		final String hexChars = "0123456789abcdef";
-		for(int i = 0; i < HASH_LEN; i++) {
-		      hash.append(hexChars.charAt((digest[i] & 0xF0) >> 4))
-		         .append(hexChars.charAt((digest[i] & 0x0F)));
-		}
-		return hash.toString();
-	}
-
 }

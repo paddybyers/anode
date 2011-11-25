@@ -1,5 +1,9 @@
 package org.meshpoint.anode;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.HashMap;
 
@@ -8,6 +12,7 @@ import org.meshpoint.anode.Runtime.InitialisationException;
 import org.meshpoint.anode.Runtime.NodeException;
 import org.meshpoint.anode.Runtime.StateListener;
 import org.meshpoint.anode.util.ArgProcessor;
+import org.meshpoint.anode.util.ModuleUtils;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -53,6 +58,9 @@ public class AnodeService extends IntentService {
 	 **********************/
 	public AnodeService() {
 		super(":anode.AnodeService");
+		(new File(Constants.APP_DIR)).mkdirs();
+		(new File(Constants.MODULE_DIR)).mkdirs();
+		(new File(Constants.RESOURCE_DIR)).mkdirs();
 	}
 
     private void initRuntime(String[] opts) {
@@ -65,17 +73,27 @@ public class AnodeService extends IntentService {
 
 	@Override
 	protected void onHandleIntent(Intent intent) {
-		/* get system options */
-		String options = intent.getStringExtra(AnodeReceiver.OPTS);
-		String[] opts = options == null ? null : options.split("\\s");
-		initRuntime(opts);
-
 		/* we should not get a stop action; should have been intercepted by the receiver */
 		String action = intent.getAction();
 		if(AnodeReceiver.ACTION_STOP.equals(action)) {
 			Log.v(TAG, "AnodeService.onHandleIntent::stop: internal error");
 			return;
 		}
+		
+		if(AnodeReceiver.ACTION_START.equals(action)) {
+			/* get system options before handling this invocation */
+			String options = intent.getStringExtra(AnodeReceiver.OPTS);
+			String[] opts = options == null ? null : options.split("\\s");
+			initRuntime(opts);
+			handleStart(intent);
+		} else if(AnodeReceiver.ACTION_INSTALL.equals(action)) {
+			handleInstall(intent);
+		} else if(AnodeReceiver.ACTION_UNINSTALL.equals(action)) {
+			handleUninstall(intent);
+		}
+	}
+	
+	private void handleStart(Intent intent) {
 
 		/* get the launch commandline */
 		String args = intent.getStringExtra(AnodeReceiver.CMD);
@@ -89,7 +107,7 @@ public class AnodeService extends IntentService {
 
 		/* create a new instance based on the supplied args */
 		ArgProcessor argProcessor = new ArgProcessor(intent.getExtras(), args);
-		String[] processedArgs = argProcessor.process();
+		String[] processedArgs = argProcessor.processArray();
 
 		/* launch directly */
 		try {
@@ -120,4 +138,92 @@ public class AnodeService extends IntentService {
 		}
 	}
 
+	private void handleInstall(Intent intent) {
+
+		/* get the specified arguments */
+		String module = intent.getStringExtra(AnodeReceiver.MODULE);
+		String path = intent.getStringExtra(AnodeReceiver.PATH);
+		File moduleResource;
+		boolean remove_tmp_resource = false;
+		
+		/* if no path was specified, it is an error */
+		if(path == null || path.isEmpty()) {
+			Log.v(TAG, "AnodeService.onHandleInstall: no path specified");
+			return;
+		}
+		
+		/* resolve expected module type from path */
+		int type = ModuleUtils.guessModuleType(path);
+		String extn = ModuleUtils.getExtensionForType(type);
+		
+		/* guess the module name, if not already specified */
+		if(module == null || module.isEmpty()) {
+			int pathEnd = path.lastIndexOf('/') + 1;
+			module = path.substring(pathEnd, path.length()-extn.length());
+		}
+
+		/* download module if http or https */
+		if(path.startsWith("http://") || path.startsWith("https://")) {
+			String filename = ModuleUtils.getResourceUriHash(path);
+			try {
+				moduleResource = ModuleUtils.getResource(new URI(path), filename);
+				remove_tmp_resource = true;
+			} catch(IOException e) {
+				Log.v(TAG, "handleInstall: aborting (unable to download resource); exception: " + e + "; resource = " + path);
+				return;
+			} catch(URISyntaxException e) {
+				Log.v(TAG, "handleInstall: aborting (invalid URI specified for resource); exception: " + e + "; resource = " + path);
+				return;
+			}
+		} else {
+			moduleResource = new File(path);
+		}
+		
+		/* unpack if necessary */
+		if(type >= ModuleUtils.TYPE_UNPACK) {
+			try {
+				moduleResource = ModuleUtils.unpack(moduleResource, module, type);
+				remove_tmp_resource = true;
+			} catch(IOException e) {
+				Log.v(TAG, "handleInstall: aborting (unable to unpack resource); exception: " + e + "; resource = " + path);
+				return;
+			}
+		}
+
+		/* copy processed package to modules dir */
+		File installLocation = ModuleUtils.getModuleFile(module, type);
+		if(installLocation.exists()) {
+			if(!ModuleUtils.deleteFile(installLocation)) {
+				Log.v(TAG, "handleInstall: aborting (unable to delete old module version); resource = " + path + ", destination = " + installLocation.toString());
+				return;
+			}
+		}
+		if(ModuleUtils.copyFile(moduleResource, installLocation)) {
+			if(remove_tmp_resource)
+				ModuleUtils.deleteFile(moduleResource);
+			Log.v(TAG, "handleInstall: success; resource = " + path + ", destination = " + installLocation.toString());
+			return;
+		}
+		Log.v(TAG, "handleInstall: aborting (unable to copy resource); resource = " + path + ", destination = " + installLocation.toString());
+	}
+
+	private void handleUninstall(Intent intent) {
+		String module = intent.getStringExtra(AnodeReceiver.MODULE);
+		
+		/* if no module was specified, it is an error */
+		if(module == null || module.isEmpty()) {
+			Log.v(TAG, "AnodeService.onHandleUninstall: no module specified");
+			return;
+		}
+
+		File moduleLocation = ModuleUtils.getModuleFile(module, ModuleUtils.TYPE_UNKNOWN);
+		if(!moduleLocation.exists()) {
+			Log.v(TAG, "AnodeService.onHandleUninstall: specified module does not exist: " + module + "; looking for " + moduleLocation.toString());
+			return;
+		}
+		if(!moduleLocation.delete()) {
+			Log.v(TAG, "AnodeService.onHandleUninstall: unable to delete: " + module + "; attempting to delete " + moduleLocation.toString());
+			return;
+		}
+	}
 }

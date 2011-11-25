@@ -30,6 +30,12 @@
             <intent-filter>
                 <action android:name="org.meshpoint.anode.STOPALL" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.INSTALL" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="org.meshpoint.anode.UNINSTALL" />
+            </intent-filter>
         </receiver>
         <service android:exported="true" android:enabled="true" android:name=".AnodeService" android:description="@string/anode_service_description" android:label="@string/anode_service">
             <!-- disabled until we work out how to get a valid context for a Service triggered by these
