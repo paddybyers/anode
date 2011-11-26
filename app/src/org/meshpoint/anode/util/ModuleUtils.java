@@ -20,54 +20,79 @@ public class ModuleUtils {
 	private static String TAG = "anode::ModuleUtils";
 
 	/* module types */
-	public static final int TYPE_UNKNOWN = -1;
-	public static final int TYPE_JS      = 0;
-	public static final int TYPE_NODE    = 1;
-	public static final int TYPE_UNPACK  = 2;
-	public static final int TYPE_ZIP     = TYPE_UNPACK;
-	public static final int TYPE_TARBALL = 3;
-	private static final int TYPE_MAX    = 4;
+	public static class ModuleType {
+		public int type;
+		public String extension;
+		public Unpacker unpacker;
+		public ModuleType(int type, String extension, Unpacker unpacker) {
+			this.type = type;
+			this.extension = extension;
+			this.unpacker = unpacker;
+		}
+	}
 	
-	private static final String[] extensions = new String[]{".js", ".node", ".zip", ".tar.gz"};
+	public static final int TYPE_JS   = 0;
+	public static final int TYPE_NODE = 1;
+	public static final int TYPE_DIR  = 2;
+	public static final int TYPE_ZIP  = 3;
+	public static final int TYPE_TAR  = 4;
 	
-	/* for hashing names for tmp files */
+	private static final ModuleType[] modTypes = new ModuleType[] {
+		new ModuleType(TYPE_JS,   ".js",     null),
+		new ModuleType(TYPE_NODE, ".node",   null),
+		new ModuleType(TYPE_DIR,  "",        null),
+		new ModuleType(TYPE_ZIP,  ".zip",    new ZipExtractor()),
+		new ModuleType(TYPE_TAR,  ".tar.gz", new TarExtractor()),
+		new ModuleType(TYPE_TAR,  ".tgz",    new TarExtractor())
+	};
+	
+	public interface Unpacker {
+		public void unpack(File src, File dest) throws IOException;
+	}
+		
+	/* for hashing names and tmp files */
+	private static int counter = 0;
 	private static final int HASH_LEN = 20;
 	
 	/* cache dir for tmp and downloaded resources */
 	private static File resourceDir = new File(Constants.RESOURCE_DIR);
 	private static File moduleDir = new File(Constants.MODULE_DIR);
 	
-	public static int guessModuleType(String filename) {
-		for(int i = 0; i < TYPE_MAX; i++) {
-			if(filename.endsWith(extensions[i]))
-				return i;
+	public static ModuleType guessModuleType(String filename) {
+		/* guess by extension first */
+		for(ModuleType modType : modTypes) {
+			if(!modType.extension.isEmpty() && filename.endsWith(modType.extension))
+				return modType;
 		}
-		return TYPE_UNKNOWN;
+		/* if it's a local directory, then it's type DIR */
+		if((new File(filename)).isDirectory())
+			return modTypes[TYPE_DIR];
+
+		return null;
 	}
 
-	public static String getExtensionForType(int type) {
-		return extensions[type];
-	}
-	
-	public static File getModuleFile(String module, int type) {
-		if(type < TYPE_UNPACK)
-			module += extensions[type];
+	public static File getModuleFile(String module, ModuleType modType) {
+		if(modType.unpacker == null)
+			module += modType.extension;
 		return new File(moduleDir, module);
 	}
 	
-	public static boolean deleteModule(String module, int type) {
-		File installLocation = null;
-		if(type == TYPE_UNKNOWN) {
-			if(!(installLocation = new File(moduleDir, module)).exists()) {
-				for(int i = 0; i < TYPE_UNPACK; i++) {
-					if((installLocation = new File(moduleDir, module)).exists())
-						break;
+	public static File locateModule(String module, ModuleType modType) {
+		File installLocation = null, candidateLocation;
+		if(modType == null) {
+			for(ModuleType type : modTypes) {
+				/* a small cheat, since all unpacked types here match as TYPE_DIR */
+				if((candidateLocation = new File(moduleDir, module + type.extension)).exists()) {
+					installLocation = candidateLocation;
+					break;
 				}
 			}
 		} else {
-			installLocation = getModuleFile(module, type);
+			candidateLocation = getModuleFile(module, modType);
+			if(candidateLocation.exists())
+				installLocation = candidateLocation;
 		}
-		return (installLocation != null && installLocation.exists()) ? deleteFile(installLocation) : false;
+		return installLocation;
 	}
 
 	public static boolean deleteFile(File location) {
@@ -123,17 +148,15 @@ public class ModuleUtils {
         return true;
 	}
 
-	public static File unpack(File moduleResource, String moduleName, int type) throws IOException {
+	public static File unpack(File moduleResource, String moduleName, ModuleType modType) throws IOException {
 		/* create temp dir to unpack; assume no hash collision */
-		String tmpDirName = moduleName + extensions[type] + "-tmp";
+		String tmpDirName = moduleName + '-' + String.valueOf(counter++) + "-tmp";
 		File result = new File(resourceDir, tmpDirName);
 		if(!result.isDirectory() && !result.mkdir())
 			throw new IOException("Unable to create tmp directory to unpack: " + result.toString());
 		
-		if(type == TYPE_ZIP) {
-			(new ZipExtractor(moduleResource, result)).extract();
-		} else if(type == TYPE_TARBALL) {
-			(new TarExtractor(moduleResource, result)).extract();
+		if(modType.unpacker != null) {
+			modType.unpacker.unpack(moduleResource, result);
 		} else {
 			Log.v(TAG, "ModuleUtils.unpack(): aborting (internal error)");
 			result = null;

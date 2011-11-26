@@ -13,6 +13,7 @@ import org.meshpoint.anode.Runtime.NodeException;
 import org.meshpoint.anode.Runtime.StateListener;
 import org.meshpoint.anode.util.ArgProcessor;
 import org.meshpoint.anode.util.ModuleUtils;
+import org.meshpoint.anode.util.ModuleUtils.ModuleType;
 
 import android.app.IntentService;
 import android.content.Intent;
@@ -58,6 +59,7 @@ public class AnodeService extends IntentService {
 	 **********************/
 	public AnodeService() {
 		super(":anode.AnodeService");
+		android.os.Debug.waitForDebugger();
 		(new File(Constants.APP_DIR)).mkdirs();
 		(new File(Constants.MODULE_DIR)).mkdirs();
 		(new File(Constants.RESOURCE_DIR)).mkdirs();
@@ -153,13 +155,16 @@ public class AnodeService extends IntentService {
 		}
 		
 		/* resolve expected module type from path */
-		int type = ModuleUtils.guessModuleType(path);
-		String extn = ModuleUtils.getExtensionForType(type);
+		ModuleType modType = ModuleUtils.guessModuleType(path);
+		if(modType == null) {
+			Log.v(TAG, "AnodeService.onHandleInstall: unable to determine module type: path = " + path);
+			return;
+		}
 		
 		/* guess the module name, if not already specified */
 		if(module == null || module.isEmpty()) {
 			int pathEnd = path.lastIndexOf('/') + 1;
-			module = path.substring(pathEnd, path.length()-extn.length());
+			module = path.substring(pathEnd, path.length()-modType.extension.length());
 		}
 
 		/* download module if http or https */
@@ -180,9 +185,9 @@ public class AnodeService extends IntentService {
 		}
 		
 		/* unpack if necessary */
-		if(type >= ModuleUtils.TYPE_UNPACK) {
+		if(modType.unpacker != null) {
 			try {
-				moduleResource = ModuleUtils.unpack(moduleResource, module, type);
+				moduleResource = ModuleUtils.unpack(moduleResource, module, modType);
 				remove_tmp_resource = true;
 			} catch(IOException e) {
 				Log.v(TAG, "handleInstall: aborting (unable to unpack resource); exception: " + e + "; resource = " + path);
@@ -191,7 +196,7 @@ public class AnodeService extends IntentService {
 		}
 
 		/* copy processed package to modules dir */
-		File installLocation = ModuleUtils.getModuleFile(module, type);
+		File installLocation = ModuleUtils.getModuleFile(module, modType);
 		if(installLocation.exists()) {
 			if(!ModuleUtils.deleteFile(installLocation)) {
 				Log.v(TAG, "handleInstall: aborting (unable to delete old module version); resource = " + path + ", destination = " + installLocation.toString());
@@ -216,14 +221,15 @@ public class AnodeService extends IntentService {
 			return;
 		}
 
-		File moduleLocation = ModuleUtils.getModuleFile(module, ModuleUtils.TYPE_UNKNOWN);
-		if(!moduleLocation.exists()) {
-			Log.v(TAG, "AnodeService.onHandleUninstall: specified module does not exist: " + module + "; looking for " + moduleLocation.toString());
+		File moduleLocation = ModuleUtils.locateModule(module, null);
+		if(moduleLocation == null) {
+			Log.v(TAG, "AnodeService.onHandleUninstall: specified module does not exist: " + module);
 			return;
 		}
-		if(!moduleLocation.delete()) {
+		if(!ModuleUtils.deleteFile(moduleLocation)) {
 			Log.v(TAG, "AnodeService.onHandleUninstall: unable to delete: " + module + "; attempting to delete " + moduleLocation.toString());
 			return;
 		}
+		Log.v(TAG, "handleUninstall: success; module = " + module + ", location = " + moduleLocation.toString());
 	}
 }

@@ -11,16 +11,9 @@ import java.util.zip.GZIPInputStream;
 import org.xeustechnologies.jtar.TarEntry;
 import org.xeustechnologies.jtar.TarInputStream;
 
-public class TarExtractor {
+public class TarExtractor implements ModuleUtils.Unpacker {
 
-	private File src, dest;
-
-	TarExtractor(File src, File dest) {
-		this.src = src;
-		this.dest = dest;
-	}
-
-	public void extract() throws IOException {
+	public void unpack(File src, File dest) throws IOException {
 		/* first extract the tar file */
 		File tarFile = new File(src.getAbsolutePath() + ".tar");
 		byte[] buf = new byte[1024];
@@ -37,14 +30,18 @@ public class TarExtractor {
 		TarInputStream tis = new TarInputStream(new BufferedInputStream(new FileInputStream(tarFile)));
 		TarEntry entry;
 		while((entry = tis.getNextEntry()) != null) {
+			File entryFile = new File(dest, entry.getName());
+			File parentDir = new File(entryFile.getParent());
+			if(!parentDir.isDirectory() && !parentDir.mkdirs())
+				throw new IOException("TarExtractor.unpack(): unable to create directory");
 
-			FileOutputStream fos = new FileOutputStream(new File(dest, entry.getName()));
-			BufferedOutputStream dest = new BufferedOutputStream(fos);
+			FileOutputStream fos = new FileOutputStream(entryFile);
+			BufferedOutputStream bos = new BufferedOutputStream(fos);
 			while((count = tis.read(buf)) != -1)
-				dest.write(buf, 0, count);
+				bos.write(buf, 0, count);
 
-			dest.flush();
-			dest.close();
+			bos.flush();
+			bos.close();
 		}
 		tis.close();		
 

@@ -7,16 +7,9 @@ import java.io.IOException;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-public class ZipExtractor {
+public class ZipExtractor implements ModuleUtils.Unpacker {
 
-	private File src, dest;
-
-	ZipExtractor(File src, File dest) {
-		this.src = src;
-		this.dest = dest;
-	}
-
-	public void extract() throws IOException {
+	public void unpack(File src, File dest) throws IOException {
 		int count;
 		byte[] buf = new byte[1024];
 		ZipInputStream zis = null;
