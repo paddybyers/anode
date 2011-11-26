@@ -59,7 +59,7 @@ public class AnodeService extends IntentService {
 	 **********************/
 	public AnodeService() {
 		super(":anode.AnodeService");
-		android.os.Debug.waitForDebugger();
+		/* android.os.Debug.waitForDebugger();*/
 		(new File(Constants.APP_DIR)).mkdirs();
 		(new File(Constants.MODULE_DIR)).mkdirs();
 		(new File(Constants.RESOURCE_DIR)).mkdirs();
