@@ -13,8 +13,9 @@ LOCAL_MODULE := hello
 # Do not delete these existing flags as these are required
 # for the included node header files.
 LOCAL_CFLAGS := \
-    -D__POSIX__ \
-	-DBUILDING_NODE_EXTENSION
+	-D__POSIX__ \
+	-DBUILDING_NODE_EXTENSION \
+	-include sys/select.h
 
 LOCAL_CPPFLAGS :=
 
