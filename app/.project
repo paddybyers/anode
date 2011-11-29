@@ -32,6 +32,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>libbridge_src</name>
+			<type>2</type>
+			<location>/Users/paddy/data/work/dev/android/anode/bridge-java/src</location>
+		</link>
+		<link>
 			<name>libnode_src</name>
 			<type>2</type>
 			<locationURI>_android_libnode_9e68607/src</locationURI>
