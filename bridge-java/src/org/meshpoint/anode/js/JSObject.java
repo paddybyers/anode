@@ -2,13 +2,13 @@ package org.meshpoint.anode.js;
 
 import java.util.Collection;
 
-import org.meshpoint.node.bridge.Env;
-import org.meshpoint.node.bridge.NativeBinding;
-import org.meshpoint.node.idl.Types.JSType;
-import org.meshpoint.node.type.ICollection;
-import org.meshpoint.node.type.IFunction;
-import org.meshpoint.node.type.IIndexedCollection;
-import org.meshpoint.node.type.IValue;
+import org.meshpoint.anode.bridge.Env;
+import org.meshpoint.anode.bridge.BridgeNative;
+import org.meshpoint.anode.idl.Types.JSType;
+import org.meshpoint.anode.type.ICollection;
+import org.meshpoint.anode.type.IFunction;
+import org.meshpoint.anode.type.IIndexedCollection;
+import org.meshpoint.anode.type.IValue;
 
 /**
  * An object that is a wrapper of a native JS object
@@ -31,7 +31,7 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 	JSObject(long instHandle, Env env) {
 		this.instHandle = instHandle;
 		this.env = env;
-		NativeBinding.wrapJSObject(instHandle, this);
+		BridgeNative.wrapJSObject(instHandle, this);
 	}
 
 	public void finalize() {

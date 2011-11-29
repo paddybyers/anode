@@ -1,6 +1,6 @@
-package org.meshpoint.node.type;
+package org.meshpoint.anode.type;
 
-import org.meshpoint.node.idl.IDLInterface;
+import org.meshpoint.anode.idl.IDLInterface;
 
 /**
  * A value that implements an IDL interface

@@ -2,13 +2,13 @@ package org.meshpoint.anode.js;
 
 import java.util.Date;
 
-import org.meshpoint.node.idl.Types;
-import org.meshpoint.node.idl.Types.JSType;
-import org.meshpoint.node.type.IBoolean;
-import org.meshpoint.node.type.IDate;
-import org.meshpoint.node.type.INumber;
-import org.meshpoint.node.type.IString;
-import org.meshpoint.node.type.IValue;
+import org.meshpoint.anode.idl.Types;
+import org.meshpoint.anode.idl.Types.JSType;
+import org.meshpoint.anode.type.IBoolean;
+import org.meshpoint.anode.type.IDate;
+import org.meshpoint.anode.type.INumber;
+import org.meshpoint.anode.type.IString;
+import org.meshpoint.anode.type.IValue;
 
 /**
  * A variant to hold an arbitrary value, plus a pool of free

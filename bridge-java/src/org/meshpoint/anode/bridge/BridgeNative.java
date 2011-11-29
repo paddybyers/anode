@@ -1,16 +1,16 @@
-package org.meshpoint.node.bridge;
+package org.meshpoint.anode.bridge;
 
 import java.util.Collection;
 
+import org.meshpoint.anode.idl.IDLInterface;
+import org.meshpoint.anode.idl.IDLInterface.Attribute;
+import org.meshpoint.anode.idl.IDLInterface.Operation;
 import org.meshpoint.anode.java.Base;
 import org.meshpoint.anode.js.JSInterface;
 import org.meshpoint.anode.js.JSObject;
-import org.meshpoint.node.idl.IDLInterface;
-import org.meshpoint.node.idl.IDLInterface.Attribute;
-import org.meshpoint.node.idl.IDLInterface.Operation;
-import org.meshpoint.node.type.IValue;
+import org.meshpoint.anode.type.IValue;
 
-public class NativeBinding {
+public class BridgeNative {
 
 	/* intrinsically typed */
 	native static IValue callAsFunction(long instHandle, IValue[] args);
@@ -55,4 +55,9 @@ public class NativeBinding {
 
 	/* event thread management */
 	public native static void requestEntry(long nodeIsolate);
+	
+	/* context initialisation:
+	 * used in the Android implementation to pass an Android context
+	 * object which is then passed to modules implemented in the bridge */
+	public native static void setContext(Object opaqueContextObject);
 }

@@ -1,21 +1,22 @@
-package org.meshpoint.node.bridge;
+package org.meshpoint.anode.bridge;
 
+import org.meshpoint.anode.java.Base;
 
-public class FinalizeQueue implements SynchronousOperation {
-	
+public class WrapQueue implements SynchronousOperation {
+
 	/********************
 	 * private state
 	 ********************/
 	private Env env;
 	private static final int QUEUE_LENGTH = 256;
-	private long[] buffer = new long[QUEUE_LENGTH];
+	private Base[] buffer = new Base[QUEUE_LENGTH];
 	private int count;
 	
 	/********************
 	 * public API
 	 *******************/
 	
-	public FinalizeQueue(Env env) {
+	public WrapQueue(Env env) {
 		this.env = env;
 	}
 	
@@ -24,12 +25,12 @@ public class FinalizeQueue implements SynchronousOperation {
 	 * from any thread
 	 * @param h the handle
 	 */
-	public synchronized void put(long h) {
+	public synchronized void put(Base obj) {
 		if(count == QUEUE_LENGTH)
 			env.waitForOperation(this);
 		if(count == QUEUE_LENGTH)
-			throw new RuntimeException("Fatal error processing FinalizeQueue");
-		buffer[count++] = h;
+			throw new RuntimeException("Fatal error processing WrapQueue");
+		buffer[count++] = obj;
 	}
 
 	/**
@@ -38,7 +39,8 @@ public class FinalizeQueue implements SynchronousOperation {
 	@Override
 	public synchronized void run() {
 		for(int i = 0; i < count; i++) {
-			NativeBinding.releaseObjectHandle(buffer[i]);
+			Base obj = buffer[i];
+			BridgeNative.wrapJavaInterface(obj, obj.getDeclaredType());
 		}
 		count = 0;
 	}

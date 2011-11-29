@@ -1,7 +1,7 @@
-package org.meshpoint.node.idl;
+package org.meshpoint.anode.idl;
 
-import org.meshpoint.node.bridge.Env;
-import org.meshpoint.node.bridge.NativeBinding;
+import org.meshpoint.anode.bridge.Env;
+import org.meshpoint.anode.bridge.BridgeNative;
 
 /**
  * An interface defined in IDL for use within one or more modules
@@ -94,35 +94,35 @@ public class IDLInterface {
 	 *********************/
 	
 	public void initOutbound() {
-		outboundBinding = NativeBinding.bindOutboundInterface(this);
+		outboundBinding = BridgeNative.bindOutboundInterface(this);
 		for(Attribute attr : attributes)
-			attr.outboundBinding = NativeBinding.bindOutboundAttribute(attr, this);
+			attr.outboundBinding = BridgeNative.bindOutboundAttribute(attr, this);
 		for(Operation op : operations)
-			op.outboundBinding = NativeBinding.bindOutboundOperation(op, this);
+			op.outboundBinding = BridgeNative.bindOutboundOperation(op, this);
 	}
 
 	public void initForImport() {
-		inboundBinding = NativeBinding.bindInboundInterface(this);
+		inboundBinding = BridgeNative.bindInboundInterface(this);
 		for(Attribute attr : attributes)
-			attr.inboundBinding = NativeBinding.bindInboundAttribute(attr, this);
+			attr.inboundBinding = BridgeNative.bindInboundAttribute(attr, this);
 		for(Operation op : operations)
-			op.inboundBinding = NativeBinding.bindInboundOperation(op, this);
+			op.inboundBinding = BridgeNative.bindInboundOperation(op, this);
 	}
 	
 	public void dispose() {
 		if(outboundBinding != 0) {
 			for(Attribute attr : attributes)
-				NativeBinding.releaseOutboundAttribute(attr.outboundBinding);
+				BridgeNative.releaseOutboundAttribute(attr.outboundBinding);
 			for(Operation op : operations)
-				NativeBinding.releaseOutboundAttribute(op.outboundBinding);
-			NativeBinding.releaseOutboundInterface(outboundBinding);
+				BridgeNative.releaseOutboundAttribute(op.outboundBinding);
+			BridgeNative.releaseOutboundInterface(outboundBinding);
 		}
 		if(inboundBinding != 0) {
 			for(Attribute attr : attributes)
-				NativeBinding.releaseInboundAttribute(attr.inboundBinding);
+				BridgeNative.releaseInboundAttribute(attr.inboundBinding);
 			for(Operation op : operations)
-				NativeBinding.releaseInboundAttribute(op.inboundBinding);
-			NativeBinding.releaseInboundInterface(inboundBinding);
+				BridgeNative.releaseInboundAttribute(op.inboundBinding);
+			BridgeNative.releaseInboundInterface(inboundBinding);
 		}
 		
 	}

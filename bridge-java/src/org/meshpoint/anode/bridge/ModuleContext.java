@@ -1,6 +1,6 @@
-package org.meshpoint.node.bridge;
+package org.meshpoint.anode.bridge;
 
-import org.meshpoint.node.type.IValue;
+import org.meshpoint.anode.type.IValue;
 
 public interface ModuleContext {
 	public IValue getExports();

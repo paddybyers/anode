@@ -1,4 +1,4 @@
-package org.meshpoint.node.idl;
+package org.meshpoint.anode.idl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -7,9 +7,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.meshpoint.node.bridge.Env;
-import org.meshpoint.node.idl.IDLInterface.Attribute;
-import org.meshpoint.node.idl.IDLInterface.Operation;
+import org.meshpoint.anode.bridge.Env;
+import org.meshpoint.anode.idl.IDLInterface.Attribute;
+import org.meshpoint.anode.idl.IDLInterface.Operation;
 
 public class InterfaceManager {
 

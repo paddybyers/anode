@@ -1,4 +1,4 @@
-package org.meshpoint.node.type;
+package org.meshpoint.anode.type;
 
 public interface INumber extends IValue {
 	public long getLongValue();

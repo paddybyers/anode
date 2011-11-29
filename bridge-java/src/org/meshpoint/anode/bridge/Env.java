@@ -1,12 +1,12 @@
-package org.meshpoint.node.bridge;
+package org.meshpoint.anode.bridge;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.js.JSInterface;
-import org.meshpoint.node.idl.InterfaceManager;
-import org.meshpoint.node.type.IValue;
+import org.meshpoint.anode.type.IValue;
 
 /**
  * Class encapsulating the Java state corresponding to
@@ -78,7 +78,7 @@ public class Env {
 	}
 	
 	private void requestEntry() {
-		NativeBinding.requestEntry(nodeIsolate);
+		BridgeNative.requestEntry(nodeIsolate);
 	}
 	
 	public void waitForOperation(SynchronousOperation op) {

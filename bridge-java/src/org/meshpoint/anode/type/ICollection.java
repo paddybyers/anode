@@ -1,4 +1,4 @@
-package org.meshpoint.node.type;
+package org.meshpoint.anode.type;
 
 import java.util.Collection;
 

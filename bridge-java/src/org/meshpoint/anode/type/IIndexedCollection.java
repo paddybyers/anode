@@ -1,4 +1,4 @@
-package org.meshpoint.node.type;
+package org.meshpoint.anode.type;
 
 public interface IIndexedCollection<T> extends IValue {
 	public T getIndexedProperty(int idx);

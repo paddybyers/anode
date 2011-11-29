@@ -1,4 +1,4 @@
-package org.meshpoint.node.type;
+package org.meshpoint.anode.type;
 
 public interface IFunction extends IValue {
 	public IValue callAsFunction(IValue[] args);

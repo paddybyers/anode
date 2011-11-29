@@ -1,4 +1,4 @@
-package org.meshpoint.node.bridge;
+package org.meshpoint.anode.bridge;
 
 public interface Module {
 	public void startModule(ModuleContext ctx);

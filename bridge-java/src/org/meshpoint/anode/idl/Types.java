@@ -1,4 +1,4 @@
-package org.meshpoint.node.idl;
+package org.meshpoint.anode.idl;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import org.meshpoint.node.type.IValue;
+import org.meshpoint.anode.type.IValue;
 
 /**
  * A single integer is used to represent a type of any argument

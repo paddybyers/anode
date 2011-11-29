@@ -1,9 +1,9 @@
 package org.meshpoint.anode.js;
 
-import org.meshpoint.node.bridge.NativeBinding;
-import org.meshpoint.node.idl.IDLInterface;
-import org.meshpoint.node.idl.Types.JSType;
-import org.meshpoint.node.type.IInterface;
+import org.meshpoint.anode.bridge.BridgeNative;
+import org.meshpoint.anode.idl.IDLInterface;
+import org.meshpoint.anode.idl.Types.JSType;
+import org.meshpoint.anode.type.IInterface;
 
 public class JSInterface implements IInterface {
 
@@ -19,7 +19,7 @@ public class JSInterface implements IInterface {
 	JSInterface(long instHandle, IDLInterface idlInterface) {
 		this.instHandle = instHandle;
 		this.idlInterface = idlInterface;
-		NativeBinding.wrapJSInterface(instHandle, this, idlInterface);
+		BridgeNative.wrapJSInterface(instHandle, this, idlInterface);
 	}
 
 	/*********************
