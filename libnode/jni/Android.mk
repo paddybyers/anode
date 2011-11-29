@@ -34,6 +34,9 @@ LOCAL_STATIC_LIBRARIES := \
 	v8 \
 	pty
 
+LOCAL_SHARED_LIBRARIES := \
+	libjnibridge
+
 LOCAL_LDLIBS += \
 	-lz \
 	-llog \
