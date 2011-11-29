@@ -15,6 +15,7 @@ public class Runtime {
 	 **************************/
 	
 	private static Runtime theRuntime;
+	private Context ctx;
 
 	/**************************
 	 * public API
@@ -43,7 +44,7 @@ public class Runtime {
 		if(theRuntime == null) {
 			throw new IllegalStateException("Runtime has not beed initialised");
 		}
-		return new Isolate();
+		return new Isolate(theRuntime.ctx);
 	}
 
 	/**
@@ -95,6 +96,7 @@ public class Runtime {
 	 **************************/
 	
 	Runtime(Context ctx, String[] argv) throws IOException {
+		this.ctx = ctx;
 		RuntimeNative.init(ctx, argv);
 	}
 	

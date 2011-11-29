@@ -17,8 +17,8 @@ final class RuntimeNative {
 	
 	private static String PACKAGE_NAME = "org.meshpoint.anode";
 	private static String TAG = "anode::RuntimeNative";
-	private static String LIBRARY_NAME = "jninode";
-	private static String LIBRARY_FILE = "libjninode.so";
+	private static String RUNTIME_LIBRARY = "libjninode.so";
+	private static String BRIDGE_LIBRARY = "libjnibridge.so";
 	private static String LIBRARY_PATH = "/data/data/" + PACKAGE_NAME + "/app";
 	
 	static final int SIGINT  = 2;
@@ -35,8 +35,9 @@ final class RuntimeNative {
 	 */
 	static void init(Context ctx, String[] argv) throws IOException {
 		try {
-			extractLib(ctx);
-			System.load(LIBRARY_PATH + '/' + LIBRARY_FILE);
+			extractLibs(ctx);
+			System.load(LIBRARY_PATH + '/' + RUNTIME_LIBRARY);
+			System.load(LIBRARY_PATH + '/' + BRIDGE_LIBRARY);
 			nodeInit(argv);
 		} catch(UnsatisfiedLinkError e) {
 			Log.v(TAG, "init: unable to load library: " + e);
@@ -102,12 +103,12 @@ final class RuntimeNative {
 	 * Extract the library from assets to the default library location.
 	 * @throws IOException 
 	 */
-	private static void extractLib(Context ctx) throws IOException {
+	private static void extractLibs(Context ctx) throws IOException {
 		File dir, so, pkg;
 		if(!(dir = new File(LIBRARY_PATH)).exists())
 			dir.mkdirs();
 		
-		if((so = new File(dir, LIBRARY_FILE)).exists()) {
+		if((so = new File(dir, RUNTIME_LIBRARY)).exists()) {
 			/* check to see if this timestamp pre-dates
 			 * the current package */
 			if((pkg = new File(ctx.getPackageResourcePath())).exists()) {
@@ -120,7 +121,7 @@ final class RuntimeNative {
 			so.delete();
 		}
 		Log.v(TAG, "extractLib: copying library");
-		InputStream in = ctx.getAssets().open(LIBRARY_FILE);
+		InputStream in = ctx.getAssets().open(RUNTIME_LIBRARY);
 		FileOutputStream out = new FileOutputStream(so);
 		int read;
 		byte[] buf = new byte[8192];

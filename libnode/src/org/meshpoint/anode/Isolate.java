@@ -6,6 +6,9 @@ import java.util.Set;
 import org.meshpoint.anode.Runtime.IllegalStateException;
 import org.meshpoint.anode.Runtime.NodeException;
 import org.meshpoint.anode.Runtime.StateListener;
+import org.meshpoint.anode.bridge.BridgeNative;
+
+import android.content.Context;
 
 public class Isolate {
 
@@ -13,6 +16,7 @@ public class Isolate {
 	 * private state
 	 **************************/
 	
+	private Context ctx;
 	private long handle;
 	private int state;
 	private int exitval;
@@ -87,7 +91,8 @@ public class Isolate {
 	 * private
 	 **************************/
 	
-	Isolate() {
+	Isolate(Context ctx) {
+		this.ctx = ctx;
 		runner = new RuntimeThread();
 		handle = RuntimeNative.create();
 		state = Runtime.STATE_CREATED;
@@ -137,6 +142,7 @@ public class Isolate {
 
 		public void run() {
 			try {
+				BridgeNative.setContext(ctx);
 				synchronized(this) {
 					setState(Runtime.STATE_STARTED);
 				}
