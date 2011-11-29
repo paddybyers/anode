@@ -3,7 +3,11 @@
 
 #include "defines.h"
 #include <node.h>
-#include <jni.h>
+#ifdef __APPLE__
+# include <JavaVM/jni.h>
+#else
+# include <jni.h>
+#endif
 
 class VM;
 

@@ -1,8 +1,15 @@
 #include "JREVM.h"
 
+#include "defines.h"
+#include <dlfcn.h>
 #include <pthread.h>
+#include <stdlib.h>
+#include <string.h>
 
-static pthread_mutext_t mtx;
+static pthread_mutex_t mtx;
+static JavaVM *javaVM;
+static int attachCount;
+static void *jniLib;
 
 JREVM::JREVM() {
 	attach();
@@ -11,10 +18,10 @@ JREVM::JREVM() {
 int JREVM::attach() {
 	pthread_mutex_lock(&mtx);
 	++attachCount;
-	int status = jniJVM->GetEnv((void **)&jniEnv, JNI_VERSION_1_2);
+	int status = javaVM->GetEnv((void **)&jniEnv, JNI_VERSION_1_2);
 	if(status != JNI_OK) {
 		if(status == JNI_EDETACHED) {
-			status = jniJVM->AttachCurrentThread((void **)&jniEnv, 0);
+			status = javaVM->AttachCurrentThread((void **)&jniEnv, 0);
 		}
 	}
 	pthread_mutex_unlock(&mtx);
@@ -31,14 +38,16 @@ JREVM::~JREVM() {
 		javaVM->DetachCurrentThread();
 		int count = --attachCount;
 		pthread_mutex_unlock(&mtx);
-		result = (status==JNI_OK) ? (int)OK : (int)Error_VM;
 		if(!count) {
 			javaVM->DestroyJavaVM();
+#ifndef __APPLE__
+			dlclose(jniLib);
+#endif
 		}
 	}
 }
 
-int JREVM::static_init(Env *env) {
+int JREVM::static_init() {
 	attachCount = 0;
 	pthread_mutex_init(&mtx, 0);
 	return createVM();
@@ -72,18 +81,21 @@ char *JREVM::buildLibrarypath(const char *anodeRoot, size_t len) {
 }
 
 int JREVM::createVM() {
-	jint (*jniCreateJavaVM)(JavaVM**, JNIEnv**, JavaVMInitArgs*);
-	jint (*jniGetCreatedJavaVMs)(JavaVM**, jsize, jsize*);
+	
 
-#ifdef DARWIN
+#ifdef __APPLE__
+  jint (*jniCreateJavaVM)(JavaVM**, void**, void*);
+	jint (*jniGetCreatedJavaVMs)(JavaVM**, jsize, jsize*);
 	jniGetCreatedJavaVMs = &JNI_GetCreatedJavaVMs;
 	jniCreateJavaVM = &JNI_CreateJavaVM;
 #else
-	int result = uv_dlopen(JRE_LIB, &jniLib);
+	jint (*jniCreateJavaVM)(JavaVM**, JNIEnv**, JavaVMInitArgs*);
+	jint (*jniGetCreatedJavaVMs)(JavaVM**, jsize, jsize*);
+	int result = dlopen(JRE_LIB, &jniLib);
 	if(!result) {
-		result = uv_dlsym(jniLib, "GetCreatedJavaVMs" (void **)&jniGetCreatedJavaVMs);
+		result = dlsym(jniLib, "GetCreatedJavaVMs" (void **)&jniGetCreatedJavaVMs);
 		if(!result)
-			result = uv_dlsym(jniLib, "CreateJavaVM" (void **)&jniCreateJavaVM);
+			result = dlsym(jniLib, "CreateJavaVM" (void **)&jniCreateJavaVM);
 	}
 	if(result) {
 		/* fatal */
@@ -126,12 +138,13 @@ int JREVM::createVM() {
 	options[3].extraInfo    = 0;
 
 #ifdef DEBUG
-	jvmInitargs.nOptions = 4
+	jvmInitargs.nOptions = 4;
 #else
 	jvmInitargs.nOptions = 2
 #endif
 
-	int status = jniCreateJavaVM(&javaVM,&jniEnv,&jvmInitargs);
+  JNIEnv *tmpEmv;
+	status = jniCreateJavaVM(&javaVM,(void**)&tmpEmv,(void*)&jvmInitargs);
 	
 	delete[] options[0].optionString;
 	delete[] options[1].optionString;

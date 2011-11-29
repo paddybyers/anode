@@ -3,6 +3,10 @@
 #include "defines.h"
 #include <pthread.h>
 
+#ifndef ANDROID
+# include "JREVM.h"
+#endif
+
 static pthread_key_t key;
 static pthread_once_t key_once = PTHREAD_ONCE_INIT;
 static void static_init() {
@@ -54,7 +58,7 @@ Env::Env(VM *vm) {
 	v8Isolate = v8::Isolate::GetCurrent();
 #ifndef ANDROID
 	if(!vm)
-		vm - new JREVM();
+		vm = new JREVM();
 #endif
 	this->vm = vm;
 }

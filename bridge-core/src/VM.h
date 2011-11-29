@@ -1,7 +1,7 @@
 #ifndef BRIDGE_VM_H
 #define BRIDGE_VM_H
 
-#ifdef DARWIN
+#ifdef __APPLE__
 # include <JavaVM/jni.h>
 #else
 # include <jni.h>

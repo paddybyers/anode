@@ -2,6 +2,7 @@
 #define BRIDGE_JREVM_H
 
 #include "VM.h"
+#include <uv.h>
 
 class JREVM : public VM {
 public:
@@ -14,9 +15,6 @@ private:
 	static char   *buildLibrarypath(const char *anodeRoot, size_t len);
 	static int     createVM();
 	int            attach();
-	uv_lib_t       jniLib;
-	static int     attachCount;
-	static JavaVM *javaVM;
 };
 
 #endif
