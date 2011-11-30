@@ -29,10 +29,10 @@ Handle<Value> Load(const Arguments& args) {
     return scope.Close(Env::getEnv_nocheck()->load(moduleName));
 }
 
-void RegisterModule(Handle<Object> target) {
-	Env::getEnv();
+void init(Handle<Object> target) {
+  	Env::getEnv();
     target->Set(String::NewSymbol("load"),
         FunctionTemplate::New(Load)->GetFunction());
 }
 
-NODE_MODULE(modulename, RegisterModule);
+NODE_MODULE(bridge, init);

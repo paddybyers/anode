@@ -27,13 +27,13 @@ using namespace v8;
 /* preemptively called when starting a node instance
  * so the reactive initEnv() won't occur*/
 void Env::setupEnv(VM *vm) {
+  static_init();
 	initEnv(vm);
 }
 #endif
 
 /* called on the first occasion that the Env is obtained in a process */
 Env *Env::initEnv(VM *vm) {
-	pthread_once(&key_once, static_init);
 	Env *result = new Env(vm);
 	pthread_setspecific(key, result);
 	/* FIXME: add atexit call here */

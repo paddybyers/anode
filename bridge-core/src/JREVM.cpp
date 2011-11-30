@@ -9,7 +9,10 @@
 static pthread_mutex_t mtx;
 static JavaVM *javaVM;
 static int attachCount;
+
+#ifndef __APPLE__
 static void *jniLib;
+#endif
 
 JREVM::JREVM() {
 	attach();
@@ -53,54 +56,58 @@ int JREVM::static_init() {
 	return createVM();
 }
 
+#define LITERAL(text, identifier) const char *str##identifier = text; size_t i##identifier = sizeof(text)-1
+#define LAPPEND(dest, literal, offset) memcpy(&dest[offset], str##literal, i##literal); offset += i##literal
+#define DAPPEND(dest, str, len, offset) memcpy(&dest[offset], str, len); offset += len
+
 char *JREVM::buildClasspath(const char *anodeRoot, size_t len) {
-	const char *part0 = "-Djava.class.path=";
-	const char *part1 = "/bridge-java/bin/:";
-	const char *part2 = "/api/bin/";
-	char *result = new char[len * 2 + sizeof(part0) + sizeof(part1) + sizeof(part2)];
+	LITERAL("-Djava.class.path=", Part0);
+	LITERAL("/bridge-java/bin/:", Part1);
+  LITERAL("/api/bin/", Part2);
+	char *result = new char[len * 2 + iPart0 + iPart1 + iPart2 + 1];
 	if(result) {
-		strcpy(result, part0);
-		strcat(result, anodeRoot);
-		strcat(result, part1);
-		strcat(result, anodeRoot);
-		strcat(result, part2);
+    size_t tmp = 0;
+    LAPPEND(result, Part0, tmp);
+    DAPPEND(result, anodeRoot, len, tmp);
+    LAPPEND(result, Part1, tmp);
+    DAPPEND(result, anodeRoot, len, tmp);
+    LAPPEND(result, Part2, tmp);
+    result[tmp] = 0;
 	}
 	return result;
 }
 
 char *JREVM::buildLibrarypath(const char *anodeRoot, size_t len) {
-	const char *part0 = "-Djava.library.path=";
-	const char *part1 = "/bridge-java/jni/lib/";
-	char *result = new char[len + sizeof(part0) + sizeof(part1)];
+	LITERAL("-Djava.library.path=", Part0);
+	LITERAL("/bridge-java/jni/lib/", Part1);
+	char *result = new char[len + iPart0 + iPart1 + 1];
 	if(result) {
-		strcpy(result, part0);
-		strcat(result, anodeRoot);
-		strcat(result, part1);
+    size_t tmp = 0;
+    LAPPEND(result, Part0, tmp);
+    DAPPEND(result, anodeRoot, len, tmp);
+    LAPPEND(result, Part1, tmp);
+    result[tmp] = 0;
 	}
 	return result;
 }
 
 int JREVM::createVM() {
-	
 
 #ifdef __APPLE__
-  jint (*jniCreateJavaVM)(JavaVM**, void**, void*);
-	jint (*jniGetCreatedJavaVMs)(JavaVM**, jsize, jsize*);
-	jniGetCreatedJavaVMs = &JNI_GetCreatedJavaVMs;
-	jniCreateJavaVM = &JNI_CreateJavaVM;
+	jint (*jniCreateJavaVM)(JavaVM**, JNIEnv**, JavaVMInitArgs*) = (jint (*)(JavaVM**, JNIEnv**, JavaVMInitArgs*))JNI_CreateJavaVM;
+	jint (*jniGetCreatedJavaVMs)(JavaVM**, jsize, jsize*) = JNI_GetCreatedJavaVMs;
 #else
 	jint (*jniCreateJavaVM)(JavaVM**, JNIEnv**, JavaVMInitArgs*);
 	jint (*jniGetCreatedJavaVMs)(JavaVM**, jsize, jsize*);
-	int result = dlopen(JRE_LIB, &jniLib);
-	if(!result) {
-		result = dlsym(jniLib, "GetCreatedJavaVMs" (void **)&jniGetCreatedJavaVMs);
-		if(!result)
-			result = dlsym(jniLib, "CreateJavaVM" (void **)&jniCreateJavaVM);
+	jniLib = dlopen(JRE_LIB, RTLD_LAZY);
+	if(jniLib) {
+		jniGetCreatedJavaVMs = (jint (*)(JavaVM**, jsize, jsize*))dlsym(jniLib, "GetCreatedJavaVMs");
+		jniCreateJavaVM = (jint (*)(JavaVM**, JNIEnv**, JavaVMInitArgs*))dlsym(jniLib, "CreateJavaVM");
 	}
-	if(result) {
+	if(!jniGetCreatedJavaVMs || ! jniCreateJavaVM) {
 		/* fatal */
 		fprintf(stderr, "Fatal error: unable to locate JNI entrypoints\n");
-		return result;
+		return ErrorVM;
 	}
 #endif
 	/* attempt to get existing VM */
@@ -116,10 +123,16 @@ int JREVM::createVM() {
 
 	/* start a VM for this process */
 	JavaVMInitArgs jvmInitargs;
-	JavaVMOption options[4];
+#ifdef DEBUG
+	jvmInitargs.nOptions = 4;
+#else
+	jvmInitargs.nOptions = 2
+#endif
+  
+	JavaVMOption *options = new JavaVMOption[jvmInitargs.nOptions];
 	jvmInitargs.options            = options;
 	jvmInitargs.ignoreUnrecognized = true;
-	jvmInitargs.version            = JNI_VERSION_1_2;
+	jvmInitargs.version            = JNI_VERSION_1_4;
 
 	const char *anodeRoot = getenv("ANODE_ROOT");
 	if(!anodeRoot) {
@@ -132,22 +145,19 @@ int JREVM::createVM() {
 	options[0].extraInfo    = 0;
 	options[1].optionString = buildLibrarypath(anodeRoot, rootLen);
 	options[1].extraInfo    = 0;
+#ifdef DEBUG
 	options[2].optionString = (char *)"-Xdebug";
 	options[2].extraInfo    = 0;
 	options[3].optionString = (char *)"-Xrunjdwp:transport=dt_socket,server=y,address=8000,suspend=n";
 	options[3].extraInfo    = 0;
-
-#ifdef DEBUG
-	jvmInitargs.nOptions = 4;
-#else
-	jvmInitargs.nOptions = 2
 #endif
 
   JNIEnv *tmpEmv;
-	status = jniCreateJavaVM(&javaVM,(void**)&tmpEmv,(void*)&jvmInitargs);
+	status = jniCreateJavaVM(&javaVM, &tmpEmv, &jvmInitargs);
 	
 	delete[] options[0].optionString;
 	delete[] options[1].optionString;
+  delete[] options;
 
 	if(status == JNI_OK)
 		return OK;
