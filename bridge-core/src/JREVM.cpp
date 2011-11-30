@@ -18,7 +18,7 @@ JREVM::JREVM() : VM() {
 	attach();
   /* initialisation specific to this VM type */
 	jContextClass = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/bridge/ModuleContext"));
-	createContextMethodId = jniEnv->GetMethodID(jContextClass, "<init>", "(Lorg/meshpoint/anode/bridge/Env;Lorg/meshpoint/anode/js/JSObject)V");
+	createContextMethodId = jniEnv->GetMethodID(jContextClass, "<init>", "(Lorg/meshpoint/anode/bridge/Env;Lorg/meshpoint/anode/js/JSObject;)V");
 }
 
 int JREVM::attach() {
@@ -40,6 +40,7 @@ int JREVM::attach() {
 
 JREVM::~JREVM() {
 	if(javaVM) {
+    jniEnv->DeleteGlobalRef(jContextClass);
 		pthread_mutex_lock(&mtx);
 		javaVM->DetachCurrentThread();
 		int count = --attachCount;

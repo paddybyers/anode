@@ -26,6 +26,7 @@ private:
 	Env(VM *vm);
 	~Env();
   int initEnv(node::Isolate *nodeIsolate, v8::Isolate *v8Isolate);
+  static void atExit();
 
 	static Env    *initEnv(VM *vm);
 	node::Isolate *nodeIsolate;

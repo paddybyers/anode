@@ -2,9 +2,7 @@
 
 VM::VM() : jniEnv(0) {}
 
-VM::~VM() {
-  jniEnv->DeleteGlobalRef(jContextClass);
-}
+VM::~VM() {}
 
 JNIEnv *VM::getJNIEnv() {
 	return jniEnv;

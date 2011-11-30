@@ -7,7 +7,9 @@ AndroidVM::AndroidVM(JNIEnv *jniEnv, jobject jAndroidContext) : VM() {
 	createContextMethodId = jniEnv->GetMethodID(jContextClass, "<init>", "(Lorg/meshpoint/anode/bridge/Env;Lorg/meshpoint/anode/js/JSObject;Landroid/content/Context;)V");
 }
 
-AndroidVM::~AndroidVM() {}
+AndroidVM::~AndroidVM() {
+    jniEnv->DeleteGlobalRef(jContextClass);
+}
 
 int AndroidVM::createContext(jobject jEnv, jobject jExports, jobject *jCtx) {
 	int result = OK;

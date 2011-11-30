@@ -85,13 +85,13 @@ public class Env {
 			return val;
 		} catch (ClassCastException e) {
 			/* the given class was not an implementation of IModule */
-			logger.e(TAG + ":loadModule()", "Requested module class is not an instance of IModule");
+			logger.e(TAG + ":loadModule()", "Requested module class (" + moduleClassname + ") is not an instance of IModule");
 		} catch (ClassNotFoundException e) {
-			logger.e(TAG + ":loadModule()", "Requested module class could not be found");
+			logger.e(TAG + ":loadModule()", "Requested module class (" + moduleClassname + ") could not be found");
 		} catch (InstantiationException e) {
-			logger.e(TAG + ":loadModule()", "Requested module class does not have a no-argument constructor");
+			logger.e(TAG + ":loadModule()", "Requested module class (" + moduleClassname + ") does not have a no-argument constructor");
 		} catch (IllegalAccessException e) {
-			logger.e(TAG + ":loadModule()", "Requested module class does not have a public no-argument constructor");
+			logger.e(TAG + ":loadModule()", "Requested module class (" + moduleClassname + ") does not have a public no-argument constructor");
 		} catch (Throwable e) {
 			logger.e(TAG + ":loadModule()", "Unexpected exception initialising module (" + moduleClassname + ")", e);
 		}

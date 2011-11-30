@@ -17,7 +17,7 @@ import org.meshpoint.anode.type.IValue;
  * The re-pooled objects are freed if the number available
  * exceeds a hard-coded count.
  */
-final class JSValue implements IValue, IBoolean, INumber, IString, IDate {
+public final class JSValue implements IValue, IBoolean, INumber, IString, IDate {
 	
 	/************************
 	 * private state

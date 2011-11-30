@@ -37,7 +37,6 @@ void Env::setupEnv(VM *vm) {
 Env *Env::initEnv(VM *vm) {
 	Env *result = new Env(vm);
 	pthread_setspecific(key, result);
-	/* FIXME: add atexit call here */
 	return result;
 }
 
@@ -67,6 +66,7 @@ Env::Env(VM *vm) {
 
 Env::~Env() {
   JNIEnv *jniEnv = vm->getJNIEnv();
+  jniEnv->CallVoidMethod(jEnv, releaseMethodId);
   jniEnv->DeleteGlobalRef(jEnv);
   jniEnv->DeleteGlobalRef(jEnvClass);
 	delete vm;
@@ -74,6 +74,7 @@ Env::~Env() {
 
 int Env::initEnv(node::Isolate *nodeIsolate, v8::Isolate *v8Isolate) {
   int result = OK;
+  nodeIsolate->exitHandler = Env::atExit;
   JNIEnv *jniEnv = vm->getJNIEnv();
   jEnvClass = (jclass)(jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/bridge/Env")));
   createMethodId = jniEnv->GetStaticMethodID(jEnvClass, "create", "(JJ)Lorg/meshpoint/anode/bridge/Env;");
@@ -86,6 +87,11 @@ int Env::initEnv(node::Isolate *nodeIsolate, v8::Isolate *v8Isolate) {
     jniEnv->ExceptionClear();
   }
   return result;
+}
+
+void Env::atExit() {
+  delete getEnv_nocheck();
+  pthread_setspecific(key, 0);
 }
   
 Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) {
@@ -111,7 +117,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
   /* create the module context */
   int result = vm->createContext(jEnv, jExports, &jCtx);
   if(result == OK) {
-    jobject jModule = jniEnv->CallObjectMethod(jEnv, loadMethodId, jModuleName, jExports);
+    jobject jModule = jniEnv->CallObjectMethod(jEnv, loadMethodId, jModuleName, jCtx);
     if(jModule) {
       /* wrap this according to its type */
     }
