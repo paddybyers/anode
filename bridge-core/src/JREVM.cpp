@@ -14,8 +14,11 @@ static int attachCount;
 static void *jniLib;
 #endif
 
-JREVM::JREVM() {
+JREVM::JREVM() : VM() {
 	attach();
+  /* initialisation specific to this VM type */
+	jContextClass = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/bridge/ModuleContext"));
+	createContextMethodId = jniEnv->GetMethodID(jContextClass, "<init>", "(Lorg/meshpoint/anode/bridge/Env;Lorg/meshpoint/anode/js/JSObject)V");
 }
 
 int JREVM::attach() {
@@ -48,6 +51,16 @@ JREVM::~JREVM() {
 #endif
 		}
 	}
+}
+
+int JREVM::createContext(jobject jEnv, jobject jExports, jobject *jCtx) {
+  int result = OK;
+	*jCtx = jniEnv->NewObject(jContextClass, createContextMethodId, jEnv, jExports);
+  if(jniEnv->ExceptionCheck()) {
+		result = ErrorVM;
+		jniEnv->ExceptionClear();
+	}
+  return result;
 }
 
 int JREVM::static_init() {

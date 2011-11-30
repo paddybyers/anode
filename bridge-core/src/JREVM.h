@@ -9,6 +9,7 @@ public:
 	JREVM();
 	virtual ~JREVM();
 	static int static_init();
+  virtual int createContext(jobject jEnv, jobject jExports, jobject *jCtx);
 
 private:
 	static char   *buildClasspath(const char *anodeRoot, size_t len);

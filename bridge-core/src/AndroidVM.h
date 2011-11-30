@@ -5,12 +5,12 @@
 
 class AndroidVM : public VM {
 public:
-	AndroidVM(JNIEnv *jniEnv, jobject androidContext);
+	AndroidVM(JNIEnv *jniEnv, jobject jAndroidContext);
 	virtual ~AndroidVM();
-	jobject getAndroidContext();
+	virtual int createContext(jobject jEnv, jobject jExports, jobject *jCtx);
 
 private:
-	jobject androidContext;
+	jobject jAndroidContext;
 };
 
 #endif

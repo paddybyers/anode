@@ -11,22 +11,28 @@ using namespace v8;
 Handle<Value> Load(const Arguments& args) {
     HandleScope scope;
 
-    /* Check arguments */
-    if (args.Length() < 1) {
-        return ThrowException(
-            Exception::TypeError(String::New("bridge.load(): error: no modulName argument"))
-        );
-    }
+  /* Check arguments */
+  if (args.Length() < 2) {
+    return ThrowException(
+      Exception::TypeError(String::New("bridge.load(): error: no modulName argument"))
+    );
+  }
 
 	if(!args[0]->IsString()) {
-        return ThrowException(
-            Exception::TypeError(String::New("bridge.load(): error: moduleName argument must be a String"))
-        );
+    return ThrowException(
+      Exception::TypeError(String::New("bridge.load(): error: moduleName argument must be a String"))
+    );
 	}
-
-    Local<String> moduleName = args[0]->ToString();
-    Env::getEnv_nocheck()->load(moduleName);
-    return scope.Close(Env::getEnv_nocheck()->load(moduleName));
+  
+	if(!args[1]->IsObject()) {
+    return ThrowException(
+      Exception::TypeError(String::New("bridge.load(): error: moduleExports argument must be an Object"))
+    );
+	}
+  
+  Local<String> moduleName = args[0]->ToString();
+  Local<Object> moduleExports = args[1]->ToObject();
+  return scope.Close(Env::getEnv_nocheck()->load(moduleName, moduleExports));
 }
 
 void init(Handle<Object> target) {

@@ -3,6 +3,7 @@
 #include "defines.h"
 #include <pthread.h>
 
+#include "VM.h"
 #ifndef ANDROID
 # include "JREVM.h"
 #endif
@@ -61,13 +62,59 @@ Env::Env(VM *vm) {
 		vm = new JREVM();
 #endif
 	this->vm = vm;
+  initEnv(nodeIsolate, v8Isolate);
 }
 
 Env::~Env() {
+  JNIEnv *jniEnv = vm->getJNIEnv();
+  jniEnv->DeleteGlobalRef(jEnv);
+  jniEnv->DeleteGlobalRef(jEnvClass);
 	delete vm;
 }
 
-Local<Value> Env::load(Handle<String> moduleName) {
-	Local<Value> result;
-	return result;
+int Env::initEnv(node::Isolate *nodeIsolate, v8::Isolate *v8Isolate) {
+  int result = OK;
+  JNIEnv *jniEnv = vm->getJNIEnv();
+  jEnvClass = (jclass)(jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/bridge/Env")));
+  createMethodId = jniEnv->GetStaticMethodID(jEnvClass, "create", "(JJ)Lorg/meshpoint/anode/bridge/Env;");
+  releaseMethodId = jniEnv->GetMethodID(jEnvClass, "release", "()V");
+  jEnv = jniEnv->NewGlobalRef(jniEnv->CallStaticObjectMethod(jEnvClass, createMethodId,  (jlong)nodeIsolate,  (jlong)v8Isolate));
+  loadMethodId = jniEnv->GetMethodID(jEnvClass, "loadModule", "(Ljava/lang/String;Lorg/meshpoint/anode/bridge/ModuleContext;)Lorg/meshpoint/anode/type/IValue;");
+  
+  if(jniEnv->ExceptionCheck()) {
+    result = ErrorVM;
+    jniEnv->ExceptionClear();
+  }
+  return result;
+}
+  
+Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) {
+  HandleScope scope;
+	Local<Value> module;
+  
+  /* wrap the exports object */
+  jobject jCtx;
+  jobject jExports = 0;
+  JNIEnv *jniEnv = vm->getJNIEnv();
+  
+  /* convert the moduleName to jstring */
+  int nameLen = moduleName->Length();
+  jchar *nameBuf = new jchar[nameLen];
+  if(!nameBuf) {
+    fprintf(stderr, "Fatal: memory allocation failure (load())\n");
+    return module;
+  }
+  moduleName->Write(nameBuf, 0, nameLen, v8::String::NO_NULL_TERMINATION);
+  jstring jModuleName = jniEnv->NewString(nameBuf, nameLen);
+  delete[] nameBuf;
+
+  /* create the module context */
+  int result = vm->createContext(jEnv, jExports, &jCtx);
+  if(result == OK) {
+    jobject jModule = jniEnv->CallObjectMethod(jEnv, loadMethodId, jModuleName, jExports);
+    if(jModule) {
+      /* wrap this according to its type */
+    }
+  }
+	return scope.Close(module);
 }

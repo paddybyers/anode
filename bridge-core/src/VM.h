@@ -1,6 +1,9 @@
 #ifndef BRIDGE_VM_H
 #define BRIDGE_VM_H
 
+#include "defines.h"
+#include <node.h>
+
 #ifdef __APPLE__
 # include <JavaVM/jni.h>
 #else
@@ -10,14 +13,15 @@
 class VM {
 public:
 	VM();
-	virtual ~VM();
-	JNIEnv *getJNIEnv();
+	virtual    ~VM();
+	JNIEnv     *getJNIEnv();
+  virtual int createContext(jobject jEnv, jobject jExports, jobject *jCtx) = 0;
 
 protected:
-	JNIEnv *  jniEnv;
-	jclass    envClass;
-	jmethodID loadMethodId;
-	jmethodID releaseMethodId;
+	JNIEnv     *jniEnv;
+  /* module lifecycle */
+  jclass      jContextClass;
+  jmethodID   createContextMethodId;
 };
 
 #endif

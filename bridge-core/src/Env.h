@@ -20,17 +20,24 @@ public:
 #endif
 	static LIB_EXPORT Env *getEnv();
 	static LIB_EXPORT Env *getEnv_nocheck();
-	LIB_EXPORT Local<Value> load(Handle<String> moduleName);
+	LIB_EXPORT Local<Value> load(Handle<String> moduleName, Handle<Object> moduleExports);
 
 private:
-	static Env *initEnv(VM *vm);
 	Env(VM *vm);
 	~Env();
+  int initEnv(node::Isolate *nodeIsolate, v8::Isolate *v8Isolate);
 
+	static Env    *initEnv(VM *vm);
 	node::Isolate *nodeIsolate;
 	v8::Isolate   *v8Isolate;
 	VM            *vm;
-	
+
+  /* JNI */
+	jclass        jEnvClass;
+  jobject       jEnv;
+	jmethodID     createMethodId;
+	jmethodID     releaseMethodId;
+  jmethodID     loadMethodId;
 };
 
 #endif
