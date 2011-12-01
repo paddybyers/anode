@@ -6,7 +6,6 @@ import java.util.List;
 
 import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.js.JSInterface;
-import org.meshpoint.anode.js.JSObject;
 import org.meshpoint.anode.module.IModule;
 import org.meshpoint.anode.type.IValue;
 import org.meshpoint.anode.util.Log;
@@ -26,7 +25,7 @@ public class Env {
 	 * private state
 	 *********************/
 
-	private static HashMap <Thread, Env> envsByThread = new HashMap <Thread, Env>();
+	private static ThreadLocal<Env> currentEnv  = new ThreadLocal<Env>();
 	private long threadid;
 	private long nodeIsolate;
 	private long v8Isolate;
@@ -65,10 +64,18 @@ public class Env {
 	 */
 	static synchronized Env create(long nodeIsolate, long v8Isolate) {
 		Env result = new Env(nodeIsolate, v8Isolate);
-		envsByThread.put(Thread.currentThread(), result);
+		currentEnv.set(result);
 		return result;
 	}
 	
+	/**
+	 * Get the env associated with this event thread
+	 * @return
+	 */
+	public static Env getCurrent() {
+		return currentEnv.get();
+	}
+
 	/**
 	 * Release this env. Called by the bridge addon
 	 */

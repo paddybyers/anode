@@ -7,6 +7,7 @@
 #ifndef ANDROID
 # include "JREVM.h"
 #endif
+#include "V8ToJava.h"
 
 static pthread_key_t key;
 static pthread_once_t key_once = PTHREAD_ONCE_INIT;
@@ -61,6 +62,7 @@ Env::Env(VM *vm) {
 		vm = new JREVM();
 #endif
 	this->vm = vm;
+  v8ToJava = new V8ToJava(vm->getJNIEnv());
   initEnv(nodeIsolate, v8Isolate);
 }
 
@@ -69,6 +71,8 @@ Env::~Env() {
   jniEnv->CallVoidMethod(jEnv, releaseMethodId);
   jniEnv->DeleteGlobalRef(jEnv);
   jniEnv->DeleteGlobalRef(jEnvClass);
+  v8ToJava->dispose(jniEnv);
+  delete v8ToJava;
 	delete vm;
 }
 
@@ -99,23 +103,25 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
 	Local<Value> module;
   
   /* wrap the exports object */
-  jobject jCtx;
-  jobject jExports = 0;
+  jobject jExports;
   JNIEnv *jniEnv = vm->getJNIEnv();
-  
-  /* convert the moduleName to jstring */
-  int nameLen = moduleName->Length();
-  jchar *nameBuf = new jchar[nameLen];
-  if(!nameBuf) {
-    fprintf(stderr, "Fatal: memory allocation failure (load())\n");
-    return module;
+  int result = v8ToJava->ToJavaObject(jniEnv, moduleExports, TYPE_OBJECT, &jExports);
+  if(result != OK) {
+    fprintf(stderr, "Fatal error: unable to convert module exports object\n");
+    return scope.Close(Undefined());
   }
-  moduleName->Write(nameBuf, 0, nameLen, v8::String::NO_NULL_TERMINATION);
-  jstring jModuleName = jniEnv->NewString(nameBuf, nameLen);
-  delete[] nameBuf;
+    
+  /* convert the moduleName to jstring */
+  jstring jModuleName;
+  result = V8ToJava::ToJavaString(jniEnv, moduleName, &jModuleName);
+  if(result != OK) {
+    fprintf(stderr, "Fatal error: unable to convert modulename string\n");
+    return scope.Close(Undefined());
+  }
 
   /* create the module context */
-  int result = vm->createContext(jEnv, jExports, &jCtx);
+  jobject jCtx;
+  result = vm->createContext(jEnv, jExports, &jCtx);
   if(result == OK) {
     jobject jModule = jniEnv->CallObjectMethod(jEnv, loadMethodId, jModuleName, jCtx);
     if(jModule) {

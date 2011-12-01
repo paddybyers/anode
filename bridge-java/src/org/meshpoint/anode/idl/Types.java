@@ -47,13 +47,11 @@ public class Types {
 	public static final int TYPE_STRING    = 9;
 	public static final int TYPE_MAP       = 10;
 	public static final int TYPE_FUNCTION  = 11;
-	public static final int TYPE_VALUE     = 12;
-	public static final int TYPE_DATE      = 13;
+	public static final int TYPE_DATE      = 12;
 
 	public static final int TYPE_OBJECT    = 16;
 	public static final int TYPE_ARRAY     = 32;
 	public static final int TYPE_INTERFACE = 64;
-	public static final int OBJECT_MASK    = TYPE_OBJECT-1;
 	
 	public static boolean isInterface(int type) {
 		return (type & TYPE_INTERFACE) != 0;

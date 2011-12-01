@@ -10,6 +10,7 @@
 #endif
 
 class VM;
+class V8ToJava;
 
 using namespace v8;
 
@@ -32,6 +33,7 @@ private:
 	node::Isolate *nodeIsolate;
 	v8::Isolate   *v8Isolate;
 	VM            *vm;
+  V8ToJava      *v8ToJava;
 
   /* JNI */
 	jclass        jEnvClass;

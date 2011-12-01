@@ -28,10 +28,10 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 	 * private API
 	 *********************/
 
-	JSObject(long instHandle, Env env) {
+	JSObject(long instHandle) {
 		this.instHandle = instHandle;
-		this.env = env;
-		BridgeNative.wrapJSObject(instHandle, this);
+		env = Env.getCurrent();
+		Env.logger.v("tmp", "instHandle = 0x" + Long.toHexString(instHandle));
 	}
 
 	public void finalize() {

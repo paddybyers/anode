@@ -2,13 +2,6 @@
 #define BRIDGE_VM_H
 
 #include "defines.h"
-#include <node.h>
-
-#ifdef __APPLE__
-# include <JavaVM/jni.h>
-#else
-# include <jni.h>
-#endif //DARWIN
 
 class VM {
 public:
