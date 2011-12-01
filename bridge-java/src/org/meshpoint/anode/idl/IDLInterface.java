@@ -1,6 +1,5 @@
 package org.meshpoint.anode.idl;
 
-import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.bridge.BridgeNative;
 
 /**
@@ -15,7 +14,6 @@ public class IDLInterface {
 
 	private long inboundBinding;
 	private long outboundBinding;
-	private Env env;
 	private int id = -1;
 	private String name;
 	private Class<? extends Object> javaClass;
@@ -55,14 +53,13 @@ public class IDLInterface {
 	 * public API
 	 ********************/
 	
-	public IDLInterface(Env env, Class<? extends Object> javaClass) {
-		this.env = env;
+	public IDLInterface(InterfaceManager mgr, Class<? extends Object> javaClass) {
 		String ifaceName = javaClass.getCanonicalName();
 		if(!ifaceName.startsWith(Types.INTERFACE_TYPE_PREFIX))
 			throw new IllegalArgumentException("InterfaceImpl(): interface " + ifaceName + " is not in expected package");
 		this.name = ifaceName.substring(Types.INTERFACE_TYPE_PREFIX.length());
 		this.javaClass = javaClass;
-		id = env.getInterfaceManager().put(this);
+		id = mgr.put(this);
 	}
 
 	public int getId() {
@@ -75,10 +72,6 @@ public class IDLInterface {
 
 	public String getName() {
 		return name;
-	}
-
-	public Env getEnv() {
-		return env;
 	}
 
 	public Attribute[] getAttributes() {

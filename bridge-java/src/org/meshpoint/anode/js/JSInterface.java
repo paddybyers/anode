@@ -1,6 +1,7 @@
 package org.meshpoint.anode.js;
 
 import org.meshpoint.anode.bridge.BridgeNative;
+import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.Types.JSType;
 import org.meshpoint.anode.type.IInterface;
@@ -11,6 +12,7 @@ public class JSInterface implements IInterface {
 	 * private state
 	 *********************/
 	long instHandle; /* (long)Persistent<Object>* */
+	Env env;
 	IDLInterface idlInterface;
 
 	/*********************
@@ -19,6 +21,7 @@ public class JSInterface implements IInterface {
 	JSInterface(long instHandle, IDLInterface idlInterface) {
 		this.instHandle = instHandle;
 		this.idlInterface = idlInterface;
+		env = Env.getCurrent();
 		BridgeNative.wrapJSInterface(instHandle, this, idlInterface);
 	}
 
@@ -37,7 +40,7 @@ public class JSInterface implements IInterface {
 	}
 
 	public void finalize() {
-		idlInterface.getEnv().finalizeQueue.put(instHandle);
+		env.finalizeQueue.put(instHandle);
 	}
 
 	@Override

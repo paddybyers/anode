@@ -31,7 +31,6 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 	JSObject(long instHandle) {
 		this.instHandle = instHandle;
 		env = Env.getCurrent();
-		Env.logger.v("tmp", "instHandle = 0x" + Long.toHexString(instHandle));
 	}
 
 	public void finalize() {

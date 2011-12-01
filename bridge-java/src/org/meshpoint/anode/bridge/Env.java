@@ -133,7 +133,7 @@ public class Env {
 		this.nodeIsolate = nodeIsolate;
 		this.v8Isolate = v8Isolate;
 		this.threadid = Thread.currentThread().getId();
-		interfaceManager = new InterfaceManager(this);
+		interfaceManager = new InterfaceManager();
 		finalizeQueue = new FinalizeQueue(this);
 		wrapQueue = new WrapQueue(this);
 		pendingOps = new ArrayList<SynchronousOperation>();

@@ -7,13 +7,11 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 
 public class InterfaceManager {
 
-	private Env env;
 	private ClassLoader classLoader;
 	private ArrayList<IDLInterface> interfaces;
 	private HashMap<String, IDLInterface> nameMap;
@@ -22,18 +20,13 @@ public class InterfaceManager {
 	/******************
 	 * public API
 	 ******************/
-	public InterfaceManager(Env env) {
-		this.env = env;
+	public InterfaceManager() {
 		classLoader = this.getClass().getClassLoader(); /* we might support distinct loaders in future */
 		interfaces = new ArrayList<IDLInterface>();
 		nameMap = new HashMap<String, IDLInterface>();
 		classMap = new HashMap<Class<? extends Object>, IDLInterface>();
 	}
 	
-	Env getEnv() {
-		return env;
-	}
-
 	ClassLoader getClassLoader() {
 		return classLoader;
 	}
@@ -76,7 +69,7 @@ public class InterfaceManager {
 			return null;
 
 		/* add to manager, and resolve parent */
-		IDLInterface result = new IDLInterface(env, javaClass);
+		IDLInterface result = new IDLInterface(this, javaClass);
 		result.parent = loadClass(javaClass.getSuperclass());
 
 		/* resolve fields */
