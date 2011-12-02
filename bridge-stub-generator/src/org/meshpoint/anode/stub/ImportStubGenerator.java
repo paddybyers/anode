@@ -107,7 +107,7 @@ public class ImportStubGenerator extends StubGenerator {
 				ps.println("\t}");
 				ps.println();
 				/* setter */
-				ps.println("\t" + modifiersStr + " void " + setterName(attr.name) + "(" + typeStr + "arg0) {");
+				ps.println("\t" + modifiersStr + " void " + setterName(attr.name) + "(" + typeStr + " arg0) {");
 				ps.println("\t\t__set(" + i + ", " + getArgToObjectExpression(attr.type, 0) + ");");
 				ps.println("\t}");
 				ps.println();
