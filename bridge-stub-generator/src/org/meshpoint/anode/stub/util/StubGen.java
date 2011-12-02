@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
+import org.meshpoint.anode.stub.ExportStubGenerator;
 import org.meshpoint.anode.stub.ImportStubGenerator;
 import org.meshpoint.anode.stub.StubGenerator;
 import org.meshpoint.anode.stub.StubGenerator.GeneratorException;
@@ -142,6 +143,8 @@ public class StubGen {
 			generator = new ImportStubGenerator(mgr, iface, outDir);
 			break;
 		case EXPORT:
+			generator = new ExportStubGenerator(mgr, iface, outDir);
+			break;
 		case VALUE:
 			System.err.println("Unsupported mode");
 			return 2;

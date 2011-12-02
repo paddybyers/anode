@@ -2,12 +2,14 @@ package org.meshpoint.anode.stub;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.Modifier;
 import java.util.HashSet;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.idl.Types;
+import org.meshpoint.anode.idl.IDLInterface.Operation;
 
 public abstract class StubGenerator {
 
@@ -160,4 +162,92 @@ public abstract class StubGenerator {
 		return "arg" + argIdx;
 	}
 
+	protected static String getterName(String attrName) {
+		return "get_" + uclName(attrName);
+	}
+
+	protected static String setterName(String attrName) {
+		return "set_" + uclName(attrName);
+	}
+
+	protected static String getArgToObjectExpression(int type, String subExpr) throws GeneratorException {
+		String result = subExpr;
+
+		/* array + interface types */
+		if((type & (Types.TYPE_ARRAY|Types.TYPE_INTERFACE)) > 0)
+			return result;
+		
+		/* others */
+		switch(type) {
+		default:
+			throw new GeneratorException("Illegal type encountered (type = " + type + ")", null);
+		case Types.TYPE_BOOL:
+			result = "org.meshpoint.anode.js.JSValue.asJSBoolean(" + result + ")";
+			break;
+		case Types.TYPE_INT:
+			result = "org.meshpoint.anode.js.JSValue.asJSNumber((long)" + result + ")";
+			break;
+		case Types.TYPE_LONG:
+		case Types.TYPE_DOUBLE:
+			result = "org.meshpoint.anode.js.JSValue.asJSNumber(" + result + ")";
+			break;
+		case Types.TYPE_STRING:
+		case Types.TYPE_DATE:
+		case Types.TYPE_OBJECT:
+		case Types.TYPE_OBJECT|Types.TYPE_BOOL:
+		case Types.TYPE_OBJECT|Types.TYPE_BYTE:
+		case Types.TYPE_OBJECT|Types.TYPE_INT:
+		case Types.TYPE_OBJECT|Types.TYPE_LONG:
+		case Types.TYPE_OBJECT|Types.TYPE_DOUBLE:
+		case Types.TYPE_OBJECT|Types.TYPE_STRING:
+		}
+		return result;
+	}
+	
+	protected String getCastExpression(int type) throws GeneratorException {
+		return "(" + getType(type) + ")";
+	}
+	
+	protected String getObjectToArgExpression(int type, String subExpr) throws GeneratorException {
+		String result;
+		String jsCastExpr = "((org.meshpoint.anode.js.JSValue)" + subExpr + ')';
+		switch(type) {
+		default:
+			result = getCastExpression(type) + subExpr;
+			break;
+		case Types.TYPE_BOOL:
+			result = jsCastExpr + ".getBooleanValue()";
+			break;
+		case Types.TYPE_INT:
+			result = "(int)" + jsCastExpr + ".longValue";
+			break;
+		case Types.TYPE_LONG:
+			result = jsCastExpr + ".longValue";
+			break;
+		case Types.TYPE_DOUBLE:
+			result = jsCastExpr + ".dblValue";
+			break;
+		case Types.TYPE_OBJECT:
+			result = subExpr;
+		}
+		return result;
+	}
+
+	protected void emitArgsArray(PrintStream ps, IDLInterface iface, boolean includeGetter) {
+		Operation[] operations = iface.getOperations();
+		int maxArgCount = 0;
+		for(Operation op : operations) {
+			int thisArgCount = op.args.length;
+			if(thisArgCount > maxArgCount)
+				maxArgCount = thisArgCount;
+		}
+		if(maxArgCount > 0) {
+			ps.println("\tprivate static Object[] __args = new Object[" + maxArgCount + "];");
+			ps.println();
+			if(includeGetter) {
+				ps.println("\tpublic static Object[] __getArgs() { return __args; }");
+				ps.println();
+			}
+		}
+	}
 }

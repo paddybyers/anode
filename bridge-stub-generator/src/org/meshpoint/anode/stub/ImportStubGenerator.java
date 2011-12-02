@@ -63,15 +63,8 @@ public class ImportStubGenerator extends StubGenerator {
 			/*******************
 			 * operation methods
 			 *******************/
+			emitArgsArray(ps, iface, false);
 			Operation[] operations = iface.getOperations();
-			int maxArgCount = 0;
-			for(Operation op : operations) {
-				int thisArgCount = op.args.length;
-				if(thisArgCount > maxArgCount)
-					maxArgCount = thisArgCount;
-			}
-			ps.println("\tprivate Object[] __args = new Object[" + maxArgCount + "];");
-			ps.println();
 			for(int i = 0; i < operations.length; i++) {
 				Operation op = operations[i];
 				registerName(op.name);
@@ -84,11 +77,11 @@ public class ImportStubGenerator extends StubGenerator {
 				ps.println(") {");
 				for(int argIdx = 0; argIdx < op.args.length; argIdx++) {
 					/* argument bashing */
-					ps.println("\t\t__args[" + argIdx + "] = " + getArgToObjectExpression(op.args[argIdx], argIdx) + ";");
+					ps.println("\t\t__args[" + argIdx + "] = " + getArgToObjectExpression(op.args[argIdx], getArgName(argIdx)) + ";");
 				}
 				String subExpr = "__invoke(" + i + ", __args)";
 				if(op.type == Types.TYPE_UNDEFINED) {
-					ps.println("\t\t" + subExpr);
+					ps.println("\t\t" + subExpr + ";");
 				} else {
 					ps.println("\t\treturn " + getObjectToArgExpression(op.type, subExpr) + ";");
 				}
@@ -113,7 +106,7 @@ public class ImportStubGenerator extends StubGenerator {
 				ps.println();
 				/* setter */
 				ps.println("\t" + modifiersStr + " void " + setterName(attr.name) + "(" + typeStr + " arg0) {");
-				ps.println("\t\t__set(" + i + ", " + getArgToObjectExpression(attr.type, 0) + ");");
+				ps.println("\t\t__set(" + i + ", " + getArgToObjectExpression(attr.type, getArgName(0)) + ");");
 				ps.println("\t}");
 				ps.println();
 			}
@@ -125,82 +118,6 @@ public class ImportStubGenerator extends StubGenerator {
 			fos.flush();
 			fos.close();
 		}
-	}
-	
-
-	/*******************
-	 * helpers
-	 *******************/
-
-	private static String getterName(String attrName) {
-		return "get_" + uclName(attrName);
-	}
-
-	private static String setterName(String attrName) {
-		return "set_" + uclName(attrName);
-	}
-
-	private static String getArgToObjectExpression(int type, int argIdx) throws GeneratorException {
-		String result = getArgName(argIdx);
-
-		/* array + interface types */
-		if((type & (Types.TYPE_ARRAY|Types.TYPE_INTERFACE)) > 0)
-			return result;
-		
-		/* others */
-		switch(type) {
-		default:
-			throw new GeneratorException("Illegal type encountered (type = " + type + ")", null);
-		case Types.TYPE_BOOL:
-			result = "org.meshpoint.anode.js.JSValue.asJSBoolean(" + result + ")";
-			break;
-		case Types.TYPE_INT:
-			result = "org.meshpoint.anode.js.JSValue.asJSNumber((long)" + result + ")";
-			break;
-		case Types.TYPE_LONG:
-		case Types.TYPE_DOUBLE:
-			result = "org.meshpoint.anode.js.JSValue.asJSNumber(" + result + ")";
-			break;
-		case Types.TYPE_STRING:
-		case Types.TYPE_DATE:
-		case Types.TYPE_OBJECT:
-		case Types.TYPE_OBJECT|Types.TYPE_BOOL:
-		case Types.TYPE_OBJECT|Types.TYPE_BYTE:
-		case Types.TYPE_OBJECT|Types.TYPE_INT:
-		case Types.TYPE_OBJECT|Types.TYPE_LONG:
-		case Types.TYPE_OBJECT|Types.TYPE_DOUBLE:
-		case Types.TYPE_OBJECT|Types.TYPE_STRING:
-		}
-		return result;
-	}
-	
-	private String getCastExpression(int type) throws GeneratorException {
-		return "(" + getType(type) + ")";
-	}
-	
-	private String getObjectToArgExpression(int type, String subExpr) throws GeneratorException {
-		String result;
-		String jsCastExpr = "((org.meshpoint.anode.js.JSValue)" + subExpr + ')';
-		switch(type) {
-		default:
-			result = getCastExpression(type) + subExpr;
-			break;
-		case Types.TYPE_BOOL:
-			result = jsCastExpr + ".getBooleanValue()";
-			break;
-		case Types.TYPE_INT:
-			result = "(int)" + jsCastExpr + ".longValue";
-			break;
-		case Types.TYPE_LONG:
-			result = jsCastExpr + ".longValue";
-			break;
-		case Types.TYPE_DOUBLE:
-			result = jsCastExpr + ".dblValue";
-			break;
-		case Types.TYPE_OBJECT:
-			result = subExpr;
-		}
-		return result;
 	}
 
 }

@@ -6,8 +6,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
-
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 
@@ -79,7 +77,7 @@ public class InterfaceManager {
 		ArrayList<Attribute> attributeList = new ArrayList<Attribute>();
 		for(Field f : javaClass.getDeclaredFields()) {
 			int modifiers = f.getModifiers();
-			if(!f.isSynthetic() && (modifiers & Modifier.PRIVATE) == 0) {
+			if(!f.isSynthetic() && ((modifiers & Modifier.PUBLIC)) != 0) {
 				int type = Types.fromJavaType(this, f.getGenericType());
 				if(type != Types.TYPE_INVALID) {
 					Attribute attr = result.new Attribute();
@@ -96,7 +94,7 @@ public class InterfaceManager {
 		ArrayList<Operation> operationList = new ArrayList<Operation>();
 		for(Method m : javaClass.getDeclaredMethods()) {
 			int modifiers = m.getModifiers();
-			if(!m.isSynthetic() && (modifiers & Modifier.PRIVATE) == 0) {
+			if(!m.isSynthetic() && ((modifiers & Modifier.PUBLIC)) != 0) {
 				int type = Types.fromJavaType(this, m.getGenericReturnType());
 				if(type != Types.TYPE_INVALID) {
 					Operation op = result.new Operation();
