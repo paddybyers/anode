@@ -24,9 +24,9 @@ public final class JSValue implements IValue, IBoolean, INumber, IString, IDate 
 	 ************************/
 
 	int type;
-	long longValue;
-	double dblValue;
-	Object obValue;
+	public long longValue;
+	public double dblValue;
+	public Object obValue;
 
 	/************************
 	 * public API 

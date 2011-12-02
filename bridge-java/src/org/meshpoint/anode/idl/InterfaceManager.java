@@ -20,8 +20,10 @@ public class InterfaceManager {
 	/******************
 	 * public API
 	 ******************/
-	public InterfaceManager() {
-		classLoader = this.getClass().getClassLoader(); /* we might support distinct loaders in future */
+	public InterfaceManager(ClassLoader classLoader) {
+		if(classLoader == null)
+			classLoader = this.getClass().getClassLoader();
+		this.classLoader = classLoader;
 		interfaces = new ArrayList<IDLInterface>();
 		nameMap = new HashMap<String, IDLInterface>();
 		classMap = new HashMap<Class<? extends Object>, IDLInterface>();
@@ -31,29 +33,26 @@ public class InterfaceManager {
 		return classLoader;
 	}
 
-	public synchronized int put(IDLInterface iface) {
-		int result = (int)iface.getId();
-		if(result == -1) {
-			result = interfaces.size();
-			interfaces.add(iface);
-			nameMap.put(iface.getName(), iface);
-			classMap.put(iface.getJavaClass(), iface);
-		}
-		return result;
-	}
-	
 	public synchronized IDLInterface getById(int id) {
 		return interfaces.get(id);
 	}
 	
 	public synchronized IDLInterface getByName(String name) {
-		return nameMap.get(name);
+		IDLInterface result = nameMap.get(name);
+		if(result != null)
+			return result;
+		
+		try {
+			Class<?> javaClass = classLoader.loadClass(name);
+			result = loadClass(javaClass);
+		} catch (ClassNotFoundException e) {}
+		return result;
 	}
 	
 	/****************
 	 * class loading
 	 ****************/
-	public IDLInterface loadClass(Class<? extends Object> javaClass) {
+	public IDLInterface loadClass(Class<?> javaClass) {
 		IDLInterface result;
 		synchronized(this) {
 			result = classMap.get(javaClass);
@@ -63,14 +62,16 @@ public class InterfaceManager {
 		return result;
 	}
 	
-	private IDLInterface defineClass(Class<? extends Object> javaClass) {
+	private IDLInterface defineClass(Class<?> javaClass) {
 		String canonicalName = javaClass.getCanonicalName().intern();
-		if(canonicalName == "java.lang.Object" || canonicalName.startsWith(Types.INTERFACE_TYPE_PREFIX))
+		if(canonicalName == "java.lang.Object")
 			return null;
 
 		/* add to manager, and resolve parent */
 		IDLInterface result = new IDLInterface(this, javaClass);
-		result.parent = loadClass(javaClass.getSuperclass());
+		Class<?> parentClass = javaClass.getSuperclass();
+		if(parentClass != null)
+			result.parent = loadClass(parentClass);
 
 		/* resolve fields */
 		ArrayList<Attribute> attributeList = new ArrayList<Attribute>();
@@ -124,6 +125,17 @@ public class InterfaceManager {
 	/**********************
 	 * private
 	 **********************/
+	synchronized int put(IDLInterface iface) {
+		int result = (int)iface.getId();
+		if(result == -1) {
+			result = interfaces.size();
+			interfaces.add(iface);
+			nameMap.put(iface.getName(), iface);
+			classMap.put(iface.getJavaClass(), iface);
+		}
+		return result;
+	}
+	
 	public void dispose() {
 		for(IDLInterface iface : interfaces) {
 			iface.dispose();

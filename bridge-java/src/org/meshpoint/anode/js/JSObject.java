@@ -3,7 +3,6 @@ package org.meshpoint.anode.js;
 import java.util.Collection;
 
 import org.meshpoint.anode.bridge.Env;
-import org.meshpoint.anode.bridge.BridgeNative;
 import org.meshpoint.anode.idl.Types.JSType;
 import org.meshpoint.anode.type.ICollection;
 import org.meshpoint.anode.type.IFunction;

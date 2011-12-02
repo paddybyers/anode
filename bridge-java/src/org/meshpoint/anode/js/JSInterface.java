@@ -12,23 +12,22 @@ public class JSInterface implements IInterface {
 	 * private state
 	 *********************/
 	long instHandle; /* (long)Persistent<Object>* */
-	Env env;
-	IDLInterface idlInterface;
+	protected Env env = Env.getCurrent();
+	private IDLInterface iface;
+	private long interfaceHandle;
 
 	/*********************
 	 * private API
 	 *********************/
-	JSInterface(long instHandle, IDLInterface idlInterface) {
+	protected JSInterface(long instHandle, IDLInterface iface) {
 		this.instHandle = instHandle;
-		this.idlInterface = idlInterface;
-		env = Env.getCurrent();
-		BridgeNative.wrapJSInterface(instHandle, this, idlInterface);
+		this.iface = iface;
+		interfaceHandle = iface.getHandle();
 	}
 
 	/*********************
 	 * public API
 	 *********************/
-
 	@Override
 	public JSType getType() {
 		return JSType.OBJECT;
@@ -36,7 +35,7 @@ public class JSInterface implements IInterface {
 
 	@Override
 	public IDLInterface getDeclaredType() {
-		return idlInterface;
+		return iface;
 	}
 
 	public void finalize() {
@@ -46,6 +45,21 @@ public class JSInterface implements IInterface {
 	@Override
 	public void release() {
 		// TODO Auto-generated method stub
-		
 	}
+	
+	/*********************
+	 * bridge API
+	 *********************/
+	protected Object __invoke(int opIdx, Object[] args) {
+		return BridgeNative.invokeJSInterface(instHandle, interfaceHandle, opIdx, args);
+	}
+
+	protected Object __get(int attrIdx) {
+		return BridgeNative.getJSInterface(instHandle, interfaceHandle, attrIdx);
+	}
+
+	protected void __set(int attrIdx, Object val) {
+		BridgeNative.setJSInterface(instHandle, interfaceHandle, attrIdx, val);
+	}
+	
 }

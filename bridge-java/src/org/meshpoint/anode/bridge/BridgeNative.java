@@ -6,8 +6,6 @@ import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 import org.meshpoint.anode.java.Base;
-import org.meshpoint.anode.js.JSInterface;
-import org.meshpoint.anode.js.JSObject;
 import org.meshpoint.anode.type.IValue;
 
 public class BridgeNative {
@@ -31,12 +29,12 @@ public class BridgeNative {
 	native static int length(long instHandle);
 
 	/* declaratively typed */
-	native static IValue callAsInterface(long instHandle, int classIdx, int methodIdx, IValue[] args);
+	public native static Object invokeJSInterface(long instHandle, long interfaceHandle, int opIdx, Object[] args);
+	public native static Object getJSInterface(long instHandle, long interfaceHandle, int attrIdx);
+	public native static void setJSInterface(long instHandle, long interfaceHandle, int attrIdx, Object val);
 	
 	/* instance handle management */
 	native static void releaseObjectHandle(long instHandle);
-	public native static void wrapJSObject(long instHandle, JSObject obj);
-	public native static void wrapJSInterface(long instHandle, JSInterface obj, IDLInterface iface);
 	public native static long wrapJavaInterface(Base obj, IDLInterface iface);
 	
 	/* interface handle management */

@@ -53,17 +53,18 @@ public class IDLInterface {
 	 * public API
 	 ********************/
 	
-	public IDLInterface(InterfaceManager mgr, Class<? extends Object> javaClass) {
-		String ifaceName = javaClass.getCanonicalName();
-		if(!ifaceName.startsWith(Types.INTERFACE_TYPE_PREFIX))
-			throw new IllegalArgumentException("InterfaceImpl(): interface " + ifaceName + " is not in expected package");
-		this.name = ifaceName.substring(Types.INTERFACE_TYPE_PREFIX.length());
+	public IDLInterface(InterfaceManager mgr, Class<?> javaClass) {
+		name = javaClass.getCanonicalName();
 		this.javaClass = javaClass;
 		id = mgr.put(this);
 	}
 
 	public int getId() {
 		return id;
+	}
+
+	public long getHandle() {
+		return inboundBinding;
 	}
 
 	public Class<? extends Object> getJavaClass() {

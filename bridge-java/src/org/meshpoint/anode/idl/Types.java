@@ -116,11 +116,10 @@ public class Types {
 			return baseClassIndex;
 		/* handle interface types */
 		String canonicalName = javaClass.getCanonicalName();
-		if(canonicalName.startsWith(INTERFACE_TYPE_PREFIX)) {
-			IDLInterface iface = interfaceManager.loadClass(javaClass);
-			if(iface != null)
-				return classid2Type(iface.getId());
-		}
+		IDLInterface iface = interfaceManager.getByName(canonicalName);
+		if(iface != null)
+			return classid2Type(iface.getId());
+
 		return TYPE_INVALID;
 	}
 	
@@ -141,8 +140,6 @@ public class Types {
 	
 	public class Map {}
 	public class Function {}
-	public class ValueType {}
-	public static final String INTERFACE_TYPE_PREFIX = "org.meshpoint.node.iface.";
 
 	/******************
 	 * private state
@@ -160,7 +157,18 @@ public class Types {
 		String.class,
 		Map.class,
 		Function.class,
-		ValueType.class,
-		Date.class
+		Date.class,
+		null,
+		null,
+		null,
+		Object.class,
+		null,
+		null,
+		Boolean.class,
+		Byte.class,
+		Short.class,
+		Integer.class,
+		Long.class,
+		Double.class,
 	}));
 }
