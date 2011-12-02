@@ -9,6 +9,7 @@ import org.meshpoint.anode.stub.ExportStubGenerator;
 import org.meshpoint.anode.stub.ImportStubGenerator;
 import org.meshpoint.anode.stub.StubGenerator;
 import org.meshpoint.anode.stub.StubGenerator.GeneratorException;
+import org.meshpoint.anode.stub.ValueStubGenerator;
 
 /**
  * A command line utility for running interface stub generators
@@ -146,8 +147,8 @@ public class StubGen {
 			generator = new ExportStubGenerator(mgr, iface, outDir);
 			break;
 		case VALUE:
-			System.err.println("Unsupported mode");
-			return 2;
+			generator = new ValueStubGenerator(mgr, iface, outDir);
+			break;
 		}
 		try {
 			generator.generate();

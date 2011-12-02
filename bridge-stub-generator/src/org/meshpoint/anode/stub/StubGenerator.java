@@ -233,7 +233,7 @@ public abstract class StubGenerator {
 		return result;
 	}
 
-	protected void emitArgsArray(PrintStream ps, IDLInterface iface, boolean includeGetter) {
+	protected void emitMaxargsArray(PrintStream ps, IDLInterface iface, boolean includeGetter) {
 		Operation[] operations = iface.getOperations();
 		int maxArgCount = 0;
 		for(Operation op : operations) {
@@ -242,7 +242,13 @@ public abstract class StubGenerator {
 				maxArgCount = thisArgCount;
 		}
 		if(maxArgCount > 0) {
-			ps.println("\tprivate static Object[] __args = new Object[" + maxArgCount + "];");
+			emitArgsArray(ps, maxArgCount, includeGetter);
+		}
+	}
+
+	protected void emitArgsArray(PrintStream ps, int len, boolean includeGetter) {
+		if(len > 0) {
+			ps.println("\tprivate static Object[] __args = new Object[" + len + "];");
 			ps.println();
 			if(includeGetter) {
 				ps.println("\tpublic static Object[] __getArgs() { return __args; }");

@@ -52,7 +52,7 @@ public class ExportStubGenerator extends StubGenerator {
 			 *******************/
 			Operation[] operations = iface.getOperations();
 			if(operations.length > 0) {
-				emitArgsArray(ps, iface, true);
+				emitMaxargsArray(ps, iface, true);
 				ps.println("\tstatic Object __invoke(" + ifaceName + " inst, int opIdx, Object[] args) {");
 				if(operations.length == 1) {
 					/* no switch statement */

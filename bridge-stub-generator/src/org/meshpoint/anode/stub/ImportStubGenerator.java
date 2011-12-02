@@ -63,7 +63,7 @@ public class ImportStubGenerator extends StubGenerator {
 			/*******************
 			 * operation methods
 			 *******************/
-			emitArgsArray(ps, iface, false);
+			emitMaxargsArray(ps, iface, false);
 			Operation[] operations = iface.getOperations();
 			for(int i = 0; i < operations.length; i++) {
 				Operation op = operations[i];
