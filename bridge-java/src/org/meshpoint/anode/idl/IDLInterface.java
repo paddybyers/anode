@@ -22,6 +22,7 @@ public class IDLInterface {
 	 * interface metadata
 	 ********************/
 
+	int modifiers;
 	IDLInterface parent;
 	Attribute[] attributes;
 	Operation[] operations;
@@ -63,8 +64,16 @@ public class IDLInterface {
 		return id;
 	}
 
-	public long getHandle() {
+	public long getInboundHandle() {
+		if(inboundBinding == 0)
+			initInbound();
 		return inboundBinding;
+	}
+
+	public long getOutboundHandle() {
+		if(outboundBinding == 0)
+			initOutbound();
+		return outboundBinding;
 	}
 
 	public Class<? extends Object> getJavaClass() {
@@ -73,6 +82,10 @@ public class IDLInterface {
 
 	public String getName() {
 		return name;
+	}
+	
+	public int getModifiers() {
+		return modifiers;
 	}
 
 	public Attribute[] getAttributes() {
@@ -95,7 +108,7 @@ public class IDLInterface {
 			op.outboundBinding = BridgeNative.bindOutboundOperation(op, this);
 	}
 
-	public void initForImport() {
+	public void initInbound() {
 		inboundBinding = BridgeNative.bindInboundInterface(this);
 		for(Attribute attr : attributes)
 			attr.inboundBinding = BridgeNative.bindInboundAttribute(attr, this);

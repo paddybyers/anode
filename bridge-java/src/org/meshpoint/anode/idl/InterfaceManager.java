@@ -6,6 +6,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
@@ -69,6 +70,7 @@ public class InterfaceManager {
 
 		/* add to manager, and resolve parent */
 		IDLInterface result = new IDLInterface(this, javaClass);
+		result.modifiers = javaClass.getModifiers();
 		Class<?> parentClass = javaClass.getSuperclass();
 		if(parentClass != null)
 			result.parent = loadClass(parentClass);
