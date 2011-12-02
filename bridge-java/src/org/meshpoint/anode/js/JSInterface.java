@@ -22,7 +22,7 @@ public class JSInterface implements IInterface {
 	protected JSInterface(long instHandle, IDLInterface iface) {
 		this.instHandle = instHandle;
 		this.iface = iface;
-		interfaceHandle = iface.getHandle();
+		interfaceHandle = iface.getInboundHandle();
 	}
 
 	/*********************
@@ -40,11 +40,6 @@ public class JSInterface implements IInterface {
 
 	public void finalize() {
 		env.finalizeQueue.put(instHandle);
-	}
-
-	@Override
-	public void release() {
-		// TODO Auto-generated method stub
 	}
 	
 	/*********************

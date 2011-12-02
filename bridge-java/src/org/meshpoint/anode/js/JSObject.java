@@ -47,12 +47,6 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 	}
 
 	@Override
-	public void release() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public IValue getIndexedProperty(int idx) {
 		// TODO Auto-generated method stub
 		return null;

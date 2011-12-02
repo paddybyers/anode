@@ -226,9 +226,4 @@ public final class JSValue implements IValue, IBoolean, INumber, IString, IDate 
 	 * Pointer for the pool list
 	 */
 	private JSValue next;
-	
-	@Override
-	public void release() {
-		put(this);
-	}
 }

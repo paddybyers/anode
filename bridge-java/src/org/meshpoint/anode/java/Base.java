@@ -1,6 +1,7 @@
 package org.meshpoint.anode.java;
 
 import org.meshpoint.anode.bridge.BridgeNative;
+import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.Types.JSType;
 import org.meshpoint.anode.type.IInterface;
@@ -11,14 +12,16 @@ public class Base implements IInterface {
 	 * private state
 	 *********************/
 	long instHandle; /* (long)Persistent<Object>* */
-	IDLInterface idlInterface;
+	protected Env env = Env.getCurrent();
+	private IDLInterface iface;
 
 	/*********************
 	 * private API
 	 *********************/
-	Base(IDLInterface idlInterface) {
-		this.idlInterface = idlInterface;
-		instHandle = BridgeNative.wrapJavaInterface(this, idlInterface);
+	Base(IDLInterface iface) {
+		this.iface = iface;
+		iface.getInboundHandle();
+		instHandle = BridgeNative.wrapJavaInterface(this, iface);
 	}
 
 	/*********************
@@ -32,13 +35,7 @@ public class Base implements IInterface {
 
 	@Override
 	public IDLInterface getDeclaredType() {
-		return idlInterface;
-	}
-
-	@Override
-	public void release() {
-		// TODO Auto-generated method stub
-		
+		return iface;
 	}
 
 }
