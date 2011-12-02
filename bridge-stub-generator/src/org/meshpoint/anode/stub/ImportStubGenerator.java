@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.reflect.Modifier;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
@@ -28,6 +29,8 @@ public class ImportStubGenerator extends StubGenerator {
 	}
 	
 	public void generate() throws IOException, GeneratorException {
+		if((iface.getModifiers() & Modifier.INTERFACE) == 0)
+			throw new GeneratorException("ImportStubGenerator: class must be an interface", null);
 		String ifaceName = iface.getName();
 		String className = hashName(ifaceName);
 		String classFilename = className + ".java";
@@ -71,6 +74,7 @@ public class ImportStubGenerator extends StubGenerator {
 			ps.println();
 			for(int i = 0; i < operations.length; i++) {
 				Operation op = operations[i];
+				registerName(op.name);
 				ps.print("\t" + getModifiers(op.modifiers) + " " + getType(op.type) + " " + op.name + "(");
 				for(int argIdx = 0; argIdx < op.args.length; argIdx++) {
 					/* argument specifier for function signature */
@@ -98,6 +102,7 @@ public class ImportStubGenerator extends StubGenerator {
 			Attribute[] attributes = iface.getAttributes();
 			for(int i = 0; i < attributes.length; i++) {
 				Attribute attr = attributes[i];
+				registerName(attr.name);
 				String typeStr = getType(attr.type);
 				String modifiersStr = getModifiers(attr.modifiers);
 				/* getter */

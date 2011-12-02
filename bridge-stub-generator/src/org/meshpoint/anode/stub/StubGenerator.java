@@ -3,6 +3,7 @@ package org.meshpoint.anode.stub;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
+import java.util.HashSet;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
@@ -18,6 +19,7 @@ public abstract class StubGenerator {
 	protected IDLInterface iface;
 	protected File destination;
 	private static final int MAX_NAME_LENGTH = 80;
+	private HashSet<String> memberNames = new HashSet<String>();
 	
 	/********************
 	 * public API
@@ -43,6 +45,12 @@ public abstract class StubGenerator {
 	/********************
 	 * private API
 	 ********************/
+	
+	protected void registerName(String memberName) throws GeneratorException {
+		if(memberNames.contains(memberName))
+			throw new GeneratorException("StubGenerator: overloaded operation or attribute name (" + memberName + ")", null);
+		memberNames.add(memberName);
+	}
 	
 	protected static String uclName(String attrName) {
 		return Character.toUpperCase(attrName.charAt(0)) + attrName.substring(1);
