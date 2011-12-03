@@ -2,7 +2,6 @@ package org.meshpoint.anode.stub;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.reflect.Modifier;
 
 import org.meshpoint.anode.idl.IDLInterface;
@@ -25,47 +24,39 @@ public class ExportStubGenerator extends StubGenerator {
 			throw new GeneratorException("ExportStubGenerator: class must not be an interface", null);
 		String ifaceName = iface.getName();
 		String className = hashName(ifaceName);
-		PrintStream ps = openStream(className);
+		ClassWriter cw = new ClassWriter(className);
 		try {
-			/***************
-			 * preamble
-			 ****************/
-			ps.println("/* This file has been automatically generated; do not edit */");
-			ps.println();
-			ps.println("package " + STUB_PACKAGE + ';');
-			ps.println();
-			ps.println("public final class " + className + " {");
-			ps.println();
+			writePreamble(cw, className, null, null);
 
 			/*******************
 			 * invoke method
 			 *******************/
 			Operation[] operations = iface.getOperations();
 			if(operations.length > 0) {
-				emitMaxargsArray(ps, iface, true);
-				ps.println("\tstatic Object __invoke(" + ifaceName + " inst, int opIdx, Object[] args) {");
+				emitMaxargsArray(cw, iface, true);
+				cw.openScope("static Object __invoke(" + ifaceName + " inst, int opIdx, Object[] args)");
 				if(operations.length == 1) {
 					/* no switch statement */
 					Operation op = operations[0];
 					registerName(op.name);
-					ps.println("\t\treturn " + getInvokeCaseBodyExpression(op, "\t\t") + ";");
+					cw.writeln("return " + getInvokeCaseBodyExpression(op, "\t\t") + ";");
 				} else {
 					/* switch needed */
-					ps.println("\t\tObject result = null;");
-					ps.println("\t\tswitch(opIdx) {");
-					for(int i = 0; i < operations.length; i++) {
-						Operation op = operations[i];
-						registerName(op.name);
-						ps.println("\t\tcase " + i + ": /* " + op.name + "*/");
-						ps.println("\t\t\tresult = " + getInvokeCaseBodyExpression(op, "\t\t\t") + ";");
-						ps.println("\t\t\tbreak;");
-					}
-					ps.println("\t\tdefault:");
-					ps.println("\t\t}");
-					ps.println("\t\treturn result;");
+					cw.writeln("Object result = null;");
+					cw.openScope("switch(opIdx)");
+						for(int i = 0; i < operations.length; i++) {
+							Operation op = operations[i];
+							registerName(op.name);
+							cw.writeln("case " + i + ": /* " + op.name + "*/", -1);
+							cw.writeln("result = " + getInvokeCaseBodyExpression(op, "\t\t\t") + ";");
+							cw.writeln("break;");
+						}
+						cw.writeln("default:", -1);
+					cw.closeScope();
+					cw.writeln("return result;");
 				}
-				ps.println("\t}");
-				ps.println();
+				cw.closeScope();
+				cw.writeln();	
 			}
 
 			/*******************
@@ -74,57 +65,54 @@ public class ExportStubGenerator extends StubGenerator {
 			Attribute[] attributes = iface.getAttributes();
 			if(attributes.length > 0) {
 				/* __get */
-				ps.println("\tstatic Object __get(" + ifaceName + " inst, int attrIdx) {");
+				cw.openScope("static Object __get(" + ifaceName + " inst, int attrIdx)");
 				if(attributes.length == 1) {
 					/* no switch statement */
 					Attribute attr = attributes[0];
 					registerName(attr.name);
-					ps.println("\t\treturn " + getArgToObjectExpression(attr.type, getAttrAccessExpression(ifaceName, attr)) + ";");
+					cw.writeln("return " + getArgToObjectExpression(attr.type, getAttrAccessExpression(ifaceName, attr)) + ";");
 				} else {
 					/* switch needed */
-					ps.println("\t\tObject result = null;");
-					ps.println("\t\tswitch(attrIdx) {");
-					for(int i = 0; i < attributes.length; i++) {
-						Attribute attr = attributes[i];
-						registerName(attr.name);
-						ps.println("\t\tcase " + i + ": /* " + attr.name + "*/");
-						ps.println("\t\t\tresult = " + getArgToObjectExpression(attr.type, getAttrAccessExpression(ifaceName, attr)) + ";");
-						ps.println("\t\t\tbreak;");
-					}
-					ps.println("\t\tdefault:");
-					ps.println("\t\t}");
-					ps.println("\t\treturn result;");
+					cw.writeln("Object result = null;");
+					cw.openScope("switch(attrIdx)");
+						for(int i = 0; i < attributes.length; i++) {
+							Attribute attr = attributes[i];
+							registerName(attr.name);
+							cw.writeln("case " + i + ": /* " + attr.name + "*/", -1);
+							cw.writeln("result = " + getArgToObjectExpression(attr.type, getAttrAccessExpression(ifaceName, attr)) + ";");
+							cw.writeln("break;");
+						}
+						cw.writeln("default:", -1);
+					cw.closeScope();
+					cw.writeln("return result;");
 				}
-				ps.println("\t}");
-				ps.println();
+				cw.closeScope();
+				cw.writeln();	
+
 				/* __set */
-				ps.println("\tstatic void __set(" + ifaceName + " inst, int attrIdx, Object val) {");
+				cw.openScope("static void __set(" + ifaceName + " inst, int attrIdx, Object val)");
 				if(attributes.length == 1) {
 					/* no switch statement */
 					Attribute attr = attributes[0];
-					ps.println("\t\t" + getAttrAccessExpression(ifaceName, attr) + " = " + getObjectToArgExpression(attr.type, "val") + ";");
+					cw.writeln(getAttrAccessExpression(ifaceName, attr) + " = " + getObjectToArgExpression(attr.type, "val") + ";");
 				} else {
 					/* switch needed */
-					ps.println("\t\tswitch(attrIdx) {");
-					for(int i = 0; i < attributes.length; i++) {
-						Attribute attr = attributes[i];
-						ps.println("\t\tcase " + i + ": /* " + attr.name + "*/");
-						ps.println("\t\t\t" + getAttrAccessExpression(ifaceName, attr) + " = " + getObjectToArgExpression(attr.type, "val") + ";");
-						ps.println("\t\t\tbreak;");
-					}
-					ps.println("\t\tdefault:");
-					ps.println("\t\t}");
+					cw.openScope("switch(attrIdx)");
+						for(int i = 0; i < attributes.length; i++) {
+							Attribute attr = attributes[i];
+							cw.writeln("case " + i + ": /* " + attr.name + "*/", -1);
+							cw.writeln(getAttrAccessExpression(ifaceName, attr) + " = " + getObjectToArgExpression(attr.type, "val") + ";");
+							cw.writeln("break;");
+						}
+						cw.writeln("default:", -1);
+					cw.closeScope();
 				}
-				ps.println("\t}");
-				ps.println();
+				cw.closeScope();
+				cw.writeln();	
 			}
-
-			/***************
-			 * postamble
-			 ***************/
-			ps.println("}");
+			cw.closeScope();
 		} finally {
-			closeStream(ps);
+			cw.close();
 		}
 	}
 

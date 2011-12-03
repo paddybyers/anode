@@ -49,28 +49,22 @@ public abstract class StubGenerator {
 	 * private API
 	 ********************/
 	
-	protected PrintStream openStream(String className) throws IOException {
-		String classFilename = className + ".java";
-		String packagePath = STUB_PACKAGE.replace('.', '/');
-		File packageDir = new File(destination.toString() + '/' + packagePath);
-		packageDir.mkdirs();
-		if(!packageDir.exists())
-			throw new IOException("Unable to create package directory (" + packageDir.toString() + ")");
-		
-		File classFile = new File(packageDir, classFilename);
-		FileOutputStream fos = new FileOutputStream(classFile);
-		return new PrintStream(fos);
-	}
-	
-	protected void closeStream(PrintStream ps) {
-		ps.flush();
-		ps.close();
-	}
-	
 	protected void registerName(String memberName) throws GeneratorException {
 		if(memberNames.contains(memberName))
 			throw new GeneratorException("StubGenerator: overloaded operation or attribute name (" + memberName + ")", null);
 		memberNames.add(memberName);
+	}
+	
+	protected void writePreamble(ClassWriter lw, String className, String superclassName, String implementsName) {
+		lw.writeln("/* This file has been automatically generated; do not edit */");
+		lw.writeln();
+		lw.writeln("package " + STUB_PACKAGE + ';');
+		lw.writeln();
+		StringBuffer header = new StringBuffer().append("public final class ").append(className);
+		if(superclassName != null) header.append(" extends ").append(superclassName);
+		if(implementsName != null) header.append(" implements ").append(implementsName);
+		lw.openScope(header.toString());
+		lw.writeln();
 	}
 	
 	protected static String uclName(String attrName) {
@@ -78,21 +72,12 @@ public abstract class StubGenerator {
 	}
 
 	protected String hashName(String idlName) {
-		String[] parts = idlName.split("\\.");
-		StringBuffer candidate = new StringBuffer();
-		for(String part: parts) {
-			if(candidate.length() == 0) {
-				candidate.append(uclName(part));
-			} else {
-				candidate.append('_');
-				candidate.append(part);
-			}
-		}
+		String candidate = uclName(idlName.replace('.', '_'));
 		if(candidate.length() > MAX_NAME_LENGTH) {
 			/* hash the remainder of the name */
 			/* FIXME: implement this */
 		}
-		return candidate.toString();
+		return candidate;
 	}
 
 	protected static String getModifiers(int modifiers) {
@@ -252,7 +237,7 @@ public abstract class StubGenerator {
 		return result;
 	}
 
-	protected void emitMaxargsArray(PrintStream ps, IDLInterface iface, boolean includeGetter) {
+	protected void emitMaxargsArray(ClassWriter lw, IDLInterface iface, boolean includeGetter) {
 		Operation[] operations = iface.getOperations();
 		int maxArgCount = 0;
 		for(Operation op : operations) {
@@ -261,18 +246,45 @@ public abstract class StubGenerator {
 				maxArgCount = thisArgCount;
 		}
 		if(maxArgCount > 0) {
-			emitArgsArray(ps, maxArgCount, includeGetter);
+			emitArgsArray(lw, maxArgCount, includeGetter);
 		}
 	}
 
-	protected void emitArgsArray(PrintStream ps, int len, boolean includeGetter) {
+	protected void emitArgsArray(ClassWriter lw, int len, boolean includeGetter) {
 		if(len > 0) {
-			ps.println("\tprivate static Object[] __args = new Object[" + len + "];");
-			ps.println();
+			lw.writeln("private static Object[] __args = new Object[" + len + "];");
+			lw.writeln();
 			if(includeGetter) {
-				ps.println("\tpublic static Object[] __getArgs() { return __args; }");
-				ps.println();
+				lw.writeln("public static Object[] __getArgs() { return __args; }");
+				lw.writeln();
 			}
 		}
+	}
+
+	protected class ClassWriter {
+		public ClassWriter(String className) throws IOException {
+			String classFilename = className + ".java";
+			String packagePath = STUB_PACKAGE.replace('.', '/');
+			File packageDir = new File(destination.toString() + '/' + packagePath);
+			packageDir.mkdirs();
+			if(!packageDir.exists())
+				throw new IOException("Unable to create package directory (" + packageDir.toString() + ")");
+			
+			File classFile = new File(packageDir, classFilename);
+			FileOutputStream fos = new FileOutputStream(classFile);
+			this.ps = new PrintStream(fos);
+		}
+		public void writeln() { ps.println(); }
+		public void writeln(String s) { ps.append(indentChars, 0, indent); ps.println(s); }
+		public void writeln(String s, int indentDelta) { indent += indentDelta; writeln(s); indent -= indentDelta; }
+		public void openScope(String s) { writelnStart(s); openScope(); }
+		public void closeScope() { --indent; writeln("}"); }
+		public void close() { ps.flush(); ps.close(); }
+		private void writelnStart(String s) { ps.append(indentChars, 0, indent); ps.print(s); }
+		private void writelnEnd(String s) { ps.println(s); }
+		private void openScope() { writelnEnd(" {"); indent++; }
+		private PrintStream ps;
+		private int indent;
+		private CharSequence indentChars = "\t\t\t\t\t";
 	}
 }

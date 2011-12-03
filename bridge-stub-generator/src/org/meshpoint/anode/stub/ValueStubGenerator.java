@@ -2,7 +2,6 @@ package org.meshpoint.anode.stub;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.lang.reflect.Modifier;
 
 import org.meshpoint.anode.idl.IDLInterface;
@@ -30,52 +29,38 @@ public class ValueStubGenerator extends StubGenerator {
 			throw new GeneratorException("ValueStubGenerator: class must not be an interface", null);
 		if(iface.getOperations().length > 0)
 			throw new GeneratorException("ValueStubGenerator: class must not have any operations", null);
-		String ifaceName = iface.getName();
-		String className = hashName(ifaceName);
-		PrintStream ps = openStream(className);
+		String className = hashName(iface.getName());
+		ClassWriter cw = new ClassWriter(className);
 		try {
-			/***************
-			 * preamble
-			 ****************/
-			ps.println("/* This file has been automatically generated; do not edit */");
-			ps.println();
-			ps.println("package " + STUB_PACKAGE + ';');
-			ps.println();
-			ps.println("public final class " + className + " extends " + ifaceName + " implements " + STUB_IFACE + " {");
-			ps.println();
+			writePreamble(cw, className, iface.getName(), STUB_IFACE);
+				/*******************
+				 * attribute methods
+				 *******************/
+				Attribute[] attributes = iface.getAttributes();
+				emitArgsArray(cw, attributes.length, true);
+	
+				/* __import */
+				cw.openScope("public void __import(Object[] vals)");
+					for(int i = 0; i < attributes.length; i++) {
+						Attribute attr = attributes[i];
+						registerName(attr.name);
+						cw.writeln(attr.name + " = " + getObjectToArgExpression(attr.type, "vals[" + i + "]") + ";");
+					}
+				cw.closeScope();
+				cw.writeln();	
 
-			/*******************
-			 * attribute methods
-			 *******************/
-			Attribute[] attributes = iface.getAttributes();
-			emitArgsArray(ps, attributes.length, true);
-
-			/* __import */
-			ps.println("\tpublic void __import(Object[] vals) {");
-			for(int i = 0; i < attributes.length; i++) {
-				Attribute attr = attributes[i];
-				registerName(attr.name);
-				ps.println("\t\t" + attr.name + " = " + getObjectToArgExpression(attr.type, "vals[" + i + "]") + ";");
-			}
-			ps.println("\t}");
-			ps.println();
-
-			/* __export */
-			ps.println("\tpublic Object[] __export() {");
-			for(int i = 0; i < attributes.length; i++) {
-				Attribute attr = attributes[i];
-				ps.println("\t\t__args[" + i + "] = " + getArgToObjectExpression(attr.type, attr.name) + ";");
-			}
-			ps.println("\t\treturn __args;");
-			ps.println("\t}");
-			ps.println();
-
-			/***************
-			 * postamble
-			 ***************/
-			ps.println("}");
+				/* __export */
+				cw.openScope("public Object[] __export()");
+					for(int i = 0; i < attributes.length; i++) {
+						Attribute attr = attributes[i];
+						cw.writeln("__args[" + i + "] = " + getArgToObjectExpression(attr.type, attr.name) + ";");
+					}
+					cw.writeln("return __args;");
+				cw.closeScope();
+				cw.writeln();	
+			cw.closeScope();
 		} finally {
-			closeStream(ps);
+			cw.close();
 		}
 	}
 
