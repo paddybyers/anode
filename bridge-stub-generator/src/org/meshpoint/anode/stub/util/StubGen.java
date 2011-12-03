@@ -19,6 +19,15 @@ public class StubGen {
 
 	private enum MODE { NONE, IMPORT, EXPORT, VALUE }
 	
+	private static final int OK                   = 0;
+	private static final int ERR_OUTDIR_EXISTS    = 1;
+	private static final int ERR_OUTDIR_NOCREATE  = 2;
+	private static final int ERR_BAD_MODE         = 3;
+	private static final int ERR_IOEXCEPTION      = 4;
+	private static final int ERR_GENERATOR        = 5;
+	private static final int ERR_NOTFOUND         = 6;
+	private static final int ERR_UNRECOGNISED_OPT = 7;
+	
 	private static final String defaultOutpath = ".";
 	private static final String[] defaultClasspath = new String[]{"."};
 	private static boolean verbose = false;
@@ -54,10 +63,10 @@ public class StubGen {
 			}
 			if(currentArg.equals("--help")) {
 				processHelp();
-				System.exit(0);
+				System.exit(OK);
 			}
 			unrecognisedArg(currentArg);
-			System.exit(1);
+			System.exit(ERR_UNRECOGNISED_OPT);
 		}
 		
 		/* setup classloader etc */
@@ -69,7 +78,7 @@ public class StubGen {
 		/* process classes */
 		for(int i = firstNonoptionArg; i < args.length; i++) {
 			int result = processStub(mgr, mode, args[i]);
-			if(result != 0) {
+			if(result != OK) {
 				System.err.println("Error processing stub: name = " + args[i] + "; error code = " + result);
 			}
 		}
@@ -81,22 +90,22 @@ public class StubGen {
 
 	private static int processOutpath(String path) {
 		outDir = new File(path);
-		if(outDir.isDirectory()) return 0;
+		if(outDir.isDirectory()) return OK;
 		if(outDir.exists()) {
 			System.err.println("StubGen: unable to create output dir (" + path + "): specified output path is a file");
-			return 5;
+			return ERR_OUTDIR_EXISTS;
 		}
 		if(!outDir.mkdirs()) {
 			System.err.println("StubGen: unable to create output dir (" + path + ")");
-			return 6;
+			return ERR_OUTDIR_NOCREATE;
 		}
-		return 0;
+		return OK;
 	}
 
 	private static int processMode(String modeStr) {
 		if(modeStr == null) {
 			System.err.println("Internal error: mode is null");
-			return 7;
+			return ERR_BAD_MODE;
 		}
 		if(modeStr.equals("import"))
 			mode = MODE.IMPORT;
@@ -106,9 +115,9 @@ public class StubGen {
 			mode = MODE.VALUE;
 		else {
 			System.err.println("StubGen: unrecognised mode option (" + modeStr + ")");
-			return 8;
+			return ERR_BAD_MODE;
 		}
-		return 0;	
+		return OK;	
 	}
 
 	private static void processHelp() {
@@ -134,7 +143,7 @@ public class StubGen {
 		IDLInterface iface = mgr.getByName(name);
 		if(iface == null) {
 			if(verbose) System.out.println("Class not found: " + name);
-			return 1;
+			return ERR_NOTFOUND;
 		}
 		
 		StubGenerator generator = null;
@@ -155,12 +164,13 @@ public class StubGen {
 		} catch(IOException ioe) {
 			System.err.println("StubGen: error processing class (" + name + ")");
 			ioe.printStackTrace();
-			return 3;
+			return ERR_IOEXCEPTION;
 		} catch (GeneratorException ge) {
 			System.err.println("StubGen: error processing class (" + name + ")");
 			ge.printStackTrace();
-			return 4;
+			return ERR_GENERATOR;
 		}
-		return 0;
+		return OK;
 	}
+	
 }

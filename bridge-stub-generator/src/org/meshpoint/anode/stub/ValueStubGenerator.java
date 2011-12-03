@@ -1,7 +1,6 @@
 package org.meshpoint.anode.stub;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Modifier;
@@ -33,16 +32,7 @@ public class ValueStubGenerator extends StubGenerator {
 			throw new GeneratorException("ValueStubGenerator: class must not have any operations", null);
 		String ifaceName = iface.getName();
 		String className = hashName(ifaceName);
-		String classFilename = className + ".java";
-		String packagePath = STUB_PACKAGE.replace('.', '/');
-		File packageDir = new File(destination.toString() + '/' + packagePath);
-		packageDir.mkdirs();
-		if(!packageDir.exists())
-			throw new IOException("Unable to create package directory (" + packageDir.toString() + ")");
-		
-		File classFile = new File(packageDir, classFilename);
-		FileOutputStream fos = new FileOutputStream(classFile);
-		PrintStream ps = new PrintStream(fos);
+		PrintStream ps = openStream(className);
 		try {
 			/***************
 			 * preamble
@@ -68,7 +58,7 @@ public class ValueStubGenerator extends StubGenerator {
 				ps.println("\t\t" + attr.name + " = " + getObjectToArgExpression(attr.type, "vals[" + i + "]") + ";");
 			}
 			ps.println("\t}");
-			ps.println("");
+			ps.println();
 
 			/* __export */
 			ps.println("\tpublic Object[] __export() {");
@@ -78,15 +68,14 @@ public class ValueStubGenerator extends StubGenerator {
 			}
 			ps.println("\t\treturn __args;");
 			ps.println("\t}");
-			ps.println("");
+			ps.println();
 
 			/***************
 			 * postamble
 			 ***************/
 			ps.println("}");
 		} finally {
-			fos.flush();
-			fos.close();
+			closeStream(ps);
 		}
 	}
 

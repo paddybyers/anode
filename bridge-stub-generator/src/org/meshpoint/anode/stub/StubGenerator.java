@@ -1,6 +1,7 @@
 package org.meshpoint.anode.stub;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Modifier;
@@ -47,6 +48,24 @@ public abstract class StubGenerator {
 	/********************
 	 * private API
 	 ********************/
+	
+	protected PrintStream openStream(String className) throws IOException {
+		String classFilename = className + ".java";
+		String packagePath = STUB_PACKAGE.replace('.', '/');
+		File packageDir = new File(destination.toString() + '/' + packagePath);
+		packageDir.mkdirs();
+		if(!packageDir.exists())
+			throw new IOException("Unable to create package directory (" + packageDir.toString() + ")");
+		
+		File classFile = new File(packageDir, classFilename);
+		FileOutputStream fos = new FileOutputStream(classFile);
+		return new PrintStream(fos);
+	}
+	
+	protected void closeStream(PrintStream ps) {
+		ps.flush();
+		ps.close();
+	}
 	
 	protected void registerName(String memberName) throws GeneratorException {
 		if(memberNames.contains(memberName))
