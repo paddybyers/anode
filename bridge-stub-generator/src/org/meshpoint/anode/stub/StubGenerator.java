@@ -9,6 +9,7 @@ import java.util.HashSet;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
+import org.meshpoint.anode.idl.StubUtil;
 import org.meshpoint.anode.idl.Types;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 
@@ -21,14 +22,11 @@ public abstract class StubGenerator {
 	protected InterfaceManager mgr;
 	protected IDLInterface iface;
 	protected File destination;
-	private static final int MAX_NAME_LENGTH = 80;
 	private HashSet<String> memberNames = new HashSet<String>();
 	
 	/********************
 	 * public API
 	 ********************/
-	
-	public static final String STUB_PACKAGE = "org.meshpoint.anode.stub.gen";
 	
 	public static class GeneratorException extends Exception {
 		private static final long serialVersionUID = 5134576967433238034L;
@@ -55,10 +53,10 @@ public abstract class StubGenerator {
 		memberNames.add(memberName);
 	}
 	
-	protected void writePreamble(ClassWriter lw, String className, String superclassName, String implementsName) {
+	protected void writePreamble(ClassWriter lw, String className, String superclassName, String implementsName, int mode) {
 		lw.writeln("/* This file has been automatically generated; do not edit */");
 		lw.writeln();
-		lw.writeln("package " + STUB_PACKAGE + ';');
+		lw.writeln("package " + StubUtil.getStubPackage(mode) + ';');
 		lw.writeln();
 		StringBuffer header = new StringBuffer().append("public final class ").append(className);
 		if(superclassName != null) header.append(" extends ").append(superclassName);
@@ -67,19 +65,6 @@ public abstract class StubGenerator {
 		lw.writeln();
 	}
 	
-	protected static String uclName(String attrName) {
-		return Character.toUpperCase(attrName.charAt(0)) + attrName.substring(1);
-	}
-
-	protected String hashName(String idlName) {
-		String candidate = uclName(idlName.replace('.', '_'));
-		if(candidate.length() > MAX_NAME_LENGTH) {
-			/* hash the remainder of the name */
-			/* FIXME: implement this */
-		}
-		return candidate;
-	}
-
 	protected static String getModifiers(int modifiers) {
 		StringBuffer buf = new StringBuffer();
 		if((modifiers & Modifier.PUBLIC) != 0)
@@ -167,11 +152,11 @@ public abstract class StubGenerator {
 	}
 
 	protected static String getterName(String attrName) {
-		return "get_" + uclName(attrName);
+		return "get_" + StubUtil.uclName(attrName);
 	}
 
 	protected static String setterName(String attrName) {
-		return "set_" + uclName(attrName);
+		return "set_" + StubUtil.uclName(attrName);
 	}
 
 	protected static String getArgToObjectExpression(int type, String subExpr) throws GeneratorException {
@@ -262,14 +247,20 @@ public abstract class StubGenerator {
 	}
 
 	protected class ClassWriter {
-		public ClassWriter(String className) throws IOException {
-			String classFilename = className + ".java";
-			String packagePath = STUB_PACKAGE.replace('.', '/');
-			File packageDir = new File(destination.toString() + '/' + packagePath);
+		/**
+		 * Create a ClassWriter instance for the specified stub class
+		 * @param className class name, without package component
+		 * @param mode stub mode
+		 * @throws IOException
+		 */
+		public ClassWriter(String className, int mode) throws IOException {
+			String stubPackage = StubUtil.getStubPackage(mode).replace('.', '/');
+			File packageDir = new File(destination.toString() + '/' + stubPackage);
 			packageDir.mkdirs();
 			if(!packageDir.exists())
 				throw new IOException("Unable to create package directory (" + packageDir.toString() + ")");
 			
+			String classFilename = className + ".java";
 			File classFile = new File(packageDir, classFilename);
 			FileOutputStream fos = new FileOutputStream(classFile);
 			this.ps = new PrintStream(fos);

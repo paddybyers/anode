@@ -8,6 +8,7 @@ import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 import org.meshpoint.anode.idl.InterfaceManager;
+import org.meshpoint.anode.idl.StubUtil;
 
 public class ExportStubGenerator extends StubGenerator {
 
@@ -23,10 +24,10 @@ public class ExportStubGenerator extends StubGenerator {
 		if((iface.getModifiers() & Modifier.INTERFACE) != 0)
 			throw new GeneratorException("ExportStubGenerator: class must not be an interface", null);
 		String ifaceName = iface.getName();
-		String className = hashName(ifaceName);
-		ClassWriter cw = new ClassWriter(className);
+		String className = iface.getStubClassname();
+		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_EXPORT);
 		try {
-			writePreamble(cw, className, null, null);
+			writePreamble(cw, className, null, null, StubUtil.MODE_EXPORT);
 
 			/*******************
 			 * invoke method

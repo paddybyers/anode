@@ -8,6 +8,7 @@ import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 import org.meshpoint.anode.idl.InterfaceManager;
+import org.meshpoint.anode.idl.StubUtil;
 import org.meshpoint.anode.idl.Types;
 
 public class ImportStubGenerator extends StubGenerator {
@@ -29,10 +30,10 @@ public class ImportStubGenerator extends StubGenerator {
 	public void generate() throws IOException, GeneratorException {
 		if((iface.getModifiers() & Modifier.INTERFACE) == 0)
 			throw new GeneratorException("ImportStubGenerator: class must be an interface", null);
-		String className = hashName(iface.getName());
-		ClassWriter cw = new ClassWriter(className);
+		String className = iface.getStubClassname();
+		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_IMPORT);
 		try {
-			writePreamble(cw, className, STUB_BASE, iface.getName());
+			writePreamble(cw, className, STUB_BASE, iface.getName(), StubUtil.MODE_IMPORT);
 				/***************
 				 * constructor
 				 ****************/

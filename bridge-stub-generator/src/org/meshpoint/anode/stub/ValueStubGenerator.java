@@ -7,6 +7,7 @@ import java.lang.reflect.Modifier;
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.InterfaceManager;
+import org.meshpoint.anode.idl.StubUtil;
 
 public class ValueStubGenerator extends StubGenerator {
 
@@ -29,10 +30,10 @@ public class ValueStubGenerator extends StubGenerator {
 			throw new GeneratorException("ValueStubGenerator: class must not be an interface", null);
 		if(iface.getOperations().length > 0)
 			throw new GeneratorException("ValueStubGenerator: class must not have any operations", null);
-		String className = hashName(iface.getName());
-		ClassWriter cw = new ClassWriter(className);
+		String className = iface.getStubClassname();
+		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_VALUE);
 		try {
-			writePreamble(cw, className, iface.getName(), STUB_IFACE);
+			writePreamble(cw, className, iface.getName(), STUB_IFACE, StubUtil.MODE_VALUE);
 				/*******************
 				 * attribute methods
 				 *******************/
