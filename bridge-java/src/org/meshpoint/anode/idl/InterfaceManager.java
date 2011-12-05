@@ -19,6 +19,7 @@ public class InterfaceManager {
 	/******************
 	 * public API
 	 ******************/
+
 	public InterfaceManager(ClassLoader classLoader) {
 		if(classLoader == null)
 			classLoader = this.getClass().getClassLoader();
@@ -46,6 +47,11 @@ public class InterfaceManager {
 			result = loadClass(javaClass);
 		} catch (ClassNotFoundException e) {}
 		return result;
+	}
+
+	public Class<?> getStubClass(IDLInterface iface, int mode) throws ClassNotFoundException {
+		String stubClassName = StubUtil.getStubPackage(mode) + '.' + iface.getStubClassname();
+		return getClassLoader().loadClass(stubClassName);
 	}
 	
 	/****************

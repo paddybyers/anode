@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
+import org.meshpoint.anode.idl.StubUtil;
 import org.meshpoint.anode.js.JSInterface;
+import org.meshpoint.anode.js.JSObject;
 import org.meshpoint.anode.module.IModule;
 import org.meshpoint.anode.type.IValue;
 import org.meshpoint.anode.util.Log;
@@ -125,7 +128,27 @@ public class Env {
 	void invoke(JSInterface obj, int methodIdx, IValue[] args) {
 		idle();
 	}
-
+	
+	/********************
+	 * instance management
+	 ********************/
+	Class<?> getJSObjectClass() {
+		return JSObject.class;
+	}
+	
+	Class<?> getStubClass(int classId, int mode) {
+		Class<?> result = null;
+		IDLInterface iface = interfaceManager.getById(classId);
+		if(iface != null) {
+			try {
+				result = interfaceManager.getStubClass(iface, mode);
+			} catch(ClassNotFoundException e) {
+				logger.e(TAG, "Exception attempting to locate stub class", e);
+			}
+		}
+		return result;
+	}
+	
 	/********************
 	 * private
 	 ********************/

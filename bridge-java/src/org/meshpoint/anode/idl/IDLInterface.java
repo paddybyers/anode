@@ -12,6 +12,7 @@ public class IDLInterface {
 	 * private state
 	 ********************/
 
+	private static final int MAX_NAME_LENGTH = 80;
 	private long inboundBinding;
 	private long outboundBinding;
 	private int id = -1;
@@ -94,6 +95,15 @@ public class IDLInterface {
 
 	public Operation[] getOperations() {
 		return operations;
+	}
+
+	public String getStubClassname() {
+		String candidate = StubUtil.uclName(name.replace('.', '_'));
+		if(candidate.length() > MAX_NAME_LENGTH) {
+			/* hash the remainder of the name */
+			/* FIXME: implement this */
+		}
+		return candidate;
 	}
 
 	/*********************
