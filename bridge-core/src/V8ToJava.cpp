@@ -6,32 +6,32 @@ V8ToJava::V8ToJava(JNIEnv *jniEnv) {
   sToString     = Persistent<String>::New(String::NewSymbol("toString"));
   sLength       = Persistent<String>::New(String::NewSymbol("length"));
   
-  jni.java.lang.Boolean.class_ = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Boolean"));
-  jni.java.lang.Byte.class_    = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Byte"));
-  jni.java.lang.Integer.class_ = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Integer"));
-  jni.java.lang.Long.class_    = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Long"));
-  jni.java.lang.Double.class_  = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Double"));
-  jni.java.lang.String.class_  = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/String"));
-  jni.java.lang.Object.class_  = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Object"));
-  jni.java.util.Date.class_    = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/util/Date"));
+  jni.java.lang.Boolean.class_       = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Boolean"));
+  jni.java.lang.Byte.class_          = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Byte"));
+  jni.java.lang.Integer.class_       = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Integer"));
+  jni.java.lang.Long.class_          = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Long"));
+  jni.java.lang.Double.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Double"));
+  jni.java.lang.String.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/String"));
+  jni.java.lang.Object.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Object"));
+  jni.java.util.Date.class_          = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/util/Date"));
   
-  jni.java.lang.Boolean.ctor   = jniEnv->GetMethodID(jni.java.lang.Boolean.class_, "<init>", "(Z)V");
-  jni.java.lang.Integer.ctor   = jniEnv->GetMethodID(jni.java.lang.Integer.class_, "<init>", "(I)V");
-  jni.java.lang.Long.ctor      = jniEnv->GetMethodID(jni.java.lang.Long.class_,    "<init>", "(J)V");
-  jni.java.lang.Double.ctor    = jniEnv->GetMethodID(jni.java.lang.Double.class_,  "<init>", "(D)V");
-  jni.java.util.Date.ctor      = jniEnv->GetMethodID(jni.java.util.Date.class_,    "<init>", "(J)V");
+  jni.java.lang.Boolean.ctor         = jniEnv->GetMethodID(jni.java.lang.Boolean.class_, "<init>", "(Z)V");
+  jni.java.lang.Integer.ctor         = jniEnv->GetMethodID(jni.java.lang.Integer.class_, "<init>", "(I)V");
+  jni.java.lang.Long.ctor            = jniEnv->GetMethodID(jni.java.lang.Long.class_,    "<init>", "(J)V");
+  jni.java.lang.Double.ctor          = jniEnv->GetMethodID(jni.java.lang.Double.class_,  "<init>", "(D)V");
+  jni.java.util.Date.ctor            = jniEnv->GetMethodID(jni.java.util.Date.class_,    "<init>", "(J)V");
   
-  jni.org.meshpoint.anode.js.JSValue_Bool.class_   =
-  jni.org.meshpoint.anode.js.JSValue_Long.class_   =
-  jni.org.meshpoint.anode.js.JSValue_Double.class_ = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSValue"));
-  jni.org.meshpoint.anode.js.JSObject.class_       = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSObject"));
-  jni.org.meshpoint.anode.js.JSFunction.class_     = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSFunction"));
-  jni.org.meshpoint.anode.js.JSArray.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSArray"));
+  jni.anode.js.JSValue_Bool.class_   =
+  jni.anode.js.JSValue_Long.class_   =
+  jni.anode.js.JSValue_Double.class_ = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSValue"));
+  jni.anode.js.JSObject.class_       = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSObject"));
+  jni.anode.js.JSFunction.class_     = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSFunction"));
+  jni.anode.js.JSArray.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSArray"));
 
-  jni.org.meshpoint.anode.js.JSObject.ctor       = jniEnv->GetMethodID(jni.org.meshpoint.anode.js.JSObject.class_,             "<init>",      "(J)V");
-  jni.org.meshpoint.anode.js.JSValue_Bool.ctor   = jniEnv->GetStaticMethodID(jni.org.meshpoint.anode.js.JSValue_Bool.class_,   "asJSBoolean", "(Z)Lorg/meshpoint/anode/js/JSValue;");
-  jni.org.meshpoint.anode.js.JSValue_Long.ctor   = jniEnv->GetStaticMethodID(jni.org.meshpoint.anode.js.JSValue_Long.class_,   "asJSNumber",  "(J)Lorg/meshpoint/anode/js/JSValue;");
-  jni.org.meshpoint.anode.js.JSValue_Double.ctor = jniEnv->GetStaticMethodID(jni.org.meshpoint.anode.js.JSValue_Double.class_, "asJSNumber",  "(D)Lorg/meshpoint/anode/js/JSValue;");
+  jni.anode.js.JSObject.ctor         = jniEnv->GetMethodID(jni.anode.js.JSObject.class_,             "<init>",      "(J)V");
+  jni.anode.js.JSValue_Bool.ctor     = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Bool.class_,   "asJSBoolean", "(Z)Lorg/meshpoint/anode/js/JSValue;");
+  jni.anode.js.JSValue_Long.ctor     = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Long.class_,   "asJSNumber",  "(J)Lorg/meshpoint/anode/js/JSValue;");
+  jni.anode.js.JSValue_Double.ctor   = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Double.class_, "asJSNumber",  "(D)Lorg/meshpoint/anode/js/JSValue;");
 }
 
 V8ToJava::~V8ToJava() {}
@@ -48,10 +48,10 @@ void V8ToJava::dispose(JNIEnv *jniEnv) {
   jniEnv->DeleteGlobalRef(jni.java.lang.String.class_);
   jniEnv->DeleteGlobalRef(jni.java.lang.Object.class_);
   jniEnv->DeleteGlobalRef(jni.java.util.Date.class_);
-  jniEnv->DeleteGlobalRef(jni.org.meshpoint.anode.js.JSValue_Bool.class_);
-  jniEnv->DeleteGlobalRef(jni.org.meshpoint.anode.js.JSObject.class_);
-  jniEnv->DeleteGlobalRef(jni.org.meshpoint.anode.js.JSFunction.class_);
-  jniEnv->DeleteGlobalRef(jni.org.meshpoint.anode.js.JSArray.class_);
+  jniEnv->DeleteGlobalRef(jni.anode.js.JSValue_Bool.class_);
+  jniEnv->DeleteGlobalRef(jni.anode.js.JSObject.class_);
+  jniEnv->DeleteGlobalRef(jni.anode.js.JSFunction.class_);
+  jniEnv->DeleteGlobalRef(jni.anode.js.JSArray.class_);
 }
 
 int V8ToJava::GetType(Handle<Value> val) {
@@ -218,7 +218,7 @@ int V8ToJava::ToJavaObject(JNIEnv *jniEnv, Handle<Object> val, int expectedType,
   /* if there's no expected type, or the expected type is pure object, wrap it */
   if(expectedType == TYPE_NONE || expectedType == TYPE_OBJECT) {
     Persistent<Object> persistRef = Persistent<Object>::New(val);
-    jobject ob = jniEnv->NewObject(jni.org.meshpoint.anode.js.JSObject.class_, jni.org.meshpoint.anode.js.JSObject.ctor, asLong(persistRef));
+    jobject ob = jniEnv->NewObject(jni.anode.js.JSObject.class_, jni.anode.js.JSObject.ctor, asLong(persistRef));
     if(ob) {
       /* set up the hidden field for this wrapper */
       jweak wrapperRef = jniEnv->NewWeakGlobalRef(ob);
@@ -249,22 +249,22 @@ int V8ToJava::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, 
       return ErrorType;
     case TYPE_BOOL: {
       bool isVoid = val->BooleanValue();
-      ob = jniEnv->CallStaticObjectMethod(jni.org.meshpoint.anode.js.JSValue_Bool.class_, jni.org.meshpoint.anode.js.JSValue_Bool.ctor, isVoid);
+      ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Bool.class_, jni.anode.js.JSValue_Bool.ctor, isVoid);
       break;
     }
     case TYPE_INT: {
       jint intValue = val->Int32Value();
-      ob = jniEnv->CallStaticObjectMethod(jni.org.meshpoint.anode.js.JSValue_Long.class_, jni.org.meshpoint.anode.js.JSValue_Long.ctor, (jlong)intValue);
+      ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Long.class_, jni.anode.js.JSValue_Long.ctor, (jlong)intValue);
       break;
     }
     case TYPE_LONG: {
       jlong longValue = val->IntegerValue();
-      ob = jniEnv->CallStaticObjectMethod(jni.org.meshpoint.anode.js.JSValue_Long.class_, jni.org.meshpoint.anode.js.JSValue_Long.ctor, longValue);
+      ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Long.class_, jni.anode.js.JSValue_Long.ctor, longValue);
       break;
     }
     case TYPE_DOUBLE: {
       jdouble doubleValue = val->NumberValue();
-      ob = jniEnv->CallStaticObjectMethod(jni.org.meshpoint.anode.js.JSValue_Double.class_, jni.org.meshpoint.anode.js.JSValue_Double.ctor, doubleValue);
+      ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Double.class_, jni.anode.js.JSValue_Double.ctor, doubleValue);
       break;
     }
     case TYPE_STRING:

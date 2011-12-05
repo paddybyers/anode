@@ -1,5 +1,5 @@
-#ifndef BRIDGE_INBOUND_H
-#define BRIDGE_INBOUND_H
+#ifndef BRIDGE_V8TOJAVA_H
+#define BRIDGE_V8TOJAVA_H
 
 #include "defines.h"
 
@@ -30,18 +30,14 @@ struct refs_t {
   } java;
   struct {
     struct {
-      struct {
-        struct {
-          classRefs JSObject;
-          classRefs JSArray;
-          classRefs JSFunction;
-          classRefs JSValue_Bool;
-          classRefs JSValue_Long;
-          classRefs JSValue_Double;
-        } js;
-      } anode;
-    } meshpoint;
-  } org;
+      classRefs JSObject;
+      classRefs JSArray;
+      classRefs JSFunction;
+      classRefs JSValue_Bool;
+      classRefs JSValue_Long;
+      classRefs JSValue_Double;
+    } js;
+  } anode;
 };
 
 class V8ToJava {
@@ -63,7 +59,7 @@ public:
    * previous wrapper value may have previously been 
    * performed with the benefit of expected type information.
    * Wrapped exported objects are unwrapped.
-   * A LocalRef is returned */
+   * A LocalRef is returned in jVal */
   int ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, jobject *jVal);
 
   /* Converts to a java object based on the expected type
@@ -81,11 +77,6 @@ public:
   int ToJavaArray(JNIEnv *jniEnv, Handle<Object> val, int componentType, jarray *jVal);
   int ToJavaInterface(JNIEnv *jniEnv, Handle<Object> val, classId clsid, jobject *jVal);
   int ToJavaDate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal);
-  
-  /* Converts to a java object based on the expected
-   * type. Where the expected type is a primitive, values
-   * are returned wrapped as JSValues */
-  int ToIValue(Handle<Object> val, int expectedType, jobject *jVal);
   
   /* converts to a java string */
   int ToJavaString(JNIEnv *jniEnv, Handle<Value> val, jstring *jVal);

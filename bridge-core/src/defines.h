@@ -78,6 +78,16 @@ inline classId getClassId(int type) {
 }
 
 /******************************
+ * stub modes
+ ******************************/
+
+enum MODE {
+  MODE_IMPORT,
+  MODE_EXPORT,
+  MODE_VALUE
+};
+
+/******************************
  * object private field indices
  ******************************/
 
@@ -88,25 +98,8 @@ enum {
 };
 
 /******************************
- * union hack for Persistent<>
+ * conv to jlong for Persistent<>
  ******************************/
-
-inline jlong asLong2(v8::Persistent<v8::Object> val) {
-  if(sizeof(val) == sizeof(jint))
-    return (jlong)*((jint*)&val);
-  if(sizeof(val) == sizeof(jlong))
-    return *((jlong*)&val);
-  return 0;
-}
-
-inline v8::Persistent<v8::Object> asHandle2(jlong jVal) {
-  v8::Persistent<v8::Object> val = v8::Persistent<v8::Object>();
-  if(sizeof(val) == sizeof(jint))
-    *(jint *)&val = (jint)jVal;
-  else if(sizeof(val) == sizeof(jlong))
-    *(jlong *)&val = jVal;
-  return val;
-}
 
 inline jlong asLong(v8::Persistent<v8::Object> val) {
   return (jlong)*val;
