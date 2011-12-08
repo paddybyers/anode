@@ -18,7 +18,7 @@ public class Base implements IInterface {
 	/*********************
 	 * private API
 	 *********************/
-	Base(IDLInterface iface) {
+	protected Base(IDLInterface iface) {
 		this.iface = iface;
 		iface.getInboundHandle();
 		instHandle = BridgeNative.wrapJavaInterface(this, iface);

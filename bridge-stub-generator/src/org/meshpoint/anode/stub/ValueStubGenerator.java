@@ -15,7 +15,7 @@ public class ValueStubGenerator extends StubGenerator {
 	 * private state
 	 ********************/
 	
-	private static final String STUB_IFACE = "org.meshpoint.anode.java.ValueType";
+	private static final String STUB_IFACE = "org.meshpoint.anode.java.ValueStub";
 	
 	/********************
 	 * public API
