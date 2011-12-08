@@ -23,11 +23,16 @@ public class ZipExtractor implements ModuleUtils.Unpacker {
 			if(!parentDir.isDirectory() && !parentDir.mkdirs())
 				throw new IOException("ZipExtractor.unpack(): unable to create directory");
 
-			FileOutputStream fos = new FileOutputStream(entryFile);             
-			while ((count = zis.read(buf, 0, 1024)) != -1)
-				fos.write(buf, 0, count);
-
-			fos.close(); 
+			if(zipentry.isDirectory()) {
+				if(!entryFile.mkdir())
+					throw new IOException("ZipExtractor.unpack(): unable to create directory entry");					
+			} else {
+				FileOutputStream fos = new FileOutputStream(entryFile);             
+				while ((count = zis.read(buf, 0, 1024)) != -1)
+					fos.write(buf, 0, count);
+	
+				fos.close(); 
+			}
 			zis.closeEntry();
 		}
 		zis.close();
