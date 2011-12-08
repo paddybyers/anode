@@ -55,6 +55,7 @@ enum {
   TYPE_FUNCTION  ,
   TYPE_DATE      ,
   TYPE_OBJECT    = 16,
+  TYPE___END     ,
   TYPE_ARRAY     = 32,
   TYPE_INTERFACE = 64
 };
