@@ -56,12 +56,17 @@ enum {
   TYPE_DATE      ,
   TYPE_OBJECT    = 16,
   TYPE___END     ,
-  TYPE_ARRAY     = 32,
-  TYPE_INTERFACE = 64
+  TYPE_SEQUENCE  = 32,
+  TYPE_ARRAY     = 64,
+  TYPE_INTERFACE = 128
 };
 
 inline bool isInterface(int type) {
   return (type & TYPE_INTERFACE) != 0;
+}
+
+inline bool isSequence(int type) {
+  return (type & TYPE_SEQUENCE) != 0;
 }
 
 inline bool isArray(int type) {
@@ -69,7 +74,7 @@ inline bool isArray(int type) {
 }
 
 inline int getComponentType(int type) {
-  return (type & ~TYPE_ARRAY);
+  return (type & (~TYPE_ARRAY & ~TYPE_SEQUENCE));
 }
 
 typedef unsigned short classId;
