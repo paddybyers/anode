@@ -7,13 +7,14 @@ import java.util.Date;
 import java.util.List;
 
 import org.meshpoint.anode.type.IValue;
+import org.w3c.dom.Array;
 
 /**
  * A single integer is used to represent a type of any argument
  * or return value of an operation.
  * For interface types, and array<interface> types, the type
  * includes the class id as (TYPE_INTERFACE | (classid << 16))
- * or (TYPE_INTERFACE | TYPE_ARRAY | (classid << 16))
+ * or (TYPE_INTERFACE | [TYPE_ARRAY|TYPE_SEQUENCE] | (classid << 16))
  * @author paddy
  *
  */
@@ -50,13 +51,18 @@ public class Types {
 	public static final int TYPE_DATE      = 12;
 
 	public static final int TYPE_OBJECT    = 16;
-	public static final int TYPE_ARRAY     = 32;
-	public static final int TYPE_INTERFACE = 64;
+	public static final int TYPE_SEQUENCE  = 32;
+	public static final int TYPE_ARRAY     = 64;
+	public static final int TYPE_INTERFACE = 128;
 	
 	public static boolean isInterface(int type) {
 		return (type & TYPE_INTERFACE) != 0;
 	}
 	
+	public static boolean isSequence(int type) {
+		return (type & TYPE_SEQUENCE) != 0;
+	}
+
 	public static boolean isArray(int type) {
 		return (type & TYPE_ARRAY) != 0;
 	}
@@ -103,11 +109,17 @@ public class Types {
 		/* parameterised and other esoteric types are not supported */
 		if(!(javaType instanceof Class))
 			return TYPE_INVALID;
-		/* handle array types; mutidimensional types are not supported */
+		/* handle sequence types; mutidimensional types are not supported */
 		Class<?> javaClass = (Class<?>)javaType;
 		if(javaClass.isArray()) {
 			Class<?> componentClass = javaClass.getComponentType();
 			if(componentClass.isArray()) throw new IllegalArgumentException("Types.fromJavaType: mutidimensional arrays are not supported");
+			return TYPE_SEQUENCE | fromJavaType(interfaceManager, componentClass);
+		}
+		/* handle array types; mutidimensional types are not supported */
+		if(Array.class.isAssignableFrom(javaClass)) {
+			Class<?> componentClass = javaClass.getComponentType();
+			if(Array.class.isAssignableFrom(componentClass)) throw new IllegalArgumentException("Types.fromJavaType: mutidimensional arrays are not supported");
 			return TYPE_ARRAY | fromJavaType(interfaceManager, componentClass);
 		}
 		/* handle basic types */
