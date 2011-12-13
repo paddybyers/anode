@@ -3,18 +3,15 @@ package org.meshpoint.anode.js;
 import java.util.Collection;
 
 import org.meshpoint.anode.bridge.Env;
-import org.meshpoint.anode.idl.Types.JSType;
 import org.meshpoint.anode.type.ICollection;
-import org.meshpoint.anode.type.IFunction;
 import org.meshpoint.anode.type.IIndexedCollection;
-import org.meshpoint.anode.type.IValue;
 
 /**
  * An object that is a wrapper of a native JS object
  * @author paddy
  *
  */
-public class JSObject implements IFunction, ICollection, IIndexedCollection<IValue> {
+public class JSObject implements ICollection, IIndexedCollection<Object> {
 
 	/*********************
 	 * private state
@@ -33,7 +30,7 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 	}
 
 	public void finalize() {
-		env.finalizeQueue.put(instHandle);
+		env.userFinalizeQueue.put(instHandle);
 	}
 
 	/*********************
@@ -41,19 +38,13 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 	 *********************/
 
 	@Override
-	public JSType getType() {
+	public Object getIndexedProperty(int idx) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public IValue getIndexedProperty(int idx) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setIndexedProperty(int idx, IValue value) {
+	public void setIndexedProperty(int idx, Object value) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -77,13 +68,13 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 	}
 
 	@Override
-	public IValue getProperty(String key) {
+	public Object getProperty(String key) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void setProperty(String key, IValue value) {
+	public void setProperty(String key, Object value) {
 		// TODO Auto-generated method stub
 		
 	}
@@ -102,18 +93,6 @@ public class JSObject implements IFunction, ICollection, IIndexedCollection<IVal
 
 	@Override
 	public Collection<String> properties() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IValue callAsFunction(IValue[] args) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public IValue callAsConstructor(IValue[] args) {
 		// TODO Auto-generated method stub
 		return null;
 	}

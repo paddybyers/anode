@@ -1,5 +1,5 @@
 package org.meshpoint.anode.type;
 
-public interface IBoolean extends IValue {
+public interface IBoolean {
 	boolean getBooleanValue();
 }

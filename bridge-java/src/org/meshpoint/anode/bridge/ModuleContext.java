@@ -4,7 +4,6 @@ import org.meshpoint.anode.js.JSObject;
 import org.meshpoint.anode.module.IModule;
 import org.meshpoint.anode.module.IModuleContext;
 import org.meshpoint.anode.type.IIndexedCollection;
-import org.meshpoint.anode.type.IValue;
 
 public class ModuleContext implements IModuleContext {
 	@SuppressWarnings("unused")
@@ -24,7 +23,7 @@ public class ModuleContext implements IModuleContext {
 	}
 
 	@Override
-	public IIndexedCollection<IValue> getModuleExports() {
+	public IIndexedCollection<Object> getModuleExports() {
 		return exports;
 	}
 
@@ -33,7 +32,6 @@ public class ModuleContext implements IModuleContext {
 		return threadId;
 	}
 
-	@Override
 	public IModule getModule() {
 		return module;
 	}

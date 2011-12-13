@@ -11,12 +11,6 @@ public class JSArray<T> implements IIndexedCollection<T> {
 	}
 
 	@Override
-	public JSType getType() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public T getIndexedProperty(int idx) {
 		// TODO Auto-generated method stub
 		return null;

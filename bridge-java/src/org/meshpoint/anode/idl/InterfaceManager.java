@@ -6,29 +6,37 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 
 public class InterfaceManager {
 
+	private Env env;
 	private ClassLoader classLoader;
 	private ArrayList<IDLInterface> interfaces;
 	private HashMap<String, IDLInterface> nameMap;
-	private HashMap<Class<? extends Object>, IDLInterface> classMap;
+	private HashMap<Class<?>, IDLInterface> classMap;
 	
 	/******************
 	 * public API
 	 ******************/
 
-	public InterfaceManager(ClassLoader classLoader) {
+	public InterfaceManager(Env env, ClassLoader classLoader) {
+		this.env = env;
 		if(classLoader == null)
 			classLoader = this.getClass().getClassLoader();
 		this.classLoader = classLoader;
 		interfaces = new ArrayList<IDLInterface>();
 		nameMap = new HashMap<String, IDLInterface>();
-		classMap = new HashMap<Class<? extends Object>, IDLInterface>();
+		classMap = new HashMap<Class<?>, IDLInterface>();
 	}
 	
+	Env getEnv() {
+		return env;
+	}
+
 	ClassLoader getClassLoader() {
 		return classLoader;
 	}
@@ -44,8 +52,15 @@ public class InterfaceManager {
 		
 		try {
 			Class<?> javaClass = classLoader.loadClass(name);
-			result = loadClass(javaClass);
+			result = getByClass(javaClass);
 		} catch (ClassNotFoundException e) {}
+		return result;
+	}
+	
+	public synchronized IDLInterface getByClass(Class<?> javaClass) {
+		IDLInterface result = classMap.get(javaClass);
+		if(result == null)
+			result = loadClass(javaClass);
 		return result;
 	}
 
@@ -134,7 +149,8 @@ public class InterfaceManager {
 	synchronized int put(IDLInterface iface) {
 		int result = (int)iface.getId();
 		if(result == -1) {
-			result = interfaces.size();
+			result = interfaces.size() * 2;
+			if(iface.isValueType()) ++result;
 			interfaces.add(iface);
 			nameMap.put(iface.getName(), iface);
 			classMap.put(iface.getJavaClass(), iface);

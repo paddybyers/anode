@@ -6,11 +6,8 @@ import java.util.List;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
-import org.meshpoint.anode.idl.StubUtil;
-import org.meshpoint.anode.js.JSInterface;
 import org.meshpoint.anode.js.JSObject;
 import org.meshpoint.anode.module.IModule;
-import org.meshpoint.anode.type.IValue;
 import org.meshpoint.anode.util.Log;
 import org.meshpoint.anode.util.PrintStreamLog;
 
@@ -29,13 +26,13 @@ public class Env {
 	 *********************/
 
 	private static ThreadLocal<Env> currentEnv  = new ThreadLocal<Env>();
-	private long threadid;
-	private long nodeIsolate;
-	private long v8Isolate;
+	private Thread eventThread;
+	long envHandle;
 	private InterfaceManager interfaceManager;
 	private List<SynchronousOperation> pendingOps;
 	private HashMap<String, ModuleContext> modules;
 	private boolean isDisposed;
+	private boolean entryRequested;
 	private String TAG = "Env";
 	
 	static {
@@ -55,8 +52,8 @@ public class Env {
 	 * public API
 	 ********************/
 
-	public FinalizeQueue finalizeQueue;
-	public WrapQueue wrapQueue;
+	public FinalizeQueue platformFinalizeQueue;
+	public FinalizeQueue userFinalizeQueue;
 	public static Log logger;
 	
 	/**
@@ -65,8 +62,8 @@ public class Env {
 	 * @param v8Isolate
 	 * @return
 	 */
-	static synchronized Env create(long nodeIsolate, long v8Isolate) {
-		Env result = new Env(nodeIsolate, v8Isolate);
+	static synchronized Env create(long nodeIsolate) {
+		Env result = new Env(nodeIsolate);
 		currentEnv.set(result);
 		return result;
 	}
@@ -78,6 +75,8 @@ public class Env {
 	public static Env getCurrent() {
 		return currentEnv.get();
 	}
+	
+	public long getHandle() {return envHandle;}
 
 	/**
 	 * Release this env. Called by the bridge addon
@@ -86,11 +85,11 @@ public class Env {
 		dispose();
 	}
 	
-	public IValue loadModule(String moduleClassname, ModuleContext moduleContext) {
+	public Object loadModule(String moduleClassname, ModuleContext moduleContext) {
 		try {
 			IModule moduleInst = (IModule)Class.forName(moduleClassname).newInstance();
 			moduleContext.setModule(moduleInst);
-			IValue val = moduleInst.startModule(moduleContext);
+			Object val = moduleInst.startModule(moduleContext);
 			modules.put(moduleClassname, moduleContext);
 			return val;
 		} catch (ClassCastException e) {
@@ -112,8 +111,40 @@ public class Env {
 		return interfaceManager;
 	}
 	
-	void idle() {
+	public boolean isEventThread() {return (Thread.currentThread() == eventThread);}
+
+	/********************
+	 * Sync ops queue
+	 ********************/
+
+	private void requestEntry() {
+		BridgeNative.requestEntry(envHandle);
+	}
+	
+	public void waitForOperation(SynchronousOperation op) {
+		if(isEventThread()) {
+			synchronized(op) {
+				if(op.isPending()) op.run();
+				return;
+			}
+		}
 		synchronized(pendingOps) {
+			if(!pendingOps.contains(op))
+				pendingOps.add(op);
+			if(!entryRequested) {
+				requestEntry();
+				entryRequested = true;
+			}
+		}
+		synchronized(op) {
+			while(op.isPending())
+				try {op.wait();} catch(InterruptedException e) {}
+		}
+	}
+	
+	void onEntry() {
+		synchronized(pendingOps) {
+			entryRequested = false;
 			for(SynchronousOperation op : pendingOps) {
 				synchronized(op) {
 					if(op.isPending()) {
@@ -123,10 +154,6 @@ public class Env {
 				}
 			}
 		}
-	}
-	
-	void invoke(JSInterface obj, int methodIdx, IValue[] args) {
-		idle();
 	}
 	
 	/********************
@@ -152,39 +179,18 @@ public class Env {
 	/********************
 	 * private
 	 ********************/
-	private Env(long nodeIsolate, long v8Isolate) {
-		this.nodeIsolate = nodeIsolate;
-		this.v8Isolate = v8Isolate;
-		this.threadid = Thread.currentThread().getId();
-		interfaceManager = new InterfaceManager(null);
-		finalizeQueue = new FinalizeQueue(this);
-		wrapQueue = new WrapQueue(this);
+	private Env(long envHandle) {
+		this.envHandle  = envHandle;
+		this.eventThread = Thread.currentThread();
+		interfaceManager = new InterfaceManager(this, null);
 		pendingOps = new ArrayList<SynchronousOperation>();
-		pendingOps.add(finalizeQueue);
-		pendingOps.add(wrapQueue);
+		pendingOps.add(platformFinalizeQueue = new FinalizeQueue(this, true));
+		pendingOps.add(userFinalizeQueue = new FinalizeQueue(this, false));
 		modules = new HashMap<String, ModuleContext>();
 	}
 	
-	private void requestEntry() {
-		BridgeNative.requestEntry(nodeIsolate);
-	}
-	
-	public void waitForOperation(SynchronousOperation op) {
-		if(Thread.currentThread().getId() == threadid) {
-			if(op.isPending()) op.run();
-			return;
-		}
-		synchronized(pendingOps) {
-			if(!pendingOps.contains(op))
-				pendingOps.add(op);
-		}
-		synchronized(op) {
-			requestEntry();
-			try {op.wait();} catch(InterruptedException e) {}
-		}
-	}
-	
 	public void finalize() {dispose();}
+
 	private void dispose() {
 		/* synchronize to ensure only one thread
 		 * performs the underlying disposal */

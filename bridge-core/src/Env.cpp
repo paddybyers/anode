@@ -7,7 +7,9 @@
 #ifndef ANDROID
 # include "JREVM.h"
 #endif
-#include "V8ToJava.h"
+#include "Conv.h"
+#include "Interface.h"
+#include "Utils.h"
 
 static pthread_key_t key;
 static pthread_once_t key_once = PTHREAD_ONCE_INIT;
@@ -62,8 +64,9 @@ Env::Env(VM *vm) {
 		vm = new JREVM();
 #endif
 	this->vm = vm;
-  v8ToJava = new V8ToJava(vm->getJNIEnv());
-  initEnv(nodeIsolate, v8Isolate);
+  conv = new Conv(this, vm->getJNIEnv());
+  interfaces = TArray<Interface*>::New();
+  initJava(nodeIsolate);
 }
 
 Env::~Env() {
@@ -71,20 +74,22 @@ Env::~Env() {
   jniEnv->CallVoidMethod(jEnv, releaseMethodId);
   jniEnv->DeleteGlobalRef(jEnv);
   jniEnv->DeleteGlobalRef(jEnvClass);
-  v8ToJava->dispose(jniEnv);
-  delete v8ToJava;
+  conv->dispose(jniEnv);
+  delete conv;
+  for(int i = 0; i < interfaces->getLength(); i++) interfaces->get(i)->dispose(jniEnv);
+  delete interfaces;
 	delete vm;
 }
 
-int Env::initEnv(node::Isolate *nodeIsolate, v8::Isolate *v8Isolate) {
+int Env::initJava(node::Isolate *nodeIsolate) {
   int result = OK;
   nodeIsolate->exitHandler = Env::atExit;
   JNIEnv *jniEnv = vm->getJNIEnv();
   jEnvClass = (jclass)(jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/bridge/Env")));
-  createMethodId = jniEnv->GetStaticMethodID(jEnvClass, "create", "(JJ)Lorg/meshpoint/anode/bridge/Env;");
+  createMethodId = jniEnv->GetStaticMethodID(jEnvClass, "create", "(J)Lorg/meshpoint/anode/bridge/Env;");
   releaseMethodId = jniEnv->GetMethodID(jEnvClass, "release", "()V");
-  jEnv = jniEnv->NewGlobalRef(jniEnv->CallStaticObjectMethod(jEnvClass, createMethodId,  (jlong)nodeIsolate,  (jlong)v8Isolate));
-  loadMethodId = jniEnv->GetMethodID(jEnvClass, "loadModule", "(Ljava/lang/String;Lorg/meshpoint/anode/bridge/ModuleContext;)Lorg/meshpoint/anode/type/IValue;");
+  jEnv = jniEnv->NewGlobalRef(jniEnv->CallStaticObjectMethod(jEnvClass, createMethodId,  (jlong)this));
+  loadMethodId = jniEnv->GetMethodID(jEnvClass, "loadModule", "(Ljava/lang/String;Lorg/meshpoint/anode/bridge/ModuleContext;)Ljava/lang/Object;");
   
   if(jniEnv->ExceptionCheck()) {
     result = ErrorVM;
@@ -105,7 +110,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
   /* wrap the exports object */
   jobject jExports;
   JNIEnv *jniEnv = vm->getJNIEnv();
-  int result = v8ToJava->ToJavaObject(jniEnv, moduleExports, TYPE_OBJECT, &jExports);
+  int result = conv->ToJavaObject(jniEnv, moduleExports, TYPE_OBJECT, &jExports);
   if(result != OK) {
     fprintf(stderr, "Fatal error: unable to convert module exports object\n");
     return scope.Close(Undefined());
@@ -113,7 +118,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
     
   /* convert the moduleName to jstring */
   jstring jModuleName;
-  result = V8ToJava::ToJavaString(jniEnv, moduleName, &jModuleName);
+  result = Conv::ToJavaString(jniEnv, moduleName, &jModuleName);
   if(result != OK) {
     fprintf(stderr, "Fatal error: unable to convert modulename string\n");
     return scope.Close(Undefined());

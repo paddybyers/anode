@@ -1,14 +1,8 @@
 package org.meshpoint.anode.js;
 
-import java.util.Date;
-
 import org.meshpoint.anode.idl.Types;
-import org.meshpoint.anode.idl.Types.JSType;
 import org.meshpoint.anode.type.IBoolean;
-import org.meshpoint.anode.type.IDate;
 import org.meshpoint.anode.type.INumber;
-import org.meshpoint.anode.type.IString;
-import org.meshpoint.anode.type.IValue;
 
 /**
  * A variant to hold an arbitrary value, plus a pool of free
@@ -17,7 +11,7 @@ import org.meshpoint.anode.type.IValue;
  * The re-pooled objects are freed if the number available
  * exceeds a hard-coded count.
  */
-public final class JSValue implements IValue, IBoolean, INumber, IString, IDate {
+public final class JSValue implements IBoolean, INumber {
 	
 	/************************
 	 * private state
@@ -26,28 +20,10 @@ public final class JSValue implements IValue, IBoolean, INumber, IString, IDate 
 	int type;
 	public long longValue;
 	public double dblValue;
-	public Object obValue;
 
 	/************************
 	 * public API 
 	 ************************/
-
-	/**
-	 * JSString
-	 */
-	public static IString asJSString(String s) {
-		JSValue result = get();
-		result.obValue = s;
-		result.type = Types.TYPE_STRING;
-		return result;
-	}
-
-	@Override
-	public String getStringValue() {
-		if(type == Types.TYPE_STRING)
-			return (String)obValue;
-		throw new Types.TypeError();
-	}
 
 	/**
 	 * JSNumber
@@ -152,34 +128,6 @@ public final class JSValue implements IValue, IBoolean, INumber, IString, IDate 
 	}
 
 
-	/**
-	 * JSDate
-	 */
-	public static IDate asJSDate(long l) {
-		JSValue result = get();
-		result.longValue = l;
-		result.type = Types.TYPE_DATE;
-		return result;
-	}
-
-	public static IDate asJSDate(Date d) {
-		JSValue result = get();
-		result.longValue = d.getTime();
-		result.type = Types.TYPE_DATE;
-		return result;
-	}
-
-	@Override
-	public Date getDateValue() {
-		return new Date(longValue);
-	}
-
-	@Override
-	public JSType getType() {
-		// TODO Auto-generated method stub
-		return Types.toJSType(type);
-	}
-	
 	/**
 	 * The maximum number of cached instances
 	 */

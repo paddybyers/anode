@@ -11,7 +11,7 @@ import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.idl.StubUtil;
 import org.meshpoint.anode.idl.Types;
 
-public class ImportStubGenerator extends StubGenerator {
+public class UserStubGenerator extends StubGenerator {
 	
 	/********************
 	 * private state
@@ -23,7 +23,7 @@ public class ImportStubGenerator extends StubGenerator {
 	 * public API
 	 ********************/
 	
-	public ImportStubGenerator(InterfaceManager mgr, IDLInterface iface, File destination) {
+	public UserStubGenerator(InterfaceManager mgr, IDLInterface iface, File destination) {
 		super(mgr, iface, destination);
 	}
 	
@@ -31,13 +31,19 @@ public class ImportStubGenerator extends StubGenerator {
 		if((iface.getModifiers() & Modifier.INTERFACE) == 0)
 			throw new GeneratorException("ImportStubGenerator: class must be an interface", null);
 		String className = iface.getStubClassname();
-		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_IMPORT);
+		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_USER);
 		try {
-			writePreamble(cw, className, STUB_BASE, iface.getName(), StubUtil.MODE_IMPORT);
+			writePreamble(cw, className, STUB_BASE, iface.getName(), StubUtil.MODE_USER);
+				/***************
+				 * statics
+				 ****************/
+				cw.writeln("static int classId = org.meshpoint.anode.bridge.Env.getCurrent().getInterfaceManager().getByClass(" + className + ".class).getId();");
+				cw.writeln();
+
 				/***************
 				 * constructor
 				 ****************/
-				cw.writeln(className + "(long instHandle, org.meshpoint.anode.idl.IDLInterface iface) { super(instHandle, iface); }");
+				cw.writeln(className + "(long instHandle) { super(instHandle); }");
 				cw.writeln();
 	
 				/*******************
@@ -53,7 +59,7 @@ public class ImportStubGenerator extends StubGenerator {
 							/* argument bashing */
 							cw.writeln("__args[" + argIdx + "] = " + getArgToObjectExpression(op.args[argIdx], getArgName(argIdx)) + ";");
 						}
-						String subExpr = "__invoke(" + i + ", __args)";
+						String subExpr = "__invoke(classId, " + i + ", __args)";
 						if(op.type == Types.TYPE_UNDEFINED) {
 							cw.writeln(subExpr + ";");
 						} else {
@@ -74,13 +80,13 @@ public class ImportStubGenerator extends StubGenerator {
 					String modifiersStr = getModifiers(attr.modifiers);
 					/* getter */
 					cw.openScope(modifiersStr + " " + typeStr + " " + getterName(attr.name) + "()");
-						String subExpr = "__get(" + i + ")";
+						String subExpr = "__get(classId, " + i + ")";
 						cw.writeln("return " + getObjectToArgExpression(attr.type, subExpr) + ";");
 					cw.closeScope();
 					cw.writeln();	
 					/* setter */
 					cw.openScope(modifiersStr + " void " + setterName(attr.name) + "(" + typeStr + " arg0) {");
-						cw.writeln("__set(" + i + ", " + getArgToObjectExpression(attr.type, getArgName(0)) + ");");
+						cw.writeln("__set(classId, " + i + ", " + getArgToObjectExpression(attr.type, getArgName(0)) + ");");
 					cw.closeScope();
 					cw.writeln();	
 				}

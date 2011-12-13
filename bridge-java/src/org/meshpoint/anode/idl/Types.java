@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
-import org.meshpoint.anode.type.IValue;
 import org.w3c.dom.Array;
 
 /**
@@ -25,8 +24,8 @@ public class Types {
 		UNDEFINED, NULL, BOOLEAN, NUMBER, STRING, OBJECT
 	}
 	
-	public static IValue jsNull;
-	public static IValue jsUndefined;
+	public static Object jsNull;
+	public static Object jsUndefined;
 	
 	public static class TypeError extends RuntimeException {
 		private static final long serialVersionUID = 4694411268187181961L;
@@ -54,6 +53,7 @@ public class Types {
 	public static final int TYPE_SEQUENCE  = 32;
 	public static final int TYPE_ARRAY     = 64;
 	public static final int TYPE_INTERFACE = 128;
+	public static final int TYPE_VALUE     = 256;
 	
 	public static boolean isInterface(int type) {
 		return (type & TYPE_INTERFACE) != 0;

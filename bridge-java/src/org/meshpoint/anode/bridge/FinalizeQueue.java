@@ -10,13 +10,15 @@ public class FinalizeQueue implements SynchronousOperation {
 	private static final int QUEUE_LENGTH = 256;
 	private long[] buffer = new long[QUEUE_LENGTH];
 	private int count;
+	private boolean isPlatform;
 	
 	/********************
 	 * public API
 	 *******************/
 	
-	public FinalizeQueue(Env env) {
+	public FinalizeQueue(Env env, boolean isPlatform) {
 		this.env = env;
+		this.isPlatform = isPlatform;
 	}
 	
 	/**
@@ -38,7 +40,7 @@ public class FinalizeQueue implements SynchronousOperation {
 	@Override
 	public synchronized void run() {
 		for(int i = 0; i < count; i++) {
-			BridgeNative.releaseObjectHandle(buffer[i]);
+			BridgeNative.releaseObjectHandle(env.envHandle, buffer[i], isPlatform);
 		}
 		count = 0;
 	}

@@ -3,56 +3,43 @@ package org.meshpoint.anode.bridge;
 import java.util.Collection;
 
 import org.meshpoint.anode.idl.IDLInterface;
-import org.meshpoint.anode.idl.IDLInterface.Attribute;
-import org.meshpoint.anode.idl.IDLInterface.Operation;
-import org.meshpoint.anode.java.Base;
-import org.meshpoint.anode.type.IValue;
 
 public class BridgeNative {
 
-	/* intrinsically typed */
-	native static IValue callAsFunction(long instHandle, IValue[] args);
-	native static IValue callAsConstructor(long instHandle, IValue[] args);
+	/* IFunction */
+	native static Object callAsFunction(long envHandle, long instHandle, Object target, Object[] args);
+	native static Object callAsConstructor(long envHandle, long instHandle, Object[] args);
 
-	native static IValue callMethod(long instHandle, String methodName, IValue[] args);
+	/* ICollection */
+	native static Object getProperty(long envHandle, long instHandle, String key);
+	native static void setProperty(long envHandle, long instHandle, String key, Object value);
+	native static void deleteProperty(long envHandle, long instHandle, String key);
+	native static boolean containsProperty(long envHandle, long instHandle, String key);
+	native static Collection<String> properties(long envHandle, long instHandle);
 
-	native static IValue getProperty(long instHandle, String key);
-	native static void setProperty(long instHandle, String key, IValue value);
-	native static void deleteProperty(long instHandle, String key);
-	native static boolean containsProperty(long instHandle, String key);
-	native static Collection<String> properties(long instHandle);
+	/* IIndexedCollection */
+	native static Object getIndexedProperty(long envHandle, long instHandle, int idx);
+	native static void setIndexedProperty(long envHandle, long instHandle, int idx, Object value);
+	native static void deleteIndexedProperty(long envHandle, long instHandle, int idx);
+	native static boolean containsIndex(long envHandle, long instHandle, int idx);
+	native static int length(long envHandle, long instHandle);
 
-	native static IValue getIndexedProperty(long instHandle, int idx);
-	native static void setIndexedProperty(long instHandle, int idx, IValue value);
-	native static void deleteIndexedProperty(long instHandle, int idx);
-	native static boolean containsIndex(long instHandle, int idx);
-	native static int length(long instHandle);
-
-	/* declaratively typed */
-	public native static Object invokeJSInterface(long instHandle, long interfaceHandle, int opIdx, Object[] args);
-	public native static Object getJSInterface(long instHandle, long interfaceHandle, int attrIdx);
-	public native static void setJSInterface(long instHandle, long interfaceHandle, int attrIdx, Object val);
+	/* JSInterface */
+	public native static Object invokeJSInterface(long envHandle, long instHandle, long interfaceHandle, int opIdx, Object[] args);
+	public native static Object getJSInterface(long envHandle, long instHandle, long interfaceHandle, int attrIdx);
+	public native static void setJSInterface(long envHandle, long instHandle, long interfaceHandle, int attrIdx, Object val);
 	
 	/* instance handle management */
-	native static void releaseObjectHandle(long instHandle);
-	public native static long wrapJavaInterface(Base obj, IDLInterface iface);
+	native static void releaseObjectHandle(long envHandle, long instHandle, boolean isPlatform);
 	
 	/* interface handle management */
-	public native static long bindInboundInterface(IDLInterface iface);
-	public native static long bindOutboundInterface(IDLInterface iface);
-	public native static long bindInboundAttribute(Attribute attr, IDLInterface iface);
-	public native static long bindOutboundAttribute(Attribute attr, IDLInterface iface);
-	public native static long bindInboundOperation(Operation attr, IDLInterface iface);
-	public native static long bindOutboundOperation(Operation attr, IDLInterface iface);
-	public native static long releaseOutboundInterface(long externalBinding);
-	public native static long releaseInboundInterface(long nativeBinding);
-	public native static long releaseOutboundAttribute(long externalBinding);
-	public native static long releaseInboundAttribute(long nativeBinding);
-	public native static long releaseOutboundOperation(long externalBinding);
-	public native static long releaseInboundOperation(long nativeBinding);
+	public native static long bindInterface(long envHandle, IDLInterface iface, int classId, int attrCount, int opCount, Class<?> userStub, Class<?> platformStub, Class<?> dictStub);
+	public native static void bindAttribute(long envHandle, long ifaceHandle, int attrIdx, int type, String name);
+	public native static void bindOperation(long envHandle, long ifaceHandle, int opIdx, int type, String name, int argCount, int[] argTypes);
+	public native static void releaseInterface(long envHandle, long ifaceHandle);
 
 	/* event thread management */
-	public native static void requestEntry(long nodeIsolate);
+	public native static void requestEntry(long envHandle);
 	
 	/* context initialisation:
 	 * used in the Android implementation to pass an Android context

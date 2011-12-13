@@ -82,8 +82,15 @@ public abstract class StubGenerator {
 
 	protected String getType(int type) throws GeneratorException {
 		/* array types */
-		if((type & Types.TYPE_ARRAY) > 0)
-			return getType(type & ~Types.TYPE_ARRAY) + "[]";
+		if((type & Types.TYPE_SEQUENCE) > 0)
+			return getType(type & ~Types.TYPE_SEQUENCE) + "[]";
+		
+		if((type & Types.TYPE_ARRAY) > 0) {
+			int componentType = type & ~Types.TYPE_SEQUENCE;
+			if(type < Types.TYPE_STRING)
+				return "org.w3c.dom." + getType(componentType|Types.TYPE_OBJECT) + "Array";
+			return "org.w3c.dom.ObjectArray<" + getType(componentType) + ">";
+		}
 		
 		/* interface types */
 		if((type & Types.TYPE_INTERFACE) > 0) {
@@ -163,7 +170,7 @@ public abstract class StubGenerator {
 		String result = subExpr;
 
 		/* array + interface types */
-		if((type & (Types.TYPE_ARRAY|Types.TYPE_INTERFACE)) > 0)
+		if((type & (Types.TYPE_SEQUENCE|Types.TYPE_ARRAY|Types.TYPE_INTERFACE)) > 0)
 			return result;
 		
 		/* others */

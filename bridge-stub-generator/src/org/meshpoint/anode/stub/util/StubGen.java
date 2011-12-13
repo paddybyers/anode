@@ -5,11 +5,11 @@ import java.io.IOException;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
-import org.meshpoint.anode.stub.ExportStubGenerator;
-import org.meshpoint.anode.stub.ImportStubGenerator;
+import org.meshpoint.anode.stub.PlatformStubGenerator;
+import org.meshpoint.anode.stub.UserStubGenerator;
 import org.meshpoint.anode.stub.StubGenerator;
 import org.meshpoint.anode.stub.StubGenerator.GeneratorException;
-import org.meshpoint.anode.stub.ValueStubGenerator;
+import org.meshpoint.anode.stub.DictionaryStubGenerator;
 
 /**
  * A command line utility for running interface stub generators
@@ -17,7 +17,7 @@ import org.meshpoint.anode.stub.ValueStubGenerator;
  */
 public class StubGen {
 
-	private enum MODE { NONE, IMPORT, EXPORT, VALUE }
+	private enum MODE { NONE, USER, PLATFORM, DICT }
 	
 	private static final int OK                   = 0;
 	private static final int ERR_OUTDIR_EXISTS    = 1;
@@ -107,12 +107,12 @@ public class StubGen {
 			System.err.println("Internal error: mode is null");
 			return ERR_BAD_MODE;
 		}
-		if(modeStr.equals("import"))
-			mode = MODE.IMPORT;
-		else if(modeStr.equals("export"))
-			mode = MODE.EXPORT;
-		else if(modeStr.equals("value"))
-			mode = MODE.VALUE;
+		if(modeStr.equals("user"))
+			mode = MODE.USER;
+		else if(modeStr.equals("platform"))
+			mode = MODE.PLATFORM;
+		else if(modeStr.equals("dict"))
+			mode = MODE.DICT;
 		else {
 			System.err.println("StubGen: unrecognised mode option (" + modeStr + ")");
 			return ERR_BAD_MODE;
@@ -125,7 +125,7 @@ public class StubGen {
 		System.err.println("Usage: StubGen [--classpath <classpath>] [--out <outpath>] [--mode <mode>] [--verbose] classes");
 		System.err.println("  classpath is path used to locate classe; multiple elements are separated by ':'");
 		System.err.println("  outpath is path save stubs");
-		System.err.println("  mode specifies the stub type; supported options are \"import\", \"export\", \"value\"");
+		System.err.println("  mode specifies the stub type; supported options are \"user\", \"platform\", \"dict\"");
 		System.err.println("  each class argument must be fully qualified package + classname; '.' and '/' separators are supported");
 	}
 
@@ -135,7 +135,7 @@ public class StubGen {
 
 	private static InterfaceManager setupLoader(String[] classPath) {
 		ClassLoader loader = new DirectoryClassLoader(classPath);
-		return new InterfaceManager(loader);
+		return new InterfaceManager(null, loader);
 	}
 
 	private static int processStub(InterfaceManager mgr, MODE mode, String name) {
@@ -149,14 +149,14 @@ public class StubGen {
 		StubGenerator generator = null;
 		switch(mode) {
 		default:
-		case IMPORT:
-			generator = new ImportStubGenerator(mgr, iface, outDir);
+		case USER:
+			generator = new UserStubGenerator(mgr, iface, outDir);
 			break;
-		case EXPORT:
-			generator = new ExportStubGenerator(mgr, iface, outDir);
+		case PLATFORM:
+			generator = new PlatformStubGenerator(mgr, iface, outDir);
 			break;
-		case VALUE:
-			generator = new ValueStubGenerator(mgr, iface, outDir);
+		case DICT:
+			generator = new DictionaryStubGenerator(mgr, iface, outDir);
 			break;
 		}
 		try {

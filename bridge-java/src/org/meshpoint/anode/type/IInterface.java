@@ -7,6 +7,6 @@ import org.meshpoint.anode.idl.IDLInterface;
  * @author paddy
  *
  */
-public interface IInterface extends IValue {
+public interface IInterface {
 	public IDLInterface getDeclaredType();
 }

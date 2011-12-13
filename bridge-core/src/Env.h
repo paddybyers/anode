@@ -9,8 +9,11 @@
 # include <jni.h>
 #endif
 
+#include "Interface.h"
+#include "Utils.h"
+
 class VM;
-class V8ToJava;
+class Conv;
 
 using namespace v8;
 
@@ -22,25 +25,29 @@ public:
 	static LIB_EXPORT Env *getEnv();
 	static LIB_EXPORT Env *getEnv_nocheck();
 	LIB_EXPORT Local<Value> load(Handle<String> moduleName, Handle<Object> moduleExports);
+  inline Interface *getInterface(classId class_) {return interfaces->get(Interface::classId2Idx(class_));}
 
 private:
 	Env(VM *vm);
 	~Env();
-  int initEnv(node::Isolate *nodeIsolate, v8::Isolate *v8Isolate);
+  int initJava(node::Isolate *nodeIsolate);
   static void atExit();
 
-	static Env    *initEnv(VM *vm);
-	node::Isolate *nodeIsolate;
-	v8::Isolate   *v8Isolate;
-	VM            *vm;
-  V8ToJava      *v8ToJava;
+	static Env         *initEnv(VM *vm);
+	node::Isolate      *nodeIsolate;
+	v8::Isolate        *v8Isolate;
+	VM                 *vm;
+  Conv               *conv;
+  TArray<Interface*> *interfaces;
+  
+  uv_async_t         async;
 
   /* JNI */
-	jclass        jEnvClass;
-  jobject       jEnv;
-	jmethodID     createMethodId;
-	jmethodID     releaseMethodId;
-  jmethodID     loadMethodId;
+	jclass             jEnvClass;
+  jobject            jEnv;
+	jmethodID          createMethodId;
+	jmethodID          releaseMethodId;
+  jmethodID          loadMethodId;
 };
 
 #endif

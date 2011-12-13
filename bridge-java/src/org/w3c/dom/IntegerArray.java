@@ -1,6 +1,6 @@
 package org.w3c.dom;
 
-public interface IntArray extends PrimitiveArray {
+public interface IntegerArray extends PrimitiveArray {
 	public int getLength();
 	public void setLength(int length);
 	public int getElement(int index);

@@ -1,292 +1,200 @@
 #include "org_meshpoint_anode_bridge_BridgeNative.h"
 
+#ifdef ANDROID
 #include <AndroidVM.h>
+#endif
 #include <Env.h>
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    callAsFunction
- * Signature: (J[Lorg/meshpoint/anode/type/IValue;)Lorg/meshpoint/anode/type/IValue;
+ * Signature: (JJLjava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callAsFunction
-  (JNIEnv *, jclass, jlong, jobjectArray) {
-  return (jobject)0;
-}
+(JNIEnv *, jclass, jlong, jlong, jobject, jobjectArray);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    callAsConstructor
- * Signature: (J[Lorg/meshpoint/anode/type/IValue;)Lorg/meshpoint/anode/type/IValue;
+ * Signature: (JJ[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callAsConstructor
-  (JNIEnv *, jclass, jlong, jobjectArray) {
-  return (jobject)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    callMethod
- * Signature: (JLjava/lang/String;[Lorg/meshpoint/anode/type/IValue;)Lorg/meshpoint/anode/type/IValue;
- */
-JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callMethod
-  (JNIEnv *, jclass, jlong, jstring, jobjectArray) {
-  return (jobject)0;
-}
+(JNIEnv *, jclass, jlong, jlong, jobjectArray);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    getProperty
- * Signature: (JLjava/lang/String;)Lorg/meshpoint/anode/type/IValue;
+ * Signature: (JJLjava/lang/String;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getProperty
-  (JNIEnv *, jclass, jlong, jstring) {
-  return (jobject)0;
-}
+(JNIEnv *, jclass, jlong, jlong, jstring);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    setProperty
- * Signature: (JLjava/lang/String;Lorg/meshpoint/anode/type/IValue;)V
+ * Signature: (JJLjava/lang/String;Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setProperty
-  (JNIEnv *, jclass, jlong, jstring, jobject) {}
+(JNIEnv *, jclass, jlong, jlong, jstring, jobject);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    deleteProperty
- * Signature: (JLjava/lang/String;)V
+ * Signature: (JJLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_deleteProperty
-  (JNIEnv *, jclass, jlong, jstring) {}
+(JNIEnv *, jclass, jlong, jlong, jstring);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    containsProperty
- * Signature: (JLjava/lang/String;)Z
+ * Signature: (JJLjava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_containsProperty
-  (JNIEnv *, jclass, jlong, jstring) {
-  return (jboolean)0;
-}
+(JNIEnv *, jclass, jlong, jlong, jstring);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    properties
- * Signature: (J)Ljava/util/Collection;
+ * Signature: (JJ)Ljava/util/Collection;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_properties
-  (JNIEnv *, jclass, jlong) {
-  return (jobject)0;
-}
+(JNIEnv *, jclass, jlong, jlong);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    getIndexedProperty
- * Signature: (JI)Lorg/meshpoint/anode/type/IValue;
+ * Signature: (JJI)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getIndexedProperty
-  (JNIEnv *, jclass, jlong, jint) {
-  return (jobject)0;
-}
+(JNIEnv *, jclass, jlong, jlong, jint);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    setIndexedProperty
- * Signature: (JILorg/meshpoint/anode/type/IValue;)V
+ * Signature: (JJILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setIndexedProperty
-  (JNIEnv *, jclass, jlong, jint, jobject) {}
+(JNIEnv *, jclass, jlong, jlong, jint, jobject);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    deleteIndexedProperty
- * Signature: (JI)V
+ * Signature: (JJI)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_deleteIndexedProperty
-  (JNIEnv *, jclass, jlong, jint) {}
+(JNIEnv *, jclass, jlong, jlong, jint);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    containsIndex
- * Signature: (JI)Z
+ * Signature: (JJI)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_containsIndex
-  (JNIEnv *, jclass, jlong, jint) {
-  return (jboolean)0;
-}
+(JNIEnv *, jclass, jlong, jlong, jint);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    length
- * Signature: (J)I
+ * Signature: (JJ)I
  */
 JNIEXPORT jint JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_length
-  (JNIEnv *, jclass, jlong) {
-  return (jint)0;
+(JNIEnv *, jclass, jlong, jlong);
+
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    invokeJSInterface
+ * Signature: (JJJI[Ljava/lang/Object;)Ljava/lang/Object;
+ */
+JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSInterface
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobjectArray jArgs) {
+  Env *env = (Env *)jEnvHandle;
+  Interface *interface = (Interface *)jInterfaceHandle;
+  return 0;
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    callAsInterface
- * Signature: (JII[Lorg/meshpoint/anode/type/IValue;)Lorg/meshpoint/anode/type/IValue;
+ * Method:    getJSInterface
+ * Signature: (JJJI)Ljava/lang/Object;
  */
-JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callAsInterface
-  (JNIEnv *, jclass, jlong, jint, jint, jobjectArray) {
-  return (jobject)0;
+JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getJSInterface
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jlong jInterfaceHandle, jint idx) {
+  Env *env = (Env *)jEnvHandle;
+  Handle<Object> instHandle = asHandle(jInstHandle);
+  Interface *interface = (Interface *)jInterfaceHandle;
+  
+}
+
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    setJSInterface
+ * Signature: (JJJILjava/lang/Object;)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setJSInterface
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobject jVal) {
+  Env *env = (Env *)jEnvHandle;
+  Handle<Object> instHandle = asHandle(jInstHandle);
+  Interface *interface = (Interface *)jInterfaceHandle;
+  
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    releaseObjectHandle
- * Signature: (J)V
+ * Signature: (JJZ)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjectHandle
-  (JNIEnv *, jclass, jlong) {}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    wrapJSObject
- * Signature: (JLorg/meshpoint/anode/js/JSObject;)V
- */
-JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_wrapJSObject
-  (JNIEnv *, jclass, jlong, jobject) {}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    wrapJSInterface
- * Signature: (JLorg/meshpoint/anode/js/JSInterface;Lorg/meshpoint/anode/idl/IDLInterface;)V
- */
-JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_wrapJSInterface
-  (JNIEnv *, jclass, jlong, jobject, jobject) {}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    wrapJavaInterface
- * Signature: (Lorg/meshpoint/anode/java/Base;Lorg/meshpoint/anode/idl/IDLInterface;)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_wrapJavaInterface
-  (JNIEnv *, jclass, jobject, jobject)  {
-  return (jlong)0;
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jboolean isPlatform) {
+  Env *env = (Env *)jEnvHandle;
+  Handle<Object> instHandle = asHandle(jInstHandle);
+  
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    bindInboundInterface
- * Signature: (Lorg/meshpoint/anode/idl/IDLInterface;)J
+ * Method:    bindInterface
+ * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)J
  */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInboundInterface
-  (JNIEnv *, jclass, jobject)  {
-  return (jlong)0;
+JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterface
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass jUserStub, jclass jPlatformStub, jclass jDictStub) {
+  Env *env = (Env *)jEnvHandle;
+  
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    bindOutboundInterface
- * Signature: (Lorg/meshpoint/anode/idl/IDLInterface;)J
+ * Method:    bindAttribute
+ * Signature: (JJIILjava/lang/String;)V
  */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOutboundInterface
-  (JNIEnv *, jclass, jobject)  {
-  return (jlong)0;
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindAttribute
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jint attrIdx, jint type, jstring jName) {
+  Env *env = (Env *)jEnvHandle;
+  Interface *interface = (Interface *)jInterfaceHandle;
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    bindInboundAttribute
- * Signature: (Lorg/meshpoint/anode/idl/IDLInterface/Attribute;Lorg/meshpoint/anode/idl/IDLInterface;)J
+ * Method:    bindOperation
+ * Signature: (JJIILjava/lang/String;I[I)V
  */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInboundAttribute
-  (JNIEnv *, jclass, jobject, jobject)  {
-  return (jlong)0;
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOperation
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jint opIdx, jint type, jstring jName, jint argCount, jintArray jArgTypes) {
+  Env *env = (Env *)jEnvHandle;
+  Interface *interface = (Interface *)jInterfaceHandle;
+  
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    bindOutboundAttribute
- * Signature: (Lorg/meshpoint/anode/idl/IDLInterface/Attribute;Lorg/meshpoint/anode/idl/IDLInterface;)J
+ * Method:    releaseInterface
+ * Signature: (JJ)V
  */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOutboundAttribute
-  (JNIEnv *, jclass, jobject, jobject)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    bindInboundOperation
- * Signature: (Lorg/meshpoint/anode/idl/IDLInterface/Operation;Lorg/meshpoint/anode/idl/IDLInterface;)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInboundOperation
-  (JNIEnv *, jclass, jobject, jobject)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    bindOutboundOperation
- * Signature: (Lorg/meshpoint/anode/idl/IDLInterface/Operation;Lorg/meshpoint/anode/idl/IDLInterface;)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOutboundOperation
-  (JNIEnv *, jclass, jobject, jobject)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    releaseOutboundInterface
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseOutboundInterface
-  (JNIEnv *, jclass, jlong)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    releaseInboundInterface
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInboundInterface
-  (JNIEnv *, jclass, jlong)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    releaseOutboundAttribute
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseOutboundAttribute
-  (JNIEnv *, jclass, jlong)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    releaseInboundAttribute
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInboundAttribute
-  (JNIEnv *, jclass, jlong)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    releaseOutboundOperation
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseOutboundOperation
-  (JNIEnv *, jclass, jlong)  {
-  return (jlong)0;
-}
-
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    releaseInboundOperation
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInboundOperation
-  (JNIEnv *, jclass, jlong)  {
-  return (jlong)0;
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInterface
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle) {
+  Env *env = (Env *)jEnvHandle;
+  Interface *interface = (Interface *)jInterfaceHandle;
+  
 }
 
 /*
@@ -295,7 +203,11 @@ JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInbo
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_requestEntry
-  (JNIEnv *, jclass, jlong) {}
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle) {
+  Env *env = (Env *)jEnvHandle;
+
+}
+
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -304,8 +216,8 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_requestEntry
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setContext
   (JNIEnv *jniEnv, jclass, jobject ctx) {
+#ifdef ANDROID
 	AndroidVM *vm = new AndroidVM(jniEnv, ctx);
 	Env::setupEnv(vm);
+#endif
 }
-
-

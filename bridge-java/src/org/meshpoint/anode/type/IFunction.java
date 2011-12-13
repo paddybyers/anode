@@ -1,6 +1,6 @@
 package org.meshpoint.anode.type;
 
-public interface IFunction extends IValue {
-	public IValue callAsFunction(IValue[] args);
-	public IValue callAsConstructor(IValue[] args);
+public interface IFunction {
+	public Object callAsFunction(Object target, Object[] args);
+	public Object callAsConstructor(Object[] args);
 }

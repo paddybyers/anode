@@ -9,19 +9,19 @@ import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.idl.StubUtil;
 
-public class ValueStubGenerator extends StubGenerator {
+public class DictionaryStubGenerator extends StubGenerator {
 
 	/********************
 	 * private state
 	 ********************/
 	
-	private static final String STUB_IFACE = "org.meshpoint.anode.java.ValueStub";
+	private static final String STUB_IFACE = "org.meshpoint.anode.java.DictionaryStub";
 	
 	/********************
 	 * public API
 	 ********************/
 	
-	public ValueStubGenerator(InterfaceManager mgr, IDLInterface iface, File destination) {
+	public DictionaryStubGenerator(InterfaceManager mgr, IDLInterface iface, File destination) {
 		super(mgr, iface, destination);
 	}
 	
@@ -31,9 +31,9 @@ public class ValueStubGenerator extends StubGenerator {
 		if(iface.getOperations().length > 0)
 			throw new GeneratorException("ValueStubGenerator: class must not have any operations", null);
 		String className = iface.getStubClassname();
-		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_VALUE);
+		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_DICT);
 		try {
-			writePreamble(cw, className, iface.getName(), STUB_IFACE, StubUtil.MODE_VALUE);
+			writePreamble(cw, className, iface.getName(), STUB_IFACE, StubUtil.MODE_DICT);
 				/*******************
 				 * attribute methods
 				 *******************/

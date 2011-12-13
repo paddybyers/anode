@@ -1,5 +1,3 @@
 package org.meshpoint.anode.idl;
 
-public interface ValueType {
-
-}
+public interface Callback {}

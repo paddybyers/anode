@@ -13,11 +13,13 @@ public class IDLInterface {
 	 ********************/
 
 	private static final int MAX_NAME_LENGTH = 80;
-	private long inboundBinding;
-	private long outboundBinding;
+	private InterfaceManager mgr;
+	private long ifaceHandle;
 	private int id = -1;
 	private String name;
-	private Class<? extends Object> javaClass;
+	private Class<?> javaClass;
+	private boolean isCallback;
+	private boolean isValueType;
 
 	/********************
 	 * interface metadata
@@ -35,8 +37,6 @@ public class IDLInterface {
 		public String name;
 		public int type;
 		public int modifiers;
-		private long inboundBinding;
-		private long outboundBinding;
 	}
 
 	/**
@@ -47,8 +47,6 @@ public class IDLInterface {
 		public int type;
 		public int modifiers;
 		public int[] args;
-		private long inboundBinding;
-		private long outboundBinding;
 	}
 
 	/********************
@@ -56,28 +54,26 @@ public class IDLInterface {
 	 ********************/
 	
 	public IDLInterface(InterfaceManager mgr, Class<?> javaClass) {
+		this.mgr = mgr;
 		name = javaClass.getCanonicalName();
 		this.javaClass = javaClass;
+		if(Callback.class.isAssignableFrom(javaClass))
+			isCallback = true;
+		if(Dictionary.class.isAssignableFrom(javaClass))
+			isValueType = true;
 		id = mgr.put(this);
+		init();
 	}
 
 	public int getId() {
 		return id;
 	}
 
-	public long getInboundHandle() {
-		if(inboundBinding == 0)
-			initInbound();
-		return inboundBinding;
+	public long getHandle() {
+		return ifaceHandle;
 	}
 
-	public long getOutboundHandle() {
-		if(outboundBinding == 0)
-			initOutbound();
-		return outboundBinding;
-	}
-
-	public Class<? extends Object> getJavaClass() {
+	public Class<?> getJavaClass() {
 		return javaClass;
 	}
 
@@ -105,42 +101,34 @@ public class IDLInterface {
 		}
 		return candidate;
 	}
+	
+	public boolean isCallback() { return isCallback; }
+	public boolean isValueType() { return isValueType; }
 
 	/*********************
 	 * private
 	 *********************/
 	
-	public void initOutbound() {
-		outboundBinding = BridgeNative.bindOutboundInterface(this);
-		for(Attribute attr : attributes)
-			attr.outboundBinding = BridgeNative.bindOutboundAttribute(attr, this);
-		for(Operation op : operations)
-			op.outboundBinding = BridgeNative.bindOutboundOperation(op, this);
+	public void init() {
+		Class<?> userStub = null, platformStub = null, dictStub = null;
+		try {
+			userStub = mgr.getStubClass(this, StubUtil.MODE_USER);
+			platformStub = mgr.getStubClass(this, StubUtil.MODE_PLATFORM);
+			dictStub = mgr.getStubClass(this, StubUtil.MODE_DICT);
+		} catch(ClassNotFoundException e) {}
+		long envHandle = mgr.getEnv().getHandle();
+		ifaceHandle = BridgeNative.bindInterface(envHandle, this, id, attributes.length, operations.length, userStub, platformStub, dictStub);
+		for(int i = 0; i < attributes.length; i++) {
+			Attribute attr = attributes[i];
+			BridgeNative.bindAttribute(envHandle, ifaceHandle, i, attr.type, attr.name);
+		}
+		for(int i = 0; i < operations.length; i++) {
+			Operation op = operations[i];
+			BridgeNative.bindOperation(envHandle, ifaceHandle, i, op.type, op.name, op.args.length, op.args);
+		}
 	}
 
-	public void initInbound() {
-		inboundBinding = BridgeNative.bindInboundInterface(this);
-		for(Attribute attr : attributes)
-			attr.inboundBinding = BridgeNative.bindInboundAttribute(attr, this);
-		for(Operation op : operations)
-			op.inboundBinding = BridgeNative.bindInboundOperation(op, this);
-	}
-	
 	public void dispose() {
-		if(outboundBinding != 0) {
-			for(Attribute attr : attributes)
-				BridgeNative.releaseOutboundAttribute(attr.outboundBinding);
-			for(Operation op : operations)
-				BridgeNative.releaseOutboundAttribute(op.outboundBinding);
-			BridgeNative.releaseOutboundInterface(outboundBinding);
-		}
-		if(inboundBinding != 0) {
-			for(Attribute attr : attributes)
-				BridgeNative.releaseInboundAttribute(attr.inboundBinding);
-			for(Operation op : operations)
-				BridgeNative.releaseInboundAttribute(op.inboundBinding);
-			BridgeNative.releaseInboundInterface(inboundBinding);
-		}
-		
+		BridgeNative.releaseInterface(mgr.getEnv().getHandle(), ifaceHandle);		
 	}
 }

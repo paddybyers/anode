@@ -83,6 +83,8 @@ inline classId getClassId(int type) {
   return (short)(type >> 16);
 }
 
+inline bool isValueType(classId class_) { return class_ & 1; }
+
 /******************************
  * stub modes
  ******************************/
