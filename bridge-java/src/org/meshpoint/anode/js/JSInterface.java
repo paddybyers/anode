@@ -19,8 +19,8 @@ public class JSInterface {
 		this.instHandle = instHandle;
 	}
 
-	public void finalize() {
-		env.userFinalizeQueue.put(instHandle);
+	public void release(int classId) {
+		env.finalizeQueue.put(instHandle, classId);
 	}
 	
 	/*********************

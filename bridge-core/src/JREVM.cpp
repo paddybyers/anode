@@ -32,7 +32,7 @@ int JREVM::attach() {
 	}
 	pthread_mutex_unlock(&mtx);
 	if(status != JNI_OK) {
-		fprintf(stderr, "Fatal error: unable to attach to Java VM\n");
+		LOGV("Fatal error: unable to attach to Java VM\n");
 		return ErrorVM;
 	}
 	return OK;
@@ -120,7 +120,7 @@ int JREVM::createVM() {
 	}
 	if(!jniGetCreatedJavaVMs || ! jniCreateJavaVM) {
 		/* fatal */
-		fprintf(stderr, "Fatal error: unable to locate JNI entrypoints\n");
+		LOGV("Fatal error: unable to locate JNI entrypoints\n");
 		return ErrorVM;
 	}
 #endif
@@ -129,7 +129,7 @@ int JREVM::createVM() {
 	jint status = jniGetCreatedJavaVMs(&javaVM,1,&vmCount);
 	if(status != JNI_OK) {
 		/* fatal */
-		fprintf(stderr, "Fatal error: unable to get created Java VMs\n");
+		LOGV("Fatal error: unable to get created Java VMs\n");
 		return ErrorVM;
 	}
 	if(vmCount > 0)
@@ -151,7 +151,7 @@ int JREVM::createVM() {
 	const char *anodeRoot = getenv("ANODE_ROOT");
 	if(!anodeRoot) {
 		/* fatal */
-		fprintf(stderr, "Fatal error: ANODE_ROOT environment variable not found\n");
+		LOGV("Fatal error: ANODE_ROOT environment variable not found\n");
 		return ErrorConfig;
 	}
 	size_t rootLen = strlen(anodeRoot);
@@ -177,6 +177,6 @@ int JREVM::createVM() {
 		return OK;
 
 	/* fatal */
-	fprintf(stderr, "Fatal error: unable to create Java VM\n");
+	LOGV("Fatal error: unable to create Java VM\n");
 	return ErrorVM;
 }

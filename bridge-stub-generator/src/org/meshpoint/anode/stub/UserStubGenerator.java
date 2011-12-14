@@ -29,7 +29,7 @@ public class UserStubGenerator extends StubGenerator {
 	
 	public void generate() throws IOException, GeneratorException {
 		if((iface.getModifiers() & Modifier.INTERFACE) == 0)
-			throw new GeneratorException("ImportStubGenerator: class must be an interface", null);
+			throw new GeneratorException("UserStubGenerator: class must be an interface", null);
 		String className = iface.getStubClassname();
 		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_USER);
 		try {
@@ -44,6 +44,12 @@ public class UserStubGenerator extends StubGenerator {
 				 * constructor
 				 ****************/
 				cw.writeln(className + "(long instHandle) { super(instHandle); }");
+				cw.writeln();
+	
+				/***************
+				 * finalizer
+				 ****************/
+				cw.writeln("public void finalize() { super.release(classId); }");
 				cw.writeln();
 	
 				/*******************

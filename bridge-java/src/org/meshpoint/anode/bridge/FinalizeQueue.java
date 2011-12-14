@@ -8,17 +8,16 @@ public class FinalizeQueue implements SynchronousOperation {
 	 ********************/
 	private Env env;
 	private static final int QUEUE_LENGTH = 256;
-	private long[] buffer = new long[QUEUE_LENGTH];
+	private long[] handleBuffer = new long[QUEUE_LENGTH];
+	private int[] classBuffer = new int[QUEUE_LENGTH];
 	private int count;
-	private boolean isPlatform;
 	
 	/********************
 	 * public API
 	 *******************/
 	
-	public FinalizeQueue(Env env, boolean isPlatform) {
+	public FinalizeQueue(Env env) {
 		this.env = env;
-		this.isPlatform = isPlatform;
 	}
 	
 	/**
@@ -26,12 +25,13 @@ public class FinalizeQueue implements SynchronousOperation {
 	 * from any thread
 	 * @param h the handle
 	 */
-	public synchronized void put(long h) {
+	public synchronized void put(long h, int classId) {
 		if(count == QUEUE_LENGTH)
 			env.waitForOperation(this);
 		if(count == QUEUE_LENGTH)
 			throw new RuntimeException("Fatal error processing FinalizeQueue");
-		buffer[count++] = h;
+		handleBuffer[count] = h;
+		classBuffer[count++] = classId;
 	}
 
 	/**
@@ -40,7 +40,7 @@ public class FinalizeQueue implements SynchronousOperation {
 	@Override
 	public synchronized void run() {
 		for(int i = 0; i < count; i++) {
-			BridgeNative.releaseObjectHandle(env.envHandle, buffer[i], isPlatform);
+			BridgeNative.releaseObjectHandle(env.envHandle, handleBuffer[i], classBuffer[i]);
 		}
 		count = 0;
 	}

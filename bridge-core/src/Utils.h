@@ -14,9 +14,9 @@ public:
 protected:
   TArray(unsigned int increment);
   int alloc(unsigned int count);
+  T *arr;
   unsigned int count;
   unsigned int increment;
-  T arr[];
 };
 
 #endif

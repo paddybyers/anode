@@ -20,19 +20,34 @@
 #endif
 
 /****************
+ * log
+ ****************/
+#ifdef DEBUG
+# ifdef ANDROID
+#  include <android/log.h>
+#  define DEBUG_TAG "bridge-core"
+#  define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, DEBUG_TAG, __VA_ARGS__)
+# else
+#  define LOGV(...) fprintf(stderr, __VA_ARGS__)
+# endif
+#else
+# define LOGV(...)
+#endif
+/****************
  * error codes
  ****************/
 
 enum {
 	OK            =  0,
-	ErrorMem      = -1,
-	ErrorConfig   = -2,
-	ErrorVM       = -3,
-	ErrorIO       = -4,
-	ErrorNotfound = -5,
-	ErrorInvalid  = -6,
-	ErrorType     = -7,
-  ErrorTBD      = -8
+	ErrorMem      = -1, /* out of memory */
+	ErrorConfig   = -2, /* configuration error */
+	ErrorVM       = -3, /* Java exception in user (module) code */
+	ErrorIO       = -4, /* IO error */
+	ErrorNotfound = -5, /* resource not found */
+	ErrorInvalid  = -6, /* invalid argument or value */
+	ErrorType     = -7, /* incompatible type */
+  ErrorJS       = -8, /* V8 exception in user code */
+  ErrorTBD      = -9
 };
 
 /****************
@@ -58,11 +73,27 @@ enum {
   TYPE___END     ,
   TYPE_SEQUENCE  = 32,
   TYPE_ARRAY     = 64,
-  TYPE_INTERFACE = 128
+  TYPE_IDL       = 128
 };
 
+typedef unsigned short classId;
+
+inline classId getClassId(int type) {
+  return (short)(type >> 16);
+}
+
+inline bool isDictClass(classId class_) { return class_ & 1; }
+
+inline bool isInterfaceOrDict(int type) {
+  return (type & TYPE_IDL) != 0;
+}
+
 inline bool isInterface(int type) {
-  return (type & TYPE_INTERFACE) != 0;
+  return isInterface(type) && !isDictClass(getClassId(type));
+}
+
+inline bool isDict(int type) {
+  return isInterface(type) && isDictClass(getClassId(type));
 }
 
 inline bool isSequence(int type) {
@@ -76,14 +107,6 @@ inline bool isArray(int type) {
 inline int getComponentType(int type) {
   return (type & (~TYPE_ARRAY & ~TYPE_SEQUENCE));
 }
-
-typedef unsigned short classId;
-
-inline classId getClassId(int type) {
-  return (short)(type >> 16);
-}
-
-inline bool isValueType(classId class_) { return class_ & 1; }
 
 /******************************
  * stub modes

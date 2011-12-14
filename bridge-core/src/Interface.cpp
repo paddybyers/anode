@@ -2,6 +2,7 @@
 
 #include "defines.h"
 #include <string.h>
+#include "Utils.cpp"
 
 using namespace v8;
 
@@ -87,7 +88,7 @@ int Interface::initOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName,
   return operations->addr(idx)->init(jniEnv, conv, this, type, jName, argCount, argTypes);
 }
 
-int Interface::CreateImport(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
+int Interface::UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
   if(!jImportStub) return ErrorNotfound;
   jobject ob = jniEnv->NewObject(jImportStub, jImportCtor, handle, jInterface);
   if(ob) {
@@ -97,7 +98,7 @@ int Interface::CreateImport(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
   return ErrorVM;
 }
 
-int Interface::CreateValue(JNIEnv *jniEnv, Handle<Object> val, jlong handle, jobject *jVal) {
+int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jlong handle, jobject *jVal) {
   jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jValueStub, jValueGetArgs);
   jobject ob = jniEnv->NewObject(jValueStub, jValueCtor);
   if(!args || !ob) return ErrorVM;
@@ -118,7 +119,75 @@ int Interface::CreateValue(JNIEnv *jniEnv, Handle<Object> val, jlong handle, job
   return OK;
 }
 
-int Interface::ExportValue(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
+int Interface::UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobjectArray jArgs, jobject *jResult) {
+  HandleScope scope;
+  TryCatch tryCatch;
+  Operation *op = operations->addr(opIdx);
+  int result = OK;
+  for(int i = 0; result == OK && i < op->argCount; i++) {
+      result = conv->ToV8Value(jniEnv, jniEnv->GetObjectArrayElement(jArgs, i), op->argTypes[i], &op->vArgs[i]);
+  }
+  if(result == OK) {
+    Handle<Value> vRes;
+    if(target->IsFunction() && op->argCount == 1) {
+      /* invoke as function if target is a function, and interface delcares only one operation */
+      vRes = (Handle<Function>::Cast(target))->Call(target, op->argCount, op->vArgs);
+    } else {
+      /* locate the method and invoke that */
+      Handle<Value> vMethod = target->Get(op->name);
+      if(!vMethod.IsEmpty() && vMethod->IsFunction()) {
+        vRes = Handle<Function>::Cast(vMethod)->Call(target, op->argCount, op->vArgs);
+      }
+    }
+    if(!vRes.IsEmpty() && op->type != TYPE_UNDEFINED) {
+      jobject ob;
+      result = conv->ToJavaObject(jniEnv, vRes, op->type, &ob);
+      if(result == OK) {
+        *jResult = ob;
+      }
+    }
+  }
+  if(tryCatch.HasCaught()) {
+    result = ErrorJS;
+    tryCatch.Reset();
+  }
+  return result;
+}
+
+int Interface::UserSet(JNIEnv *jniEnv, Handle<Object> target, int attrIdx, jobject jVal) {
+  HandleScope scope;
+  TryCatch tryCatch;
+  Attribute *attr = attributes->addr(attrIdx);
+  Handle<Value> val;
+  int result = conv->ToV8Value(jniEnv, jVal, attr->type, &val);
+  if(result == OK) {
+    target->Set(attr->name, val);
+  }
+  if(tryCatch.HasCaught()) {
+    result = ErrorJS;
+    tryCatch.Reset();
+  }
+  return result;
+}
+
+int Interface::UserGet(JNIEnv *jniEnv, Handle<Object> target, int attrIdx, jobject *jVal) {
+  HandleScope scope;
+  TryCatch tryCatch;
+  Attribute *attr = attributes->addr(attrIdx);
+  Handle<Value> val = target->Get(attr->name);
+  if(tryCatch.HasCaught()) {
+    tryCatch.Reset();
+    return ErrorJS;
+  }
+  jobject ob;
+  int result = conv->ToJavaObject(jniEnv, val, attr->type, &ob);
+  if(result == OK) {
+    *jVal = ob;
+  }
+  return result;
+}
+
+int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
   jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jValueStub, jValueGetArgs);
   if(!args) return ErrorVM;
   jniEnv->MonitorEnter(args);
@@ -150,6 +219,7 @@ int Attribute::init(JNIEnv *jniEnv, Conv *conv, jint type, jstring jName) {
 
 Operation::~Operation() {
   delete[] argTypes;
+  delete[] vArgs;
   if(!fInvoke.IsEmpty()) fInvoke.Dispose();
   if(!fGet.IsEmpty()) fGet.Dispose();
   if(!fSet.IsEmpty()) fSet.Dispose();
@@ -158,7 +228,8 @@ Operation::~Operation() {
 int Operation::init(JNIEnv *jniEnv, Conv *conv, Interface *interface, jint type, jstring jName, jint argCount, jint *argTypes) {
   int result = Attribute::init(jniEnv, conv, type, jName);
   argTypes = new jint[argCount];
+  vArgs = new Handle<Value>[argCount];
   if(result == OK)
-    result = argTypes ? OK : ErrorMem;
+    result = (argTypes && vArgs) ? OK : ErrorMem;
   return result;
 }

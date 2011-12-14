@@ -21,7 +21,7 @@ public class Base implements IInterface {
 	}
 
 	public void finalize() {
-		env.platformFinalizeQueue.put(instHandle);
+		env.finalizeQueue.put(instHandle, classId);
 	}
 	
 	/*********************

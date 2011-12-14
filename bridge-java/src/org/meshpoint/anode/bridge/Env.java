@@ -52,8 +52,7 @@ public class Env {
 	 * public API
 	 ********************/
 
-	public FinalizeQueue platformFinalizeQueue;
-	public FinalizeQueue userFinalizeQueue;
+	public FinalizeQueue finalizeQueue;
 	public static Log logger;
 	
 	/**
@@ -184,8 +183,7 @@ public class Env {
 		this.eventThread = Thread.currentThread();
 		interfaceManager = new InterfaceManager(this, null);
 		pendingOps = new ArrayList<SynchronousOperation>();
-		pendingOps.add(platformFinalizeQueue = new FinalizeQueue(this, true));
-		pendingOps.add(userFinalizeQueue = new FinalizeQueue(this, false));
+		pendingOps.add(finalizeQueue = new FinalizeQueue(this));
 		modules = new HashMap<String, ModuleContext>();
 	}
 	

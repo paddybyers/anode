@@ -9,7 +9,7 @@
 #endif
 #include "Conv.h"
 #include "Interface.h"
-#include "Utils.h"
+#include "Utils.cpp"
 
 static pthread_key_t key;
 static pthread_once_t key_once = PTHREAD_ONCE_INIT;
@@ -20,7 +20,7 @@ static void static_init() {
 	int result = JREVM::static_init();
 	if(result != OK) {
 		/* fatal */
-		fprintf(stderr, "Fatal error in static initialisation of Env\n");
+		LOGV("Fatal error in static initialisation of Env\n");
 	}
 #endif //ANDROID
 }
@@ -37,7 +37,7 @@ void Env::setupEnv(VM *vm) {
 #endif
 
 /* called on the first occasion that the Env is obtained in a process */
-Env *Env::initEnv(VM *vm) {
+Env *Env::initOnce(VM *vm) {
 	Env *result = new Env(vm);
 	pthread_setspecific(key, result);
 	return result;
@@ -51,14 +51,17 @@ Env *Env::getEnv() {
 	pthread_once(&key_once, static_init);
 	Env *result;
 	if((result = getEnv_nocheck()) == 0) {
-		result = initEnv(0);
+		result = initOnce(0);
 	}
 	return result;
 }
 
 Env::Env(VM *vm) {
+  /* node state */
 	nodeIsolate = node::Isolate::GetCurrent();
 	v8Isolate = v8::Isolate::GetCurrent();
+  
+  /* java state */
 #ifndef ANDROID
 	if(!vm)
 		vm = new JREVM();
@@ -67,6 +70,10 @@ Env::Env(VM *vm) {
   conv = new Conv(this, vm->getJNIEnv());
   interfaces = TArray<Interface*>::New();
   initJava(nodeIsolate);
+  
+  /* async */
+  async.data = this;
+  uv_async_init(nodeIsolate->Loop(), &async, asyncCb);
 }
 
 Env::~Env() {
@@ -90,6 +97,7 @@ int Env::initJava(node::Isolate *nodeIsolate) {
   releaseMethodId = jniEnv->GetMethodID(jEnvClass, "release", "()V");
   jEnv = jniEnv->NewGlobalRef(jniEnv->CallStaticObjectMethod(jEnvClass, createMethodId,  (jlong)this));
   loadMethodId = jniEnv->GetMethodID(jEnvClass, "loadModule", "(Ljava/lang/String;Lorg/meshpoint/anode/bridge/ModuleContext;)Ljava/lang/Object;");
+  onEntryMethodId = jniEnv->GetMethodID(jEnvClass, "onEntry", "()V");
   
   if(jniEnv->ExceptionCheck()) {
     result = ErrorVM;
@@ -102,7 +110,16 @@ void Env::atExit() {
   delete getEnv_nocheck();
   pthread_setspecific(key, 0);
 }
-  
+
+void Env::asyncCb(uv_async_t *async, int status) {
+  Env *env = (Env *)async->data;
+  env->vm->getJNIEnv()->CallVoidMethod(env->jEnv, env->onEntryMethodId);
+}
+
+void Env::setAsync() {
+  uv_async_send(&async);
+}
+                
 Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) {
   HandleScope scope;
 	Local<Value> module;
@@ -112,7 +129,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
   JNIEnv *jniEnv = vm->getJNIEnv();
   int result = conv->ToJavaObject(jniEnv, moduleExports, TYPE_OBJECT, &jExports);
   if(result != OK) {
-    fprintf(stderr, "Fatal error: unable to convert module exports object\n");
+    LOGV("Fatal error: unable to convert module exports object\n");
     return scope.Close(Undefined());
   }
     
@@ -120,7 +137,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
   jstring jModuleName;
   result = Conv::ToJavaString(jniEnv, moduleName, &jModuleName);
   if(result != OK) {
-    fprintf(stderr, "Fatal error: unable to convert modulename string\n");
+    LOGV("Fatal error: unable to convert modulename string\n");
     return scope.Close(Undefined());
   }
 

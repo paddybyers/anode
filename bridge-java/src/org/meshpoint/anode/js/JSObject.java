@@ -30,7 +30,7 @@ public class JSObject implements ICollection, IIndexedCollection<Object> {
 	}
 
 	public void finalize() {
-		env.userFinalizeQueue.put(instHandle);
+		env.finalizeQueue.put(instHandle, -1);
 	}
 
 	/*********************

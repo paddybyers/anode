@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include "defines.h"
+#include <string.h>
 
 template <class T> TArray<T> *TArray<T>::New(unsigned int count, unsigned int increment) {
   TArray<T> *ob = new TArray<T>(increment);

@@ -25,15 +25,19 @@ public:
 	static LIB_EXPORT Env *getEnv();
 	static LIB_EXPORT Env *getEnv_nocheck();
 	LIB_EXPORT Local<Value> load(Handle<String> moduleName, Handle<Object> moduleExports);
+  inline Conv *getConv() {return conv;}
   inline Interface *getInterface(classId class_) {return interfaces->get(Interface::classId2Idx(class_));}
+  inline VM *getVM() {return vm;}
+  void setAsync();
 
 private:
 	Env(VM *vm);
 	~Env();
   int initJava(node::Isolate *nodeIsolate);
   static void atExit();
+  static void asyncCb(uv_async_t *async, int status);
 
-	static Env         *initEnv(VM *vm);
+	static Env         *initOnce(VM *vm);
 	node::Isolate      *nodeIsolate;
 	v8::Isolate        *v8Isolate;
 	VM                 *vm;
@@ -48,6 +52,7 @@ private:
 	jmethodID          createMethodId;
 	jmethodID          releaseMethodId;
   jmethodID          loadMethodId;
+  jmethodID          onEntryMethodId;
 };
 
 #endif

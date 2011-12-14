@@ -107,10 +107,14 @@ JNIEXPORT jint JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_length
  * Signature: (JJJI[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSInterface
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobjectArray jArgs) {
-  Env *env = (Env *)jEnvHandle;
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobjectArray jArgs) {
+  Handle<Object> instHandle = asHandle(jInstHandle);
   Interface *interface = (Interface *)jInterfaceHandle;
-  return 0;
+  jobject jResult = 0;
+  int result = interface->UserInvoke(jniEnv, instHandle, idx, jArgs, &jResult);
+  if(result != OK)
+    LOGV("Unable to get property on user interface: err = %d\n", result);
+  return jResult;
 }
 
 /*
@@ -119,11 +123,14 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSI
  * Signature: (JJJI)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getJSInterface
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jlong jInterfaceHandle, jint idx) {
-  Env *env = (Env *)jEnvHandle;
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInstHandle, jlong jInterfaceHandle, jint idx) {
   Handle<Object> instHandle = asHandle(jInstHandle);
   Interface *interface = (Interface *)jInterfaceHandle;
-  
+  jobject jVal = 0;
+  int result = interface->UserGet(jniEnv, instHandle, idx, &jVal);
+  if(result != OK)
+    LOGV("Unable to get property on user interface: err = %d\n", result);
+  return jVal;
 }
 
 /*
@@ -132,23 +139,25 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getJSInte
  * Signature: (JJJILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setJSInterface
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobject jVal) {
-  Env *env = (Env *)jEnvHandle;
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobject jVal) {
   Handle<Object> instHandle = asHandle(jInstHandle);
   Interface *interface = (Interface *)jInterfaceHandle;
-  
+  int result = interface->UserSet(jniEnv, instHandle, idx, jVal);
+  if(result != OK) {
+    LOGV("Unable to set property on user interface: err = %d\n", result);
+  }
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    releaseObjectHandle
- * Signature: (JJZ)V
+ * Signature: (JJI)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjectHandle
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jboolean isPlatform) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint jClassId) {
   Env *env = (Env *)jEnvHandle;
-  Handle<Object> instHandle = asHandle(jInstHandle);
-  
+  Persistent<Object> instHandle = asHandle(jInstHandle);
+  env->getConv()->releaseV8Handle(jniEnv, instHandle, jClassId);
 }
 
 /*
@@ -159,7 +168,12 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjec
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterface
 (JNIEnv *jniEnv, jclass, jlong jEnvHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass jUserStub, jclass jPlatformStub, jclass jDictStub) {
   Env *env = (Env *)jEnvHandle;
-  
+  Interface *interface;
+  int result = Interface::Create(jniEnv, env->getConv(), jInterface, jClassId, attrCount, opCount, jUserStub, jPlatformStub, jDictStub, &interface);
+  if(result == OK)
+    return (jlong)interface;
+  LOGV("Unable to create Interface: err = %d\n", result);
+  return 0;
 }
 
 /*
@@ -168,9 +182,12 @@ JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterfa
  * Signature: (JJIILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindAttribute
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jint attrIdx, jint type, jstring jName) {
-  Env *env = (Env *)jEnvHandle;
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jint attrIdx, jint type, jstring jName) {
   Interface *interface = (Interface *)jInterfaceHandle;
+  int result = interface->initAttribute(jniEnv, attrIdx, type, jName);
+  if(result != OK) {
+    LOGV("Unable to init Attribute: err = %d\n", result);
+  }
 }
 
 /*
@@ -179,10 +196,14 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindAttribut
  * Signature: (JJIILjava/lang/String;I[I)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOperation
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jint opIdx, jint type, jstring jName, jint argCount, jintArray jArgTypes) {
-  Env *env = (Env *)jEnvHandle;
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jint opIdx, jint type, jstring jName, jint argCount, jintArray jArgTypes) {
   Interface *interface = (Interface *)jInterfaceHandle;
-  
+  jint *argTypes = jniEnv->GetIntArrayElements(jArgTypes, 0);
+  int result = interface->initOperation(jniEnv, opIdx, type, jName, argCount, argTypes);
+  jniEnv->ReleaseIntArrayElements(jArgTypes, argTypes, 0);
+  if(result != OK) {
+    LOGV("Unable to init Operation: err = %d\n", result);
+  }
 }
 
 /*
@@ -191,10 +212,10 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOperatio
  * Signature: (JJ)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInterface
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle) {
-  Env *env = (Env *)jEnvHandle;
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle) {
   Interface *interface = (Interface *)jInterfaceHandle;
-  
+  interface->dispose(jniEnv);
+  delete interface;
 }
 
 /*
@@ -205,9 +226,8 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInter
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_requestEntry
 (JNIEnv *jniEnv, jclass, jlong jEnvHandle) {
   Env *env = (Env *)jEnvHandle;
-
+  env->setAsync();
 }
-
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative

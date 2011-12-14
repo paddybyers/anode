@@ -62,7 +62,7 @@ public class IDLInterface {
 		if(Dictionary.class.isAssignableFrom(javaClass))
 			isValueType = true;
 		id = mgr.put(this);
-		init();
+		if(mgr.getEnv() != null) initNative();
 	}
 
 	public int getId() {
@@ -109,7 +109,7 @@ public class IDLInterface {
 	 * private
 	 *********************/
 	
-	public void init() {
+	public void initNative() {
 		Class<?> userStub = null, platformStub = null, dictStub = null;
 		try {
 			userStub = mgr.getStubClass(this, StubUtil.MODE_USER);

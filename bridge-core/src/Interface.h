@@ -21,9 +21,13 @@ public:
   inline Persistent<String> getHiddenKey() {return hiddenKey;}
   static inline int classId2Idx(classId class_) {return class_ >> 1;}
   
-  int CreateImport(JNIEnv *jniEnv, jlong handle, jobject *jVal);
-  int CreateValue(JNIEnv *jniEnv, Handle<Object> val, jlong handle, jobject *jVal);
-  int ExportValue(JNIEnv *jniEnv, jobject jVal, Handle<Object> val);
+  int DictCreate(JNIEnv *jniEnv, Handle<Object> val, jlong handle, jobject *jVal);
+  int DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val);
+  
+  int UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal);
+  int UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobjectArray jArgs, jobject *jResult);
+  int UserSet(JNIEnv *jniEnv, Handle<Object> target, int attrIdx, jobject jVal);
+  int UserGet(JNIEnv *jniEnv, Handle<Object> target, int attrIdx, jobject *jVal);
 
   classId operator=(classId) { return this->class_;}
   jobject operator=(jobject) { return this->jInterface;}
@@ -73,6 +77,7 @@ class Operation : public Attribute {
 public:
   int argCount;
   jint *argTypes;
+  Handle<Value> *vArgs;
   Persistent<Function> fInvoke;
   Persistent<Function> fGet;
   Persistent<Function> fSet;

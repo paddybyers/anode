@@ -30,7 +30,7 @@ public class BridgeNative {
 	public native static void setJSInterface(long envHandle, long instHandle, long interfaceHandle, int attrIdx, Object val);
 	
 	/* instance handle management */
-	native static void releaseObjectHandle(long envHandle, long instHandle, boolean isPlatform);
+	native static void releaseObjectHandle(long envHandle, long instHandle, int classId);
 	
 	/* interface handle management */
 	public native static long bindInterface(long envHandle, IDLInterface iface, int classId, int attrCount, int opCount, Class<?> userStub, Class<?> platformStub, Class<?> dictStub);
