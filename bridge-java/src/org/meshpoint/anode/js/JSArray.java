@@ -1,42 +1,41 @@
 package org.meshpoint.anode.js;
 
-import org.meshpoint.anode.idl.Types.JSType;
-import org.meshpoint.anode.type.IIndexedCollection;
+import org.meshpoint.anode.bridge.BridgeNative;
+import org.meshpoint.anode.bridge.Env;
+import org.w3c.dom.Array;
 
-public class JSArray<T> implements IIndexedCollection<T> {
+public class JSArray implements Array {
 
-	public JSType getComponentType() {
-		// TODO Auto-generated method stub
-		return null;
+	/*********************
+	 * private state
+	 *********************/
+
+	long instHandle; /* (long)Persistent<Object>* */
+	Env env;
+
+	/*********************
+	 * private API
+	 *********************/
+
+	JSArray(long instHandle) {
+		this.instHandle = instHandle;
+		env = Env.getCurrent();
 	}
 
-	@Override
-	public T getIndexedProperty(int idx) {
-		// TODO Auto-generated method stub
-		return null;
+	protected void dispose(int type) {
+		env.finalizeQueue.put(instHandle, type);
 	}
 
-	@Override
-	public void setIndexedProperty(int idx, T value) {
-		// TODO Auto-generated method stub
-		
+	/*********************
+	 * public API
+	 *********************/
+
+	public int getLength() {
+		return BridgeNative.getLength(env.getHandle(), instHandle);
 	}
 
-	@Override
-	public void deleteIndexedProperty(int idx) {
-		// TODO Auto-generated method stub
-		
+	public void setLength(int length) {
+		BridgeNative.setLength(env.getHandle(), instHandle, length);
 	}
 
-	@Override
-	public boolean containsIndex(int idx) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public int length() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 }

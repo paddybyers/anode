@@ -2,35 +2,30 @@ package org.meshpoint.anode.java;
 
 import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.IDLInterface;
-import org.meshpoint.anode.type.IInterface;
+import org.meshpoint.anode.idl.Types;
 
-public class Base implements IInterface {
+public class Base {
 
 	/*********************
 	 * private state
 	 *********************/
 	long instHandle; /* (long)Persistent<Object>* */
 	protected Env env = Env.getCurrent();
-	private int classId;
+	private int type;
 
 	/*********************
 	 * private API
 	 *********************/
 	protected Base(IDLInterface iface) {
-		classId = iface.getId();
+		type = Types.classid2Type(iface.getId());
+	}
+
+	protected Base(int type) {
+		this.type = type;
 	}
 
 	public void finalize() {
-		env.finalizeQueue.put(instHandle, classId);
+		env.finalizeQueue.put(instHandle, type);
 	}
 	
-	/*********************
-	 * public API
-	 *********************/
-
-	@Override
-	public IDLInterface getDeclaredType() {
-		return env.getInterfaceManager().getById(classId);
-	}
-
 }

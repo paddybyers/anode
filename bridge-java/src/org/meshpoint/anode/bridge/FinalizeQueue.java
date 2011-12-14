@@ -9,7 +9,7 @@ public class FinalizeQueue implements SynchronousOperation {
 	private Env env;
 	private static final int QUEUE_LENGTH = 256;
 	private long[] handleBuffer = new long[QUEUE_LENGTH];
-	private int[] classBuffer = new int[QUEUE_LENGTH];
+	private int[] typeBuffer = new int[QUEUE_LENGTH];
 	private int count;
 	
 	/********************
@@ -25,13 +25,13 @@ public class FinalizeQueue implements SynchronousOperation {
 	 * from any thread
 	 * @param h the handle
 	 */
-	public synchronized void put(long h, int classId) {
+	public synchronized void put(long h, int type) {
 		if(count == QUEUE_LENGTH)
 			env.waitForOperation(this);
 		if(count == QUEUE_LENGTH)
 			throw new RuntimeException("Fatal error processing FinalizeQueue");
 		handleBuffer[count] = h;
-		classBuffer[count++] = classId;
+		typeBuffer[count++] = type;
 	}
 
 	/**
@@ -40,7 +40,7 @@ public class FinalizeQueue implements SynchronousOperation {
 	@Override
 	public synchronized void run() {
 		for(int i = 0; i < count; i++) {
-			BridgeNative.releaseObjectHandle(env.envHandle, handleBuffer[i], classBuffer[i]);
+			BridgeNative.releaseObjectHandle(env.envHandle, handleBuffer[i], typeBuffer[i]);
 		}
 		count = 0;
 	}

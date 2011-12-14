@@ -18,11 +18,12 @@ public class BridgeNative {
 	native static Collection<String> properties(long envHandle, long instHandle);
 
 	/* IIndexedCollection */
-	native static Object getIndexedProperty(long envHandle, long instHandle, int idx);
-	native static void setIndexedProperty(long envHandle, long instHandle, int idx, Object value);
-	native static void deleteIndexedProperty(long envHandle, long instHandle, int idx);
-	native static boolean containsIndex(long envHandle, long instHandle, int idx);
-	native static int length(long envHandle, long instHandle);
+	public native static Object getIndexedProperty(long envHandle, long instHandle, int idx);
+	public native static void setIndexedProperty(long envHandle, long instHandle, int idx, Object value);
+	public native static void deleteIndexedProperty(long envHandle, long instHandle, int idx);
+	public native static boolean containsIndex(long envHandle, long instHandle, int idx);
+	public native static int getLength(long envHandle, long instHandle);
+	public native static void setLength(long envHandle, long instHandle, int length);
 
 	/* JSInterface */
 	public native static Object invokeJSInterface(long envHandle, long instHandle, long interfaceHandle, int opIdx, Object[] args);
@@ -30,7 +31,7 @@ public class BridgeNative {
 	public native static void setJSInterface(long envHandle, long instHandle, long interfaceHandle, int attrIdx, Object val);
 	
 	/* instance handle management */
-	native static void releaseObjectHandle(long envHandle, long instHandle, int classId);
+	native static void releaseObjectHandle(long envHandle, long instHandle, int type);
 	
 	/* interface handle management */
 	public native static long bindInterface(long envHandle, IDLInterface iface, int classId, int attrCount, int opCount, Class<?> userStub, Class<?> platformStub, Class<?> dictStub);
