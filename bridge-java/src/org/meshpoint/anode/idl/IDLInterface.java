@@ -1,6 +1,7 @@
 package org.meshpoint.anode.idl;
 
 import org.meshpoint.anode.bridge.BridgeNative;
+import org.meshpoint.anode.bridge.Env;
 
 /**
  * An interface defined in IDL for use within one or more modules
@@ -62,7 +63,6 @@ public class IDLInterface {
 		if(Dictionary.class.isAssignableFrom(javaClass))
 			isValueType = true;
 		id = mgr.put(this);
-		if(mgr.getEnv() != null) initNative();
 	}
 
 	public int getId() {
@@ -109,15 +109,21 @@ public class IDLInterface {
 	 * private
 	 *********************/
 	
-	public void initNative() {
-		Class<?> userStub = null, platformStub = null, dictStub = null;
-		try {
-			userStub = mgr.getStubClass(this, StubUtil.MODE_USER);
-			platformStub = mgr.getStubClass(this, StubUtil.MODE_PLATFORM);
-			dictStub = mgr.getStubClass(this, StubUtil.MODE_DICT);
-		} catch(ClassNotFoundException e) {}
+	void initNative() {
 		long envHandle = mgr.getEnv().getHandle();
-		ifaceHandle = BridgeNative.bindInterface(envHandle, this, id, attributes.length, operations.length, javaClass, userStub, platformStub, dictStub);
+		ifaceHandle = BridgeNative.bindInterface(envHandle, this, id, attributes.length, operations.length, javaClass);
+		try {
+			Class<?> userStub = mgr.getStubClass(this, StubUtil.MODE_USER);
+			BridgeNative.bindUserStub(envHandle, ifaceHandle, userStub);
+		} catch(ClassNotFoundException e) {}
+		try {
+			Class <?> platformStub = mgr.getStubClass(this, StubUtil.MODE_PLATFORM);
+			BridgeNative.bindPlatformStub(envHandle, ifaceHandle, platformStub);
+		} catch(ClassNotFoundException e) {}
+		try {
+			Class<?> dictStub = mgr.getStubClass(this, StubUtil.MODE_DICT);
+			BridgeNative.bindDictStub(envHandle, ifaceHandle, dictStub);
+		} catch(ClassNotFoundException e) {}
 		for(int i = 0; i < attributes.length; i++) {
 			Attribute attr = attributes[i];
 			BridgeNative.bindAttribute(envHandle, ifaceHandle, i, attr.type, attr.name);
@@ -128,7 +134,9 @@ public class IDLInterface {
 		}
 	}
 
-	public void dispose() {
-		BridgeNative.releaseInterface(mgr.getEnv().getHandle(), ifaceHandle);		
+	void dispose() {
+		Env env = mgr.getEnv();
+		if(env != null)
+			BridgeNative.releaseInterface(env.getHandle(), ifaceHandle);		
 	}
 }

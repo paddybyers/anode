@@ -33,7 +33,7 @@ template <class T> int TArray<T>::put(unsigned int idx, T value) {
     int result = alloc(newCount);
     if(result != OK) return result;
   }
-  arr[count] = value;
+  arr[idx] = value;
   return OK;
 }
 

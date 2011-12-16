@@ -7,8 +7,12 @@
 
 namespace bridge {
 
+class ArrayType;
 class Env;
 
+typedef v8::Handle<v8::Value> (*eltGetter)(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index);
+typedef void (*eltSetter)(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value>);
+  
 class ArrayType {
 public:
   unsigned int componentType;
@@ -26,8 +30,10 @@ public:
             unsigned int componentType,
             const char *ClassName,
             const char *jsCtor,
-            const char *javaGetter,
-            const char *javaSetter
+            const char *javaGetterSig,
+            const char *javaSetterSig,
+            eltGetter getter = 0,
+            eltSetter setter = 0
   );
   ~ArrayType() {}
   int UserNew(JNIEnv *jniEnv, jobject *jVal);
@@ -35,10 +41,24 @@ public:
   void dispose(JNIEnv *jniEnv);
 private:
   Env *env;
-  static v8::Handle<v8::Value> UserLengthGet(v8::Local<v8::String> property, const v8::AccessorInfo& info);
-  static void UserLengthSet(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Value> UserElementGet(uint32_t index, const v8::AccessorInfo& info);
-  static v8::Handle<v8::Value> UserElementSet(uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
+  eltGetter getter;
+  eltSetter setter;
+  static v8::Handle<v8::Value> PlatformLengthGet(v8::Local<v8::String> property, const v8::AccessorInfo& info);
+  static void PlatformLengthSet(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
+  static v8::Handle<v8::Value> PlatformElementGet(uint32_t index, const v8::AccessorInfo& info);
+  static v8::Handle<v8::Value> PlatformElementSet(uint32_t index, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
+  static v8::Handle<v8::Value> PlatformCtor(const v8::Arguments& args);
+
+  static v8::Handle<v8::Value> ByteGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index);
+  static v8::Handle<v8::Value> IntegerGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index);
+  static v8::Handle<v8::Value> LongGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index);
+  static v8::Handle<v8::Value> DoubleGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index);
+  static void ByteSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt);
+  static void IntegerSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt);
+  static void LongSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt);
+  static void DoubleSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt);
+
+  friend class ArrayConv;
 };
 
 class ArrayConv {
@@ -69,6 +89,8 @@ private:
   v8::Persistent<v8::String> sLength;
   ArrayType *typeToArray[TYPE___END];
   TArray<ArrayType*> *interfaces;
+  
+  friend class ArrayType;
 };
 
 } // namespace bridge

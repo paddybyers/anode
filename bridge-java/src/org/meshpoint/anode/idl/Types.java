@@ -106,7 +106,7 @@ public class Types {
 	public static int type2classid(int type) { return type >> 16; }
 	
 	public static int fromJavaType(InterfaceManager interfaceManager, Type javaType) {
-		/* parameterised and other esoteric types are not supported */
+		/* parameterised types are not supported */
 		if(!(javaType instanceof Class))
 			return TYPE_INVALID;
 		/* handle sequence types; mutidimensional types are not supported */
@@ -121,6 +121,15 @@ public class Types {
 			Class<?> componentClass = javaClass.getComponentType();
 			if(Array.class.isAssignableFrom(componentClass)) throw new IllegalArgumentException("Types.fromJavaType: mutidimensional arrays are not supported");
 			return TYPE_ARRAY | fromJavaType(interfaceManager, componentClass);
+		}
+		/* handle dictionary types */
+		if(Dictionary.class.isAssignableFrom(javaClass)) {
+			while(javaClass != Object.class) {
+				IDLInterface iface = interfaceManager.getByClass(javaClass);
+				if(iface != null) return classid2Type(iface.getId());
+				javaClass = javaClass.getSuperclass();
+			}
+			return TYPE_INVALID;
 		}
 		/* handle basic types */
 		int baseClassIndex = classMap.indexOf(javaClass);

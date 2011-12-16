@@ -140,6 +140,8 @@ public class InterfaceManager {
 		}
 		result.operations = operationList.toArray(new Operation[operationList.size()]);
 
+		/* init the native part */
+		if(getEnv() != null) result.initNative();
 		return result;
 	}
 	

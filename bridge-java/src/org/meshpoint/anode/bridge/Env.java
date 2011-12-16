@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
+import org.meshpoint.anode.idl.Types;
 import org.meshpoint.anode.js.JSObject;
 import org.meshpoint.anode.module.IModule;
 import org.meshpoint.anode.util.Log;
@@ -89,7 +90,8 @@ public class Env {
 			IModule moduleInst = (IModule)Class.forName(moduleClassname).newInstance();
 			moduleContext.setModule(moduleInst);
 			Object val = moduleInst.startModule(moduleContext);
-			modules.put(moduleClassname, moduleContext);
+			if(val != null)
+				modules.put(moduleClassname, moduleContext);
 			return val;
 		} catch (ClassCastException e) {
 			/* the given class was not an implementation of IModule */
@@ -106,10 +108,28 @@ public class Env {
 		return null;
 	}
 
+	public boolean unloadModule(String moduleClassname) {
+		boolean result = false;
+		ModuleContext ctx = modules.get(moduleClassname);
+		if(ctx != null) {
+			IModule module = ctx.getModule();
+			try {
+				module.stopModule();
+			} catch(Throwable t) {}
+			modules.remove(moduleClassname);
+			result = true;
+		}
+		return result;
+	}
+
 	public InterfaceManager getInterfaceManager() {
 		return interfaceManager;
 	}
 	
+	public int findClass(Class<?> javaClass) {
+		return Types.fromJavaType(interfaceManager, javaClass);
+	}
+
 	public boolean isEventThread() {return (Thread.currentThread() == eventThread);}
 
 	/********************

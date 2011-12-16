@@ -66,9 +66,9 @@ enum {
   TYPE_INT       ,
   TYPE_LONG      ,
   TYPE_DOUBLE    ,
-  TYPE__OB_START ,
-  TYPE_STRING    , /*= 10 */
-  TYPE_MAP       ,
+  TYPE_STRING    ,
+  TYPE__OB_START = TYPE_STRING,
+  TYPE_MAP       , /*= 10 */
   TYPE_FUNCTION  ,
   TYPE_DATE      ,
   TYPE_OBJECT    = 16,
@@ -95,11 +95,11 @@ inline bool isInterfaceOrDict(int type) {
 }
 
 inline bool isInterface(int type) {
-  return isInterface(type) && !isDictClass(getClassId(type));
+  return isInterfaceOrDict(type) && !isDictClass(getClassId(type));
 }
 
 inline bool isDict(int type) {
-  return isInterface(type) && isDictClass(getClassId(type));
+  return isInterfaceOrDict(type) && isDictClass(getClassId(type));
 }
 
 inline bool isSequence(int type) {

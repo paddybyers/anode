@@ -5,6 +5,17 @@ import java.util.Collection;
 import org.meshpoint.anode.idl.IDLInterface;
 
 public class BridgeNative {
+	
+	private static final String LIBRARY_PATH = System.getenv("NODE_ROOT");
+	private static final String BRIDGE_LIBRARY = "bridge.node";
+
+	static {
+		try {
+			System.load(LIBRARY_PATH + '/' + BRIDGE_LIBRARY);
+		} catch(UnsatisfiedLinkError e) {
+			System.err.println("Unable to load bridge native library: " + LIBRARY_PATH);
+		}
+	}
 
 	/* IFunction */
 	native static Object callAsFunction(long envHandle, long instHandle, Object target, Object[] args);
@@ -34,10 +45,13 @@ public class BridgeNative {
 	native static void releaseObjectHandle(long envHandle, long instHandle, int type);
 	
 	/* interface handle management */
-	public native static long bindInterface(long envHandle, IDLInterface iface, int classId, int attrCount, int opCount, Class<?> declaredClass, Class<?> userStub, Class<?> platformStub, Class<?> dictStub);
+	public native static long bindInterface(long envHandle, IDLInterface iface, int classId, int attrCount, int opCount, Class<?> declaredClass);
 	public native static void bindAttribute(long envHandle, long ifaceHandle, int attrIdx, int type, String name);
 	public native static void bindOperation(long envHandle, long ifaceHandle, int opIdx, int type, String name, int argCount, int[] argTypes);
 	public native static void releaseInterface(long envHandle, long ifaceHandle);
+	public native static void bindUserStub(long envHandle, long interfaceHandle, Class<?> userStub);
+	public native static void bindPlatformStub(long envHandle, long interfaceHandle, Class<?> platformStub);
+	public native static void bindDictStub(long envHandle, long interfaceHandle, Class<?> dictStub);
 
 	/* event thread management */
 	public native static void requestEntry(long envHandle);

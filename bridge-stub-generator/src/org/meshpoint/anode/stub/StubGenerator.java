@@ -237,19 +237,15 @@ public abstract class StubGenerator {
 			if(thisArgCount > maxArgCount)
 				maxArgCount = thisArgCount;
 		}
-		if(maxArgCount > 0) {
-			emitArgsArray(lw, maxArgCount, includeGetter);
-		}
+		emitArgsArray(lw, maxArgCount, includeGetter);
 	}
 
 	protected void emitArgsArray(ClassWriter lw, int len, boolean includeGetter) {
-		if(len > 0) {
-			lw.writeln("private static Object[] __args = new Object[" + len + "];");
+		lw.writeln("private static Object[] __args = new Object[" + len + "];");
+		lw.writeln();
+		if(includeGetter) {
+			lw.writeln("public static Object[] __getArgs() { return __args; }");
 			lw.writeln();
-			if(includeGetter) {
-				lw.writeln("public static Object[] __getArgs() { return __args; }");
-				lw.writeln();
-			}
 		}
 	}
 

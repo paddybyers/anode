@@ -76,7 +76,17 @@ Env::Env(VM *vm) {
   
   /* async */
   async.data = this;
-  uv_async_init(nodeIsolate->Loop(), &async, asyncCb);
+  moduleCount = 0;
+}
+
+void Env::moduleLoaded() {
+  if(moduleCount++ == 0)
+    uv_async_init(nodeIsolate->Loop(), &async, asyncCb);
+}
+
+void Env::moduleUnloaded() {
+  if(--moduleCount == 0)
+    uv_close((uv_handle_t *)&async, 0);
 }
 
 Env::~Env() {
@@ -86,7 +96,10 @@ Env::~Env() {
   jniEnv->DeleteGlobalRef(jEnvClass);
   conv->dispose(jniEnv);
   delete conv;
-  for(int i = 0; i < interfaces->getLength(); i++) interfaces->get(i)->dispose(jniEnv);
+  for(int i = 0; i < interfaces->getLength(); i++) {
+    Interface *interface = interfaces->get(i);
+    if(interface) interface->dispose(jniEnv);
+  }
   delete interfaces;
 	delete vm;
 }
@@ -100,7 +113,9 @@ int Env::initJava(node::Isolate *nodeIsolate) {
   releaseMethodId = jniEnv->GetMethodID(jEnvClass, "release", "()V");
   jEnv = jniEnv->NewGlobalRef(jniEnv->CallStaticObjectMethod(jEnvClass, createMethodId,  (jlong)this));
   loadMethodId = jniEnv->GetMethodID(jEnvClass, "loadModule", "(Ljava/lang/String;Lorg/meshpoint/anode/bridge/ModuleContext;)Ljava/lang/Object;");
+  unloadMethodId = jniEnv->GetMethodID(jEnvClass, "unloadModule", "(Ljava/lang/String;)Z");
   onEntryMethodId = jniEnv->GetMethodID(jEnvClass, "onEntry", "()V");
+  findClassMethodId = jniEnv->GetMethodID(jEnvClass, "findClass", "(Ljava/lang/Class;)I");
   
   if(jniEnv->ExceptionCheck()) {
     result = ErrorVM;
@@ -133,7 +148,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
   int result = conv->ToJavaObject(jniEnv, moduleExports, TYPE_OBJECT, &jExports);
   if(result != OK) {
     LOGV("Fatal error: unable to convert module exports object\n");
-    return scope.Close(Undefined());
+    return Local<Value>(*Undefined());
   }
     
   /* convert the moduleName to jstring */
@@ -141,7 +156,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
   result = Conv::ToJavaString(jniEnv, moduleName, &jModuleName);
   if(result != OK) {
     LOGV("Fatal error: unable to convert modulename string\n");
-    return scope.Close(Undefined());
+    return Local<Value>(*Undefined());
   }
 
   /* create the module context */
@@ -151,7 +166,28 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
     jobject jModule = jniEnv->CallObjectMethod(jEnv, loadMethodId, jModuleName, jCtx);
     if(jModule) {
       /* wrap this according to its type */
+      result = conv->ToV8Value(jniEnv, jModule, TYPE_NONE, &module);
     }
   }
-	return scope.Close(module);
+  if(result == OK && !module.IsEmpty()) {
+    moduleLoaded();
+    return scope.Close(module);
+  }
+
+  conv->ThrowV8ExceptionForErrno(result);
+  return Local<Value>(*Undefined());
+}
+
+Local<Value> Env::unload(Handle<String> moduleName) {
+  HandleScope scope;
+
+  JNIEnv *jniEnv = vm->getJNIEnv();
+  jstring jModuleName;
+  int result = Conv::ToJavaString(jniEnv, moduleName, &jModuleName);
+  if(result == OK) {
+    jniEnv->CallObjectMethod(jEnv, unloadMethodId, jModuleName);
+    moduleUnloaded();
+  }
+
+  return Local<Value>(*Undefined());
 }

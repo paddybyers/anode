@@ -44,6 +44,7 @@ private:
   static v8::Handle<v8::Value> PlatformAttrGet(v8::Local<v8::String> property, const v8::AccessorInfo& info);
   static void PlatformAttrSet(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
   static v8::Handle<v8::Value> PlatformOpInvoke(const v8::Arguments& args);
+  static v8::Handle<v8::Value> PlatformCtor(const v8::Arguments& args);
 
   Env *env;
   Conv *conv;

@@ -15,12 +15,28 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   sObjectHiddenKey = Persistent<String>::New(String::NewSymbol("node::object"));
   sToString        = Persistent<String>::New(String::NewSymbol("toString"));
   sLength          = Persistent<String>::New(String::NewSymbol("length"));
-  
+
+  jfieldID typeField;
   jni.java.lang.Boolean.class_       = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Boolean"));
+  typeField                          = jniEnv->GetStaticFieldID(jni.java.lang.Boolean.class_, "TYPE", "Ljava/lang/Class;");
+  jni.java.lang.Boolean.primitive    = (jclass)jniEnv->NewGlobalRef(jniEnv->GetStaticObjectField(jni.java.lang.Boolean.class_,typeField));
+
   jni.java.lang.Byte.class_          = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Byte"));
+  typeField                          = jniEnv->GetStaticFieldID(jni.java.lang.Byte.class_, "TYPE", "Ljava/lang/Class;");
+  jni.java.lang.Byte.primitive       = (jclass)jniEnv->NewGlobalRef(jniEnv->GetStaticObjectField(jni.java.lang.Byte.class_,typeField));
+
   jni.java.lang.Integer.class_       = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Integer"));
+  typeField                          = jniEnv->GetStaticFieldID(jni.java.lang.Integer.class_, "TYPE", "Ljava/lang/Class;");
+  jni.java.lang.Integer.primitive    = (jclass)jniEnv->NewGlobalRef(jniEnv->GetStaticObjectField(jni.java.lang.Integer.class_,typeField));
+  
   jni.java.lang.Long.class_          = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Long"));
+  typeField                          = jniEnv->GetStaticFieldID(jni.java.lang.Long.class_, "TYPE", "Ljava/lang/Class;");
+  jni.java.lang.Long.primitive       = (jclass)jniEnv->NewGlobalRef(jniEnv->GetStaticObjectField(jni.java.lang.Long.class_,typeField));
+  
   jni.java.lang.Double.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Double"));
+  typeField                          = jniEnv->GetStaticFieldID(jni.java.lang.Double.class_, "TYPE", "Ljava/lang/Class;");
+  jni.java.lang.Double.primitive     = (jclass)jniEnv->NewGlobalRef(jniEnv->GetStaticObjectField(jni.java.lang.Double.class_,typeField));
+  
   jni.java.lang.String.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/String"));
   jni.java.lang.Object.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Object"));
   jni.java.util.Date.class_          = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/util/Date"));
@@ -49,7 +65,7 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   jni.java.lang.Byte.getter          = jniEnv->GetMethodID(jni.java.lang.Byte.class_,          "byteValue",       "()B");
   jni.java.lang.Integer.getter       = jniEnv->GetMethodID(jni.java.lang.Integer.class_,       "intValue",        "()I");
   jni.java.lang.Long.getter          = jniEnv->GetMethodID(jni.java.lang.Long.class_,          "longValue",       "()J");
-  jni.java.lang.Double.getter        = jniEnv->GetMethodID(jni.java.lang.Double.class_,        "doubleValue",     "()I");
+  jni.java.lang.Double.getter        = jniEnv->GetMethodID(jni.java.lang.Double.class_,        "doubleValue",     "()D");
   jni.java.util.Date.getter          = jniEnv->GetMethodID(jni.java.util.Date.class_,          "getTime",         "()J");
   jni.anode.js.JSValue_Bool.getter   = jniEnv->GetMethodID(jni.anode.js.JSValue_Bool.class_,   "getBooleanValue", "()Z");
   jni.anode.js.JSValue_Long.getter   = jniEnv->GetMethodID(jni.anode.js.JSValue_Long.class_,   "getLongValue",    "()J");
@@ -67,10 +83,15 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   
   classClass            = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Class"));
   baseClass             = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/java/Base"));
+  dictClass             = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/idl/Dictionary"));
   classIsArray          = jniEnv->GetMethodID(classClass, "isArray", "()Z");
+  classIsAssignableFrom = jniEnv->GetMethodID(classClass, "isAssignableFrom", "(Ljava/lang/Class;)Z");
+  classIsPrimitive      = jniEnv->GetMethodID(classClass, "isPrimitive", "()Z");
   classGetComponentType = jniEnv->GetMethodID(classClass, "getComponentType", "()Ljava/lang/Class;");
   classGetName          = jniEnv->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
+  stringReplace         = jniEnv->GetMethodID(jni.java.lang.String.class_, "replace", "(CC)Ljava/lang/String;");
   instHandle            = jniEnv->GetFieldID(baseClass, "instHandle", "J");
+  instType              = jniEnv->GetFieldID(baseClass, "type", "I");
 }
 
 Conv::~Conv() {
@@ -97,6 +118,7 @@ void Conv::dispose(JNIEnv *jniEnv) {
   
   jniEnv->DeleteGlobalRef(classClass);
   jniEnv->DeleteGlobalRef(baseClass);
+  jniEnv->DeleteGlobalRef(dictClass);
   
   arrayConv->dispose(jniEnv);
 }
@@ -113,19 +135,36 @@ jclass Conv::type2Class(int type) {
 /* attempt to resolve a java class to a type
  * Must be given a global reference to the class */
 int Conv::class2Type(JNIEnv *jniEnv, jclass class_, jclass *componentType) {
-  int result = TYPE_NONE;
-  for(int i = 0; i < TYPE___END; i++) {
-    if(jniEnv->IsSameObject(typeToRef[i]->class_, class_)) {
-      result = (i | TYPE_OBJECT);
-      break;
+  int result = TYPE_INVALID;
+  if(jniEnv->CallBooleanMethod(class_, classIsPrimitive)) {
+    for(int i = 0; i < TYPE__OB_START; i++) {
+      if(!typeToRef[i]) continue;
+      if(jniEnv->IsSameObject(typeToRef[i]->primitive, class_)) {
+        result = i;
+        break;
+      }
     }
+    return result;
   }
-  if(result == TYPE_NONE) {
-    if(jniEnv->CallBooleanMethod(class_, classIsArray)) {
-      jclass componentClass = (jclass)jniEnv->CallObjectMethod(class_, classGetComponentType);
-      result = class2Type(jniEnv, componentClass);
-      if(componentType && componentClass && result != TYPE_NONE)
-        *componentType = componentClass;
+  if(jniEnv->CallBooleanMethod(class_, classIsArray)) {
+    jclass componentClass = (jclass)jniEnv->CallObjectMethod(class_, classGetComponentType);
+    result = class2Type(jniEnv, componentClass);
+    if(componentClass && result != TYPE_NONE) {
+      if(componentType) *componentType = componentClass;
+      result |= TYPE_SEQUENCE;
+    }
+    return result;
+  }
+  if(jniEnv->CallBooleanMethod(dictClass, classIsAssignableFrom, class_)) {
+    return jniEnv->CallIntMethod(env->jEnv, env->findClassMethodId, class_);
+  }
+
+  for(int i = 0; i < TYPE___END; i++) {
+    if(!typeToRef[i]) continue;
+    if(jniEnv->IsSameObject(typeToRef[i]->class_, class_)) {
+      result = i;
+      if(!isJavaObject(i)) result |= TYPE_OBJECT;
+      break;
     }
   }
   return result;
@@ -134,7 +173,11 @@ int Conv::class2Type(JNIEnv *jniEnv, jclass class_, jclass *componentType) {
 /* attempt to resolve a java class to a type
  * Must be given a global reference to the class */
 int Conv::ob2Type(JNIEnv *jniEnv, jobject ob, jclass *componentType) {
-  return class2Type(jniEnv, jniEnv->GetObjectClass(ob), componentType);
+  jclass class_ = jniEnv->GetObjectClass(ob);
+  if(jniEnv->CallBooleanMethod(baseClass, classIsAssignableFrom, class_)) {
+    return jniEnv->GetIntField(ob, instType);
+  }
+  return class2Type(jniEnv, class_, componentType);
 }
 
 int Conv::GetNaturalType(Handle<Value> val) {
@@ -311,6 +354,7 @@ int Conv::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobj
       ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Bool.class_, jni.anode.js.JSValue_Bool.ctor, isVoid);
       break;
     }
+    case TYPE_BYTE:
     case TYPE_INT: {
       jint intValue = val->Int32Value();
       ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Long.class_, jni.anode.js.JSValue_Long.ctor, (jlong)intValue);
@@ -335,6 +379,11 @@ int Conv::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobj
     case TYPE_OBJECT|TYPE_BOOL: {
       bool isVoid = val->BooleanValue();
       ob = jniEnv->NewObject(jni.java.lang.Boolean.class_, jni.java.lang.Boolean.ctor, isVoid);
+      break;
+    }
+    case TYPE_OBJECT|TYPE_BYTE: {
+      jbyte byteValue = val->Int32Value();
+      ob = jniEnv->NewObject(jni.java.lang.Byte.class_, jni.java.lang.Byte.ctor, byteValue);
       break;
     }
     case TYPE_OBJECT|TYPE_INT: {
@@ -590,13 +639,13 @@ int Conv::ToV8Value(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value
   int result = OK;
   if(expectedType == TYPE_NONE || expectedType == TYPE_OBJECT) {
     expectedType = ob2Type(jniEnv, jVal);
-    if(expectedType == TYPE_NONE)
+    if(expectedType == TYPE_INVALID)
       return ErrorType;
   }
 
-  if(isBase(expectedType)) {
+  if(isBase(expectedType & ~TYPE_OBJECT)) {
     Handle<Value> baseVal;
-    result = ToV8Base(jniEnv, (jarray)jVal, getComponentType(expectedType), &baseVal);
+    result = ToV8Base(jniEnv, jVal, expectedType, &baseVal);
     if(result == OK)
       *val = scope.Close(Handle<Value>(baseVal));
     return result;
@@ -648,6 +697,11 @@ int Conv::ToV8Base(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value>
       local = Handle<Value>(Boolean::New(booleanValue));
       break;
     }
+    case TYPE_BYTE: {
+      jbyte byteValue = (jbyte)jniEnv->CallLongMethod(jVal, jni.anode.js.JSValue_Long.getter);
+      local = Handle<Value>(Number::New(byteValue));
+      break;
+    }
     case TYPE_INT: {
       jint intValue = (jint)jniEnv->CallLongMethod(jVal, jni.anode.js.JSValue_Long.getter);
       local = Handle<Value>(Number::New(intValue));
@@ -677,6 +731,11 @@ int Conv::ToV8Base(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value>
     case TYPE_OBJECT|TYPE_BOOL: {
       bool booleanValue = jniEnv->CallBooleanMethod(jVal, jni.java.lang.Boolean.getter);
       local = Handle<Value>(Boolean::New(booleanValue));
+      break;
+    }
+    case TYPE_OBJECT|TYPE_BYTE: {
+      jbyte byteValue = jniEnv->CallByteMethod(jVal, jni.java.lang.Byte.getter);
+      local = Handle<Value>(Number::New(byteValue));
       break;
     }
     case TYPE_OBJECT|TYPE_INT: {
@@ -781,7 +840,7 @@ int Conv::ToV8Interface(JNIEnv *jniEnv, jobject jVal, classId clsid, Handle<Obje
   if(result == ErrorNotfound) {
     Handle<Object> vInst;
     Interface *interface = env->getInterface(clsid);
-    result = interface->PlatformCreate(jniEnv, jVal, val);
+    result = interface->PlatformCreate(jniEnv, jVal, &vInst);
     if(result == OK) {
       result = BindToJavaObject(jniEnv, jVal, vInst, interface->getHiddenKey());
       if(result == OK)
@@ -871,13 +930,16 @@ Handle<String> Conv::getTypeKey(unsigned int type) {
   return Local<String>::New(String::New(keyStr));
 }
 
-jstring Conv::getJavaClassName(JNIEnv *jniEnv, jclass class_) {
-  return (jstring)jniEnv->CallObjectMethod(classClass, classGetName);
+jstring Conv::getJavaClassName(JNIEnv *jniEnv, jclass class_, bool replace) {
+  jstring name = (jstring)jniEnv->CallObjectMethod(class_, classGetName);
+  if(replace)
+    name = (jstring)jniEnv->CallObjectMethod(name, stringReplace, '.', '/');
+  return name;
 }
 
 Handle<String> Conv::getV8ClassName(JNIEnv *jniEnv, jclass class_) {
   Local<String> name;
-  ToV8String(jniEnv, getJavaClassName(jniEnv, class_), &name);
+  ToV8String(jniEnv, getJavaClassName(jniEnv, class_, false), &name);
   return name;
 }
 

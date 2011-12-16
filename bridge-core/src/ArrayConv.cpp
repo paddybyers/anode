@@ -13,8 +13,10 @@ ArrayType::ArrayType(Env *env,
                      unsigned int componentType,
                      const char *ClassName,
                      const char *jsCtor,
-                     const char *javaGetter,
-                     const char *javaSetter)
+                     const char *javaGetterSig,
+                     const char *javaSetterSig,
+                     eltGetter getter,
+                     eltSetter setter)
 {
   this->env           = env;
   this->componentType = componentType;
@@ -26,10 +28,12 @@ ArrayType::ArrayType(Env *env,
   js.ctor     = jniEnv->GetMethodID(js.class_,   "<init>",     "(J)V");
   getLength   = jniEnv->GetMethodID(java.class_, "getLength",  "()I");
   setLength   = jniEnv->GetMethodID(java.class_, "setLength",  "(I)V");
-  getElement  = jniEnv->GetMethodID(java.class_, "getElement", javaGetter);
-  setElement  = jniEnv->GetMethodID(java.class_, "setElement", javaSetter);
-  sHiddenKey  = Persistent<String>(Conv::getTypeKey(TYPE_ARRAY|componentType));
-  sClassName  = Persistent<String>(String::New(ClassName));
+  getElement  = jniEnv->GetMethodID(java.class_, "getElement", javaGetterSig);
+  setElement  = jniEnv->GetMethodID(java.class_, "setElement", javaSetterSig);
+  this->getter = getter;
+  this->setter = setter;
+  sHiddenKey  = Persistent<String>::New(Conv::getTypeKey(TYPE_ARRAY|componentType));
+  sClassName  = Persistent<String>::New(String::New(ClassName));
 }
 
 int ArrayType::UserNew(JNIEnv *jniEnv, jobject *jVal) {
@@ -40,15 +44,19 @@ int ArrayType::UserNew(JNIEnv *jniEnv, jobject *jVal) {
   return *jVal ? OK : ErrorVM;
 }
 
+Handle<Value> ArrayType::PlatformCtor(const Arguments& args) {
+  return args.This();
+}
+
 int ArrayType::PlatformNew(JNIEnv *jniEnv, Handle<Object> *val) {
   int result = OK;
   if(function.IsEmpty()) {
-    functionTemplate = Persistent<FunctionTemplate>::New(FunctionTemplate::New());
+    functionTemplate = Persistent<FunctionTemplate>::New(FunctionTemplate::New(PlatformCtor));
     functionTemplate->SetClassName(sClassName);
     Local<ObjectTemplate> instanceTemplate = functionTemplate->InstanceTemplate();
     instanceTemplate->SetInternalFieldCount(2);
-    instanceTemplate->SetAccessor(env->getConv()->getArrayConv()->getSLength(), UserLengthGet, UserLengthSet);
-    instanceTemplate->SetIndexedPropertyHandler(UserElementGet, UserElementSet);
+    instanceTemplate->SetAccessor(env->getConv()->getArrayConv()->getSLength(), PlatformLengthGet, PlatformLengthSet);
+    instanceTemplate->SetIndexedPropertyHandler(PlatformElementGet, PlatformElementSet);
     function = Persistent<Function>::New(functionTemplate->GetFunction());
   }
   if(result == OK) {
@@ -62,7 +70,7 @@ int ArrayType::PlatformNew(JNIEnv *jniEnv, Handle<Object> *val) {
   return result;
 }
 
-Handle<Value> ArrayType::UserLengthGet(Local<String> property, const AccessorInfo& info) {
+Handle<Value> ArrayType::PlatformLengthGet(Local<String> property, const AccessorInfo& info) {
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
   ArrayType *arr = (ArrayType *)info.This()->GetPointerFromInternalField(1);
@@ -76,7 +84,7 @@ Handle<Value> ArrayType::UserLengthGet(Local<String> property, const AccessorInf
   return scope.Close(Integer::New(length));
 }
 
-void ArrayType::UserLengthSet(Local<String> property, Local<Value> value, const AccessorInfo& info) {
+void ArrayType::PlatformLengthSet(Local<String> property, Local<Value> value, const AccessorInfo& info) {
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
   ArrayType *arr = (ArrayType *)info.This()->GetPointerFromInternalField(1);
@@ -93,11 +101,18 @@ void ArrayType::UserLengthSet(Local<String> property, Local<Value> value, const 
   }
 }
 
-Handle<Value> ArrayType::UserElementGet(uint32_t index, const AccessorInfo& info) {
+void ArrayType::DoubleSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt) {
+  jniEnv->CallVoidMethod(ob, arr->setElement, index, (jdouble)elt->NumberValue());
+}
+
+Handle<Value> ArrayType::PlatformElementGet(uint32_t index, const AccessorInfo& info) {
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
   ArrayType *arr = (ArrayType *)info.This()->GetPointerFromInternalField(1);
   JNIEnv *jniEnv = arr->env->getVM()->getJNIEnv();
+  /* use simple getter for primitive types */
+  if(arr->getter) return scope.Close((arr->getter)(arr, jniEnv, ob, index));
+  /* else do object call */
   jobject jVal = jniEnv->CallObjectMethod(ob, arr->getElement, index);
   if(jniEnv->ExceptionCheck()) {
     jniEnv->ExceptionClear();
@@ -112,11 +127,17 @@ Handle<Value> ArrayType::UserElementGet(uint32_t index, const AccessorInfo& info
   return Undefined();
 }
 
-Handle<Value> ArrayType::UserElementSet(uint32_t index, Local<Value> value, const AccessorInfo& info) {
+Handle<Value> ArrayType::PlatformElementSet(uint32_t index, Local<Value> value, const AccessorInfo& info) {
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
   ArrayType *arr = (ArrayType *)info.This()->GetPointerFromInternalField(1);
   JNIEnv *jniEnv = arr->env->getVM()->getJNIEnv();
+  /* use simple setter for primitive types */
+  if(arr->setter) {
+    (arr->setter)(arr, jniEnv, ob, index, value);
+    return value;
+  }
+  /* else do object call */
   jobject jVal;
   int result = arr->env->getConv()->ToJavaObject(jniEnv, value, arr->componentType, &jVal);
   if(result == OK) {
@@ -130,6 +151,34 @@ Handle<Value> ArrayType::UserElementSet(uint32_t index, Local<Value> value, cons
     Conv::ThrowV8ExceptionForErrno(result);
 
   return scope.Close(value);
+}
+
+Handle<Value> ArrayType::ByteGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index) {
+  return Handle<Value>(Number::New(jniEnv->CallByteMethod(ob, arr->getElement, index)));
+}
+
+Handle<Value> ArrayType::IntegerGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index) {
+  return Handle<Value>(Number::New(jniEnv->CallIntMethod(ob, arr->getElement, index)));
+}
+
+Handle<Value> ArrayType::LongGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index) {
+  return Handle<Value>(Number::New(jniEnv->CallLongMethod(ob, arr->getElement, index)));
+}
+
+Handle<Value> ArrayType::DoubleGet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index) {
+  return Handle<Value>(Number::New(jniEnv->CallDoubleMethod(ob, arr->getElement, index)));
+}
+
+void ArrayType::ByteSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt) {
+  jniEnv->CallVoidMethod(ob, arr->setElement, index, (jbyte)elt->Int32Value());
+}
+
+void ArrayType::IntegerSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt) {
+  jniEnv->CallVoidMethod(ob, arr->setElement, index, (jint)elt->Int32Value());
+}
+
+void ArrayType::LongSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt) {
+  jniEnv->CallVoidMethod(ob, arr->setElement, index, (jlong)elt->IntegerValue());
 }
 
 void ArrayType::dispose(JNIEnv *jniEnv) {
@@ -149,10 +198,10 @@ ArrayConv::ArrayConv(Env *env, Conv *conv, JNIEnv *jniEnv) {
   sLength         = Persistent<String>::New(String::NewSymbol("length"));
 
   memset(&typeToArray, 0, sizeof(typeToArray));
-  typeToArray[TYPE_BYTE]     = new ArrayType(env, jniEnv, TYPE_BYTE,     "ByteArray",    "(J)V", "(I)B", "(IB)V");
-  typeToArray[TYPE_INT]      = new ArrayType(env, jniEnv, TYPE_INT,      "IntegerArray", "(J)V", "(I)I", "(II)V");
-  typeToArray[TYPE_LONG]     = new ArrayType(env, jniEnv, TYPE_LONG,     "LongArray",    "(J)V", "(I)J", "(IJ)V");
-  typeToArray[TYPE_DOUBLE]   = new ArrayType(env, jniEnv, TYPE_DOUBLE,   "DoubleArray",  "(J)V", "(I)D", "(ID)V");
+  typeToArray[TYPE_BYTE]     = new ArrayType(env, jniEnv, TYPE_BYTE,     "ByteArray",    "(J)V", "(I)B", "(IB)V", ArrayType::ByteGet, ArrayType::ByteSet);
+  typeToArray[TYPE_INT]      = new ArrayType(env, jniEnv, TYPE_INT,      "IntegerArray", "(J)V", "(I)I", "(II)V", ArrayType::IntegerGet, ArrayType::IntegerSet);
+  typeToArray[TYPE_LONG]     = new ArrayType(env, jniEnv, TYPE_LONG,     "LongArray",    "(J)V", "(I)J", "(IJ)V", ArrayType::LongGet, ArrayType::LongSet);
+  typeToArray[TYPE_DOUBLE]   = new ArrayType(env, jniEnv, TYPE_DOUBLE,   "DoubleArray",  "(J)V", "(I)D", "(ID)V", ArrayType::DoubleGet, ArrayType::DoubleSet);
   typeToArray[TYPE_STRING]   = new ArrayType(env, jniEnv, TYPE_STRING,   "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
   typeToArray[TYPE_MAP]      = new ArrayType(env, jniEnv, TYPE_MAP,      "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
   typeToArray[TYPE_FUNCTION] = new ArrayType(env, jniEnv, TYPE_FUNCTION, "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
@@ -166,8 +215,11 @@ ArrayConv::~ArrayConv() {}
 void ArrayConv::dispose(JNIEnv *jniEnv) {
   sArrayHiddenKey.Dispose();
   sLength.Dispose();
-  for(int i = 0; i < TYPE___END; i++) if(typeToArray[i]) typeToArray[i]->dispose(jniEnv);
-  for(int i = 0; i < interfaces->getLength(); i++) interfaces->get(i)->dispose(jniEnv);
+  for(int i = 0; i < TYPE___END; i++) if(typeToArray[i])
+    if(typeToArray[i]) typeToArray[i]->dispose(jniEnv);
+
+  for(int i = 0; i < interfaces->getLength(); i++)
+    if(interfaces->get(i)) interfaces->get(i)->dispose(jniEnv);
 }
 
 int ArrayConv::WrapV8Array(JNIEnv *jniEnv, Handle<Array> val, jobject *jVal) {

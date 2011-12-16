@@ -13,6 +13,7 @@ class Env;
 
 typedef struct classRefs_s {
   jclass class_;
+  jclass primitive;
   jmethodID ctor;
   jmethodID getter;
 } classRefs;
@@ -133,7 +134,7 @@ public:
   void releaseV8Handle(JNIEnv *jniEnv, v8::Persistent<v8::Object> intHandle, int type);
   static void releaseJavaRef(v8::Persistent<v8::Value> instHandle, void *jGlobalRef);
   static v8::Handle<v8::String> getTypeKey(unsigned int type);
-  jstring getJavaClassName(JNIEnv *jniEnv, jclass class_);
+  jstring getJavaClassName(JNIEnv *jniEnv, jclass class_, bool replace);
   v8::Handle<v8::String> getV8ClassName(JNIEnv *jniEnv, jclass class_);
   
   static void ThrowV8ExceptionForErrno(int errno);
@@ -148,10 +149,15 @@ private:
   classRefs *typeToRef[TYPE___END];
   jclass classClass;
   jclass baseClass;
+  jclass dictClass;
   jmethodID classIsArray;
+  jmethodID classIsAssignableFrom;
+  jmethodID classIsPrimitive;
   jmethodID classGetComponentType;
   jmethodID classGetName;
+  jmethodID stringReplace;
   jfieldID instHandle;
+  jfieldID instType;
 };
 
 } // namespace bridge

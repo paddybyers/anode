@@ -243,17 +243,14 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjec
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    bindInterface
- * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)J
+ * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;)J
  */
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterface
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass declaredClass, jclass jUserStub, jclass jPlatformStub, jclass jDictStub) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass declaredClass) {
   Env *env = (Env *)jEnvHandle;
   Interface *interface;
   int result = Interface::Create(jniEnv, env, jInterface, jClassId, attrCount, opCount, declaredClass, &interface);
   if(result == OK) {
-    if(jUserStub != 0) interface->InitUserStub(jniEnv, jUserStub);
-    if(jPlatformStub != 0) interface->InitPlatformStub(jniEnv, jPlatformStub);
-    if(jDictStub != 0) interface->InitDictStub(jniEnv, jDictStub);
     return (jlong)interface;
   }
   LOGV("Unable to create Interface: err = %d\n", result);
@@ -303,6 +300,39 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInter
   Interface *interface = (Interface *)jInterfaceHandle;
   interface->dispose(jniEnv);
   delete interface;
+}
+
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    bindUserStub
+ * Signature: (JJLjava/lang/Class;)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindUserStub
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jclass jUserStub) {
+  Interface *interface = (Interface *)jInterfaceHandle;
+  interface->InitUserStub(jniEnv, jUserStub);
+}
+
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    bindPlatformStub
+ * Signature: (JJLjava/lang/Class;)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindPlatformStub
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jclass jPlatformStub) {
+  Interface *interface = (Interface *)jInterfaceHandle;
+  interface->InitPlatformStub(jniEnv, jPlatformStub);
+}
+
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    bindDictStub
+ * Signature: (JJLjava/lang/Class;)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindDictStub
+(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jclass jDictStub) {
+  Interface *interface = (Interface *)jInterfaceHandle;
+  interface->InitDictStub(jniEnv, jDictStub);
 }
 
 /*

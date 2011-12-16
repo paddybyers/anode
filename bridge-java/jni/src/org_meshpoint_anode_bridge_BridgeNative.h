@@ -150,10 +150,10 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjec
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    bindInterface
- * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)J
+ * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;)J
  */
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterface
-  (JNIEnv *, jclass, jlong, jobject, jint, jint, jint, jclass, jclass, jclass, jclass);
+  (JNIEnv *, jclass, jlong, jobject, jint, jint, jint, jclass);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -179,6 +179,30 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOperatio
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInterface
   (JNIEnv *, jclass, jlong, jlong);
 
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    bindUserStub
+ * Signature: (JJLjava/lang/Class;)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindUserStub
+  (JNIEnv *, jclass, jlong, jlong, jclass);
+  
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    bindPlatformStub
+ * Signature: (JJLjava/lang/Class;)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindPlatformStub
+  (JNIEnv *, jclass, jlong, jlong, jclass);
+  
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    bindDictStub
+ * Signature: (JJLjava/lang/Class;)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindDictStub
+  (JNIEnv *, jclass, jlong, jlong, jclass);
+  
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    requestEntry
