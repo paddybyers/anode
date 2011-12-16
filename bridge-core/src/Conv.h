@@ -3,14 +3,15 @@
 
 #include "defines.h"
 
-class Env;
+namespace bridge {
 
-using namespace v8;
+class ArrayConv;
+class Env;
 
 /* Class to perform conversions between v8 and java values
  * and hold assocoiated per-env state */
 
-typedef struct {
+typedef struct classRefs_s {
   jclass class_;
   jmethodID ctor;
   jmethodID getter;
@@ -34,7 +35,6 @@ struct refs_t {
   struct {
     struct {
       classRefs JSObject;
-      classRefs JSArray;
       classRefs JSFunction;
       classRefs JSInterface;
       classRefs JSValue_Bool;
@@ -49,6 +49,8 @@ public:
   Conv(Env *env, JNIEnv *jniEnv);
   void dispose(JNIEnv *jniEnv);
   ~Conv();
+  
+  inline ArrayConv *getArrayConv() {return arrayConv;}
 
   /* type conversions */
   jclass type2Class(int type);
@@ -58,8 +60,8 @@ public:
   /* Returns a type value representing the intrinsic
    * v8 type information, without reference to an
    * expected type */
-  int GetNaturalType(Handle<Value> val);
-  int GetNaturalType(Handle<Object> val);
+  int GetNaturalType(v8::Handle<v8::Value> val);
+  int GetNaturalType(v8::Handle<v8::Object> val);
   
   /****************************
    * V8 to Java conversions
@@ -72,25 +74,24 @@ public:
    * original wrapper value is returned.
    * Wrapped exported objects are unwrapped.
    * A LocalRef is returned in jVal */
-  int ToNaturalJavaObject(JNIEnv *jniEnv, Handle<Value> val, jobject *jVal);
+  int ToNaturalJavaObject(JNIEnv *jniEnv, v8::Handle<v8::Value> val, jobject *jVal);
 
   /* attempts to unwrap a previously wrapped object,
    * when there is a known expected interface type */
-  int UnwrapInterface(JNIEnv *jniEnv, Handle<Object> val, classId class_, jobject *jVal);
+  int UnwrapInterface(JNIEnv *jniEnv, v8::Handle<v8::Object> val, classId class_, jobject *jVal);
 
   /* attempts to unwrap a previously wrapped object */
-  int UnwrapObject(JNIEnv *jniEnv, Handle<Object> val, Handle<String> key, jobject *jVal);
+  int UnwrapObject(JNIEnv *jniEnv, v8::Handle<v8::Object> val, v8::Handle<v8::String> key, jobject *jVal);
   
   /* wraps a V8 Object as a Java JSObject|JSArray|JSFunction according to type */
-  int WrapV8Object(JNIEnv *jniEnv, Handle<Function> val, jobject *jVal);
-  int WrapV8Object(JNIEnv *jniEnv, Handle<Array> val, jobject *jVal);
-  int WrapV8Object(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal);
+  int WrapV8Object(JNIEnv *jniEnv, v8::Handle<v8::Function> val, jobject *jVal);
+  int WrapV8Object(JNIEnv *jniEnv, v8::Handle<v8::Object> val, jobject *jVal);
   
   /* wraps a V8 object that implements an interface */
-  int WrapV8Interface(JNIEnv *jniEnv, Handle<Object> val, classId class_, jobject *jVal);
+  int WrapV8Interface(JNIEnv *jniEnv, v8::Handle<v8::Object> val, classId class_, jobject *jVal);
   
   /* connect the handles */
-  int BindToV8Object(JNIEnv *jniEnv, Handle<Object> val, Handle<String> key, jobject jLocal, jobject *jGlobal);
+  int BindToV8Object(JNIEnv *jniEnv, v8::Handle<v8::Object> val, v8::Handle<v8::String> key, jobject jLocal, jobject *jGlobal);
 
   /* Converts to a java object based on the expected type
    * If the expected type is not specified, then the conversion
@@ -100,45 +101,58 @@ public:
    * original wrapper value is returned.
    * Wrapped exported objects are unwrapped.
    * A LocalRef is returned */
-  int ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobject *jVal);
-  int ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, jarray *jVal);
-  int ToJavaArray(JNIEnv *jniEnv, Handle<Value> val, int componentType, jobject *jVal);
-  int ToJavaInterface(JNIEnv *jniEnv, Handle<Value> val, classId clsid, jobject *jVal);
-  int ToJavaDict(JNIEnv *jniEnv, Handle<Value> val, classId clsid, jobject *jVal);
-  int ToJavaDate(JNIEnv *jniEnv, Handle<Value> val, jobject *jVal);
+  int ToJavaObject(JNIEnv *jniEnv, v8::Handle<v8::Value> val, int expectedType, jobject *jVal);
+  int ToJavaSequence(JNIEnv *jniEnv, v8::Handle<v8::Value> val, int componentType, jarray *jVal);
+  int ToJavaInterface(JNIEnv *jniEnv, v8::Handle<v8::Value> val, classId clsid, jobject *jVal);
+  int ToJavaDict(JNIEnv *jniEnv, v8::Handle<v8::Value> val, classId clsid, jobject *jVal);
+  int ToJavaDate(JNIEnv *jniEnv, v8::Handle<v8::Value> val, jobject *jVal);
   
   /* converts to a java string */
-  int ToJavaString(JNIEnv *jniEnv, Handle<Value> val, jstring *jVal);
+  int ToJavaString(JNIEnv *jniEnv, v8::Handle<v8::Value> val, jstring *jVal);
   int ToJavaString(JNIEnv *jniEnv, const char *valUtf, jstring *jVal);
-  static int ToJavaString(JNIEnv *jniEnv, Handle<String> val, jstring *jVal);
+  static int ToJavaString(JNIEnv *jniEnv, v8::Handle<v8::String> val, jstring *jVal);
 
   /****************************
    * Java to V8 conversions
    ****************************/
 
-  int ToV8Value(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value> *val);
-  int ToV8Sequence(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Array> *val);
-  int ToV8Array(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object> *val);
-  int ToV8Interface(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object> *val);
-  int ToV8Dict(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object> *val);
-  int ToV8String(JNIEnv *jniEnv, jstring jVal, Handle<String> *val);
-  int ToV8Date(JNIEnv *jniEnv, jobject jVal, Handle<Date> *val);
-  int ToV8Object(JNIEnv *jniEnv, jobject jVal, Handle<Object> *val);
+  int ToV8Value(JNIEnv *jniEnv, jobject jVal, int expectedType, v8::Handle<v8::Value> *val);
+  int ToV8Base(JNIEnv *jniEnv, jobject jVal, int expectedType, v8::Handle<v8::Value> *val);
+  int ToV8Sequence(JNIEnv *jniEnv, jarray jVal, int expectedType, v8::Handle<v8::Array> *val);
+  int ToV8Interface(JNIEnv *jniEnv, jobject jVal, classId clsid, v8::Handle<v8::Object> *val);
+  int ToV8Dict(JNIEnv *jniEnv, jobject jVal, classId clsid, v8::Handle<v8::Object> *val);
+  int ToV8String(JNIEnv *jniEnv, jstring jVal, v8::Handle<v8::String> *val);
+  int ToV8Date(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Value> *val);
   
-  void releaseV8Handle(JNIEnv *jniEnv, Persistent<Object> intHandle, int classId);
-  static void releaseJavaRef(Persistent<Value> instHandle, void *jGlobalRef);
+  /* attempts to unwrap a previously wrapped object */
+  int UnwrapObject(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> *val);
+
+  /* connect the handles */
+  int BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, v8::Handle<v8::Object> val, v8::Handle<v8::String> key);
+  
+  void releaseV8Handle(JNIEnv *jniEnv, v8::Persistent<v8::Object> intHandle, int type);
+  static void releaseJavaRef(v8::Persistent<v8::Value> instHandle, void *jGlobalRef);
+  static v8::Handle<v8::String> getTypeKey(unsigned int type);
+  jstring getJavaClassName(JNIEnv *jniEnv, jclass class_);
+  v8::Handle<v8::String> getV8ClassName(JNIEnv *jniEnv, jclass class_);
+  
+  static void ThrowV8ExceptionForErrno(int errno);
   
 private:
   Env *env;
-  Persistent<String> sObjectHiddenKey;
-  Persistent<String> sToString;
-  Persistent<String> sLength;
+  ArrayConv *arrayConv;
+  v8::Persistent<v8::String> sObjectHiddenKey;
+  v8::Persistent<v8::String> sToString;
+  v8::Persistent<v8::String> sLength;
   refs_t jni;
   classRefs *typeToRef[TYPE___END];
   jclass classClass;
+  jclass baseClass;
   jmethodID classIsArray;
   jmethodID classGetComponentType;
-  
+  jmethodID classGetName;
+  jfieldID instHandle;
 };
 
+} // namespace bridge
 #endif

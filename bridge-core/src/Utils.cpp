@@ -33,7 +33,7 @@ template <class T> int TArray<T>::put(unsigned int idx, T value) {
     int result = alloc(newCount);
     if(result != OK) return result;
   }
-  arr[count] == value;
+  arr[count] = value;
   return OK;
 }
 
@@ -50,7 +50,7 @@ template <class T> int TArray<T>::alloc(unsigned int count) {
   if(count > 0) {
     T *arr = new T[count];
     if(!arr) return ErrorMem;
-    memcpy(&arr, this->arr, this->count * sizeof(T));
+    memcpy(arr, this->arr, this->count * sizeof(T));
     memset(&arr[this->count], 0, (count - this->count) * sizeof(T));
     this->count = count;
     this->arr = arr;

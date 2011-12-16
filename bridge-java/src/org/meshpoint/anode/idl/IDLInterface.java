@@ -117,7 +117,7 @@ public class IDLInterface {
 			dictStub = mgr.getStubClass(this, StubUtil.MODE_DICT);
 		} catch(ClassNotFoundException e) {}
 		long envHandle = mgr.getEnv().getHandle();
-		ifaceHandle = BridgeNative.bindInterface(envHandle, this, id, attributes.length, operations.length, userStub, platformStub, dictStub);
+		ifaceHandle = BridgeNative.bindInterface(envHandle, this, id, attributes.length, operations.length, javaClass, userStub, platformStub, dictStub);
 		for(int i = 0; i < attributes.length; i++) {
 			Attribute attr = attributes[i];
 			BridgeNative.bindAttribute(envHandle, ifaceHandle, i, attr.type, attr.name);

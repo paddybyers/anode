@@ -10,8 +10,9 @@ public class ObjectArray<T> extends Array implements org.w3c.dom.ObjectArray<T> 
 	}
 
 	public ObjectArray(T[] data, boolean isFixedLength) {
-		super(Types.TYPE_OBJECT|Types.TYPE_ARRAY, isFixedLength);
+		super(0, isFixedLength);
 		this.data = data;
+		type = Types.fromJavaType(env.getInterfaceManager(), data.getClass());
 	}
 
 	@Override
@@ -37,8 +38,10 @@ public class ObjectArray<T> extends Array implements org.w3c.dom.ObjectArray<T> 
 
 	@Override
 	public void setElement(int index, T value) {
-		if(!isFixedLength && index >= data.length)
+		if(!isFixedLength && index >= data.length) {
 			setLength(index + 1);
+			for(int i = data.length; i < index; i++) data[i] = value;
+		}
 		data[index] = value;
 	}
 

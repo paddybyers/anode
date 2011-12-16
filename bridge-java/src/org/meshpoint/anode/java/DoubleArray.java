@@ -36,8 +36,10 @@ public class DoubleArray extends Array implements org.w3c.dom.DoubleArray {
 
 	@Override
 	public void setElement(int index, double value) {
-		if(!isFixedLength && index >= data.length)
+		if(!isFixedLength && index >= data.length) {
 			setLength(index + 1);
+			for(int i = data.length; i < index; i++) data[i] = value;
+		}
 		data[index] = value;
 	}
 

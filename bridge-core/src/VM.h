@@ -3,6 +3,8 @@
 
 #include "defines.h"
 
+namespace bridge {
+
 class VM {
 public:
 	VM();
@@ -17,4 +19,5 @@ protected:
   jmethodID   createContextMethodId;
 };
 
+} // namespace bridge
 #endif

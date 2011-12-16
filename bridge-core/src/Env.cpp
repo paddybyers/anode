@@ -7,9 +7,12 @@
 #ifndef ANDROID
 # include "JREVM.h"
 #endif
+#include "ArrayConv.h"
 #include "Conv.h"
 #include "Interface.h"
 #include "Utils.cpp"
+
+using namespace bridge;
 
 static pthread_key_t key;
 static pthread_once_t key_once = PTHREAD_ONCE_INIT;

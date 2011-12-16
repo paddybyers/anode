@@ -11,7 +11,7 @@ public class Base {
 	 *********************/
 	long instHandle; /* (long)Persistent<Object>* */
 	protected Env env = Env.getCurrent();
-	private int type;
+	protected int type;
 
 	/*********************
 	 * private API

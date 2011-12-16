@@ -12,10 +12,10 @@
 #include "Interface.h"
 #include "Utils.h"
 
-class VM;
-class Conv;
+namespace bridge {
 
-using namespace v8;
+class Conv;
+class VM;
 
 class LIB_EXPORT Env {
 public:
@@ -24,7 +24,7 @@ public:
 #endif
 	static LIB_EXPORT Env *getEnv();
 	static LIB_EXPORT Env *getEnv_nocheck();
-	LIB_EXPORT Local<Value> load(Handle<String> moduleName, Handle<Object> moduleExports);
+	LIB_EXPORT v8::Local<v8::Value> load(v8::Handle<v8::String> moduleName, v8::Handle<v8::Object> moduleExports);
   inline Conv *getConv() {return conv;}
   inline Interface *getInterface(classId class_) {return interfaces->get(Interface::classId2Idx(class_));}
   inline VM *getVM() {return vm;}
@@ -55,4 +55,5 @@ private:
   jmethodID          onEntryMethodId;
 };
 
+} //namespace bridge
 #endif

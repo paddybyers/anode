@@ -14,6 +14,8 @@ static int attachCount;
 static void *jniLib;
 #endif
 
+using namespace bridge;
+
 JREVM::JREVM() : VM() {
 	attach();
   /* initialisation specific to this VM type */

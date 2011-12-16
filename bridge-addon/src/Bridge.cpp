@@ -32,11 +32,11 @@ Handle<Value> Load(const Arguments& args) {
   
   Local<String> moduleName = args[0]->ToString();
   Local<Object> moduleExports = args[1]->ToObject();
-  return scope.Close(Env::getEnv_nocheck()->load(moduleName, moduleExports));
+  return scope.Close(bridge::Env::getEnv_nocheck()->load(moduleName, moduleExports));
 }
 
 void init(Handle<Object> target) {
-  	Env::getEnv();
+  bridge::Env::getEnv();
     target->Set(String::NewSymbol("load"),
         FunctionTemplate::New(Load)->GetFunction());
 }

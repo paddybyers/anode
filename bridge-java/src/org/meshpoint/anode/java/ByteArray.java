@@ -36,8 +36,10 @@ public class ByteArray extends Array implements org.w3c.dom.ByteArray {
 
 	@Override
 	public void setElement(int index, byte value) {
-		if(!isFixedLength && index >= data.length)
+		if(!isFixedLength && index >= data.length) {			
 			setLength(index + 1);
+			for(int i = data.length; i < index; i++) data[i] = value;
+		}
 		data[index] = value;
 	}
 

@@ -1,13 +1,18 @@
 #include "Conv.h"
+#include "ArrayConv.h"
 #include "Env.h"
 #include "VM.h"
 #include <string.h>
 #include <math.h>
 
+using namespace v8;
+using namespace bridge;
+
 Conv::Conv(Env *env, JNIEnv *jniEnv) {
   this->env = env;
+  arrayConv = new ArrayConv(env, this, env->getVM()->getJNIEnv());
 
-  sObjectHiddenKey = Persistent<String>::New(String::NewSymbol("node::GlobalRef"));
+  sObjectHiddenKey = Persistent<String>::New(String::NewSymbol("node::object"));
   sToString        = Persistent<String>::New(String::NewSymbol("toString"));
   sLength          = Persistent<String>::New(String::NewSymbol("length"));
   
@@ -31,12 +36,10 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   jni.anode.js.JSValue_Double.class_ = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSValue"));
   jni.anode.js.JSObject.class_       = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSObject"));
   jni.anode.js.JSFunction.class_     = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSFunction"));
-  jni.anode.js.JSArray.class_        = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSArray"));
   jni.anode.js.JSInterface.class_    = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/js/JSInterface"));
 
   jni.anode.js.JSObject.ctor         = jniEnv->GetMethodID(jni.anode.js.JSObject.class_,             "<init>",      "(J)V");
   jni.anode.js.JSFunction.ctor       = jniEnv->GetMethodID(jni.anode.js.JSFunction.class_,           "<init>",      "(J)V");
-  jni.anode.js.JSArray.ctor          = jniEnv->GetMethodID(jni.anode.js.JSArray.class_,              "<init>",      "(J)V");
   jni.anode.js.JSInterface.ctor      = jniEnv->GetMethodID(jni.anode.js.JSInterface.class_,          "<init>",      "(JLorg/meshpoint/anode/idl/IDLInterface;)V");
   jni.anode.js.JSValue_Bool.ctor     = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Bool.class_,   "asJSBoolean", "(Z)Lorg/meshpoint/anode/js/JSValue;");
   jni.anode.js.JSValue_Long.ctor     = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Long.class_,   "asJSNumber",  "(J)Lorg/meshpoint/anode/js/JSValue;");
@@ -47,6 +50,7 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   jni.java.lang.Integer.getter       = jniEnv->GetMethodID(jni.java.lang.Integer.class_,       "intValue",        "()I");
   jni.java.lang.Long.getter          = jniEnv->GetMethodID(jni.java.lang.Long.class_,          "longValue",       "()J");
   jni.java.lang.Double.getter        = jniEnv->GetMethodID(jni.java.lang.Double.class_,        "doubleValue",     "()I");
+  jni.java.util.Date.getter          = jniEnv->GetMethodID(jni.java.util.Date.class_,          "getTime",         "()J");
   jni.anode.js.JSValue_Bool.getter   = jniEnv->GetMethodID(jni.anode.js.JSValue_Bool.class_,   "getBooleanValue", "()Z");
   jni.anode.js.JSValue_Long.getter   = jniEnv->GetMethodID(jni.anode.js.JSValue_Long.class_,   "getLongValue",    "()J");
   jni.anode.js.JSValue_Double.getter = jniEnv->GetMethodID(jni.anode.js.JSValue_Double.class_, "getDoubleValue",  "()D");
@@ -61,17 +65,23 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   typeToRef[TYPE_DATE]   = &jni.java.util.Date;
   typeToRef[TYPE_OBJECT] = &jni.java.lang.Object;
   
-  classClass = jniEnv->FindClass("java/lang/Class");
-  classIsArray = jniEnv->GetMethodID(classClass, "isArray", "()Z");
+  classClass            = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Class"));
+  baseClass             = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/java/Base"));
+  classIsArray          = jniEnv->GetMethodID(classClass, "isArray", "()Z");
   classGetComponentType = jniEnv->GetMethodID(classClass, "getComponentType", "()Ljava/lang/Class;");
+  classGetName          = jniEnv->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
+  instHandle            = jniEnv->GetFieldID(baseClass, "instHandle", "J");
 }
 
-Conv::~Conv() {}
+Conv::~Conv() {
+  delete arrayConv;
+}
 
 void Conv::dispose(JNIEnv *jniEnv) {
   sObjectHiddenKey.Dispose();
   sToString.Dispose();
   sLength.Dispose();
+
   jniEnv->DeleteGlobalRef(jni.java.lang.Boolean.class_);
   jniEnv->DeleteGlobalRef(jni.java.lang.Byte.class_);
   jniEnv->DeleteGlobalRef(jni.java.lang.Integer.class_);
@@ -80,10 +90,15 @@ void Conv::dispose(JNIEnv *jniEnv) {
   jniEnv->DeleteGlobalRef(jni.java.lang.String.class_);
   jniEnv->DeleteGlobalRef(jni.java.lang.Object.class_);
   jniEnv->DeleteGlobalRef(jni.java.util.Date.class_);
+
   jniEnv->DeleteGlobalRef(jni.anode.js.JSValue_Bool.class_);
   jniEnv->DeleteGlobalRef(jni.anode.js.JSObject.class_);
   jniEnv->DeleteGlobalRef(jni.anode.js.JSFunction.class_);
-  jniEnv->DeleteGlobalRef(jni.anode.js.JSArray.class_);
+  
+  jniEnv->DeleteGlobalRef(classClass);
+  jniEnv->DeleteGlobalRef(baseClass);
+  
+  arrayConv->dispose(jniEnv);
 }
 
 /* convert a type number for a primitive type.
@@ -123,7 +138,6 @@ int Conv::ob2Type(JNIEnv *jniEnv, jobject ob, jclass *componentType) {
 }
 
 int Conv::GetNaturalType(Handle<Value> val) {
-  
   if(val.IsEmpty()) return TYPE_INVALID;
   if(val->IsUndefined()) return TYPE_UNDEFINED;
   if(val->IsNull()) return TYPE_NULL;
@@ -132,15 +146,10 @@ int Conv::GetNaturalType(Handle<Value> val) {
   if(val->IsUint32()) return TYPE_LONG;
   if(val->IsNumber() || val->IsNumberObject()) return TYPE_DOUBLE;
   if(val->IsString() || val->IsStringObject()) return TYPE_STRING;
-  if(val->IsDate()) return TYPE_DATE;
-  if(val->IsFunction()) return TYPE_FUNCTION;
-  if(val->IsArray()) return TYPE_ARRAY;
-  if(val->IsObject()) return TYPE_OBJECT;
-  return TYPE_INVALID;
+  return GetNaturalType(Handle<Object>::Cast(val));
 }
 
 int Conv::GetNaturalType(Handle<Object> val) {
-  
   if(val.IsEmpty()) return TYPE_INVALID;
   if(val->IsDate()) return TYPE_DATE;
   if(val->IsFunction()) return TYPE_FUNCTION;
@@ -154,6 +163,7 @@ int Conv::GetNaturalType(Handle<Object> val) {
  ****************************/
 
 int Conv::ToNaturalJavaObject(JNIEnv *jniEnv, Handle<Value> val, jobject *jVal) {
+  HandleScope scope;
   jobject ob = 0;
   int result = 0;
   switch(GetNaturalType(val)) {
@@ -190,9 +200,9 @@ int Conv::ToNaturalJavaObject(JNIEnv *jniEnv, Handle<Value> val, jobject *jVal) 
     }
     case TYPE_ARRAY: {
       Handle<Array> aVal = Handle<Array>::Cast(val->ToObject());
-      result = UnwrapObject(jniEnv, aVal, sObjectHiddenKey, jVal);
+      result = UnwrapObject(jniEnv, aVal, arrayConv->getHiddenKey(), jVal);
       if(result == ErrorNotfound)
-        result = WrapV8Object(jniEnv, aVal, jVal);
+        result = arrayConv->WrapV8Array(jniEnv, aVal, jVal);
       break;
     }
     case TYPE_OBJECT: {
@@ -250,12 +260,6 @@ int Conv::WrapV8Object(JNIEnv *jniEnv, Handle<Function> val, jobject *jVal) {
   return BindToV8Object(jniEnv, val, sObjectHiddenKey, ob, jVal);
 }
 
-int Conv::WrapV8Object(JNIEnv *jniEnv, Handle<Array> val, jobject *jVal) {
-  Persistent<Array> pVal = Persistent<Array>::New(val);
-  jobject ob = jniEnv->NewObject(jni.anode.js.JSArray.class_, jni.anode.js.JSArray.ctor, asLong(pVal));
-  return BindToV8Object(jniEnv, val, sObjectHiddenKey, ob, jVal);
-}
-
 int Conv::WrapV8Object(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
   Persistent<Object> pVal = Persistent<Object>::New(val);
   jobject ob = jniEnv->NewObject(jni.anode.js.JSObject.class_, jni.anode.js.JSObject.ctor, asLong(pVal));
@@ -289,7 +293,7 @@ int Conv::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobj
     return ToJavaSequence(jniEnv, val, getComponentType(expectedType), (jarray *)jVal);
   
   if(isArray(expectedType))
-    return ToJavaArray(jniEnv, val, getComponentType(expectedType), jVal);
+    return arrayConv->ToJavaArray(jniEnv, val, getComponentType(expectedType), jVal);
   
   if(isInterface(expectedType))
     return ToJavaInterface(jniEnv, val, getClassId(expectedType), jVal);
@@ -359,7 +363,6 @@ int Conv::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobj
 }
 
 int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, jarray *jVal) {
-  HandleScope scope;
   Local<Object> oVal;
   Local<Value> vLength;
   if(val.IsEmpty() || val->IsNull() || val->IsUndefined()) {
@@ -374,91 +377,92 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
   if(vLength.IsEmpty() || !vLength->IsNumber())
     return ErrorType;
   
-  jint len = vLength->Uint32Value();
-  
-  if(isInterfaceOrDict(componentType) || componentType == TYPE_OBJECT) {
-    /* this will be passed by reference (as Array<T> */
-    /* TBD */
-    return ErrorTBD;
-  }
-  
   jarray ob;
-  switch(componentType) {
-    default:
-      return ErrorType;
-    case TYPE_BYTE:
-      ob = jniEnv->NewByteArray(len);
-      if(ob) {
-        /* FIXME: see if this case can be optimised */
-        jbyte *buf = new jbyte[len];
-        if(!buf) return ErrorMem;
-        for(int i = 0; i < len; i++)
-          buf[i] = (jbyte)oVal->Get(i)->Uint32Value();
-        
-        jniEnv->SetByteArrayRegion((jbyteArray)ob, 0, len, (const jbyte *)&buf);
-        delete[] buf;
-        break;
+  jint len = vLength->Int32Value();
+  if(isJavaObject(componentType)) {
+    jclass componentClass;
+    if(isInterfaceOrDict(componentType)) {
+      Interface *interface = env->getInterface(getClassId(componentType));
+      componentClass = interface->getDeclaredClass();
+    } else {
+      switch(componentType) {
+        default:
+          return ErrorType;
+        case TYPE_STRING:
+          componentClass = jni.java.lang.String.class_;
+          break;
+        case TYPE_DATE:
+          componentClass = jni.java.util.Date.class_;
+          break;
+        case TYPE_OBJECT:
+          componentClass = jni.anode.js.JSObject.class_;
+          break;
       }
-    case TYPE_INT:
-      ob = jniEnv->NewIntArray(len);
-      if(ob) {
-        jint *buf = new jint[len];
-        if(!buf) return ErrorMem;
-        for(int i = 0; i < len; i++)
-          buf[i] = oVal->Get(i)->Int32Value();
-        
-        jniEnv->SetIntArrayRegion((jintArray)ob, 0, len, (const jint *)&buf);
-        delete[] buf;
-        break;
-      }
-    case TYPE_LONG:
-      ob = jniEnv->NewLongArray(len);
-      if(ob) {
-        jlong *buf = new jlong[len];
-        if(!buf) return ErrorMem;
-        for(int i = 0; i < len; i++)
-          buf[i] = oVal->Get(i)->IntegerValue();
-        
-        jniEnv->SetLongArrayRegion((jlongArray)ob, 0, len, (const jlong *)&buf);
-        delete[] buf;
-        break;
-      }
-    case TYPE_DOUBLE:
-      ob = jniEnv->NewDoubleArray(len);
-      if(ob) {
-        jdouble *buf = new jdouble[len];
-        if(!buf) return ErrorMem;
-        for(int i = 0; i < len; i++)
-          buf[i] = oVal->Get(i)->NumberValue();
-        
-        jniEnv->SetDoubleArrayRegion((jdoubleArray)ob, 0, len, (const jdouble *)&buf);
-        delete[] buf;
-        break;
-      }
-    case TYPE_STRING:
-      ob = jniEnv->NewObjectArray(len, jni.java.lang.String.class_, 0);
-      if(ob) {
-        int res = OK;
-        for(int i = 0; i < len; i++) {
-          jstring item;
-          res = ToJavaString(jniEnv, oVal->Get(i), &item);
-          if(res != OK) break;
+    }
+    ob = jniEnv->NewObjectArray(len, componentClass, 0);
+    if(ob) {
+      int res = OK;
+      for(int i = 0; i < len; i++) {
+        jobject item;
+        res = ToJavaObject(jniEnv, oVal->Get(i), componentType, &item);
+        if(res != OK) break;
           jniEnv->SetObjectArrayElement((jobjectArray)ob, i, item);
-        }
-        break;
       }
-    case TYPE_DATE:
-      ob = jniEnv->NewObjectArray(len, jni.java.util.Date.class_, 0);
-      if(ob) {
-        int res = OK;
-        for(int i = 0; i < len; i++) {
-          jobject item;
-          res = ToJavaDate(jniEnv, oVal->Get(i), &item);
-          if(res != OK) break;
-          jniEnv->SetObjectArrayElement((jobjectArray)ob, i, item);
+    }
+  } else {
+    switch(componentType) {
+      default:
+        return ErrorType;
+      case TYPE_BYTE:
+        ob = jniEnv->NewByteArray(len);
+        if(ob) {
+          /* FIXME: see if this case can be optimised */
+          jbyte *buf = new jbyte[len];
+          if(!buf) return ErrorMem;
+          for(int i = 0; i < len; i++)
+            buf[i] = (jbyte)oVal->Get(i)->Uint32Value();
+        
+          jniEnv->SetByteArrayRegion((jbyteArray)ob, 0, len, (const jbyte *)&buf);
+          delete[] buf;
+          break;
         }
-        break;
-      }
+      case TYPE_INT:
+        ob = jniEnv->NewIntArray(len);
+        if(ob) {
+          jint *buf = new jint[len];
+          if(!buf) return ErrorMem;
+          for(int i = 0; i < len; i++)
+            buf[i] = oVal->Get(i)->Int32Value();
+        
+          jniEnv->SetIntArrayRegion((jintArray)ob, 0, len, (const jint *)&buf);
+          delete[] buf;
+          break;
+        }
+      case TYPE_LONG:
+        ob = jniEnv->NewLongArray(len);
+        if(ob) {
+          jlong *buf = new jlong[len];
+          if(!buf) return ErrorMem;
+          for(int i = 0; i < len; i++)
+            buf[i] = oVal->Get(i)->IntegerValue();
+        
+          jniEnv->SetLongArrayRegion((jlongArray)ob, 0, len, (const jlong *)&buf);
+          delete[] buf;
+          break;
+        }
+      case TYPE_DOUBLE:
+        ob = jniEnv->NewDoubleArray(len);
+        if(ob) {
+          jdouble *buf = new jdouble[len];
+          if(!buf) return ErrorMem;
+          for(int i = 0; i < len; i++)
+            buf[i] = oVal->Get(i)->NumberValue();
+        
+          jniEnv->SetDoubleArrayRegion((jdoubleArray)ob, 0, len, (const jdouble *)&buf);
+          delete[] buf;
+          break;
+        }
+    }
   }
   if(ob) {
     *jVal = ob;
@@ -469,16 +473,20 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
   return ErrorVM;
 }
 
-int Conv::ToJavaArray(JNIEnv *jniEnv, Handle<Value> val, int componentType, jobject *jVal) {
-  return OK;
-}
-
 int Conv::ToJavaInterface(JNIEnv *jniEnv, Handle<Value> val, classId clsid, jobject *jVal) {
-  return OK;
+  if(val.IsEmpty() || !val->IsObject())
+    return ErrorType;
+  Handle<Object> oVal = Handle<Object>::Cast(val);
+  int result = UnwrapInterface(jniEnv, oVal, clsid, jVal);
+  if(result == ErrorNotfound)
+    result = WrapV8Interface(jniEnv, oVal, clsid, jVal);
+  return result;
 }
 
 int Conv::ToJavaDict(JNIEnv *jniEnv, Handle<Value> val, classId clsid, jobject *jVal) {
-  return OK;
+  if(!val->IsObject()) return ErrorType;
+  Interface *interface = env->getInterface(clsid);
+  return interface ? interface->DictCreate(jniEnv, Handle<Object>::Cast(val), jVal) : ErrorInvalid;
 }
 
 int Conv::ToJavaDate(JNIEnv *jniEnv, Handle<Value> val, jobject *jVal) {
@@ -526,7 +534,6 @@ int Conv::ToJavaString(JNIEnv *jniEnv, const char *valUtf, jstring *jVal) {
 }
 
 int Conv::ToJavaString(JNIEnv *jniEnv, Handle<Value> val, jstring *jVal) {
-  HandleScope scope;
   Handle<String> vString;
   Handle<Value> empty, vRes;
   jstring ob;
@@ -587,101 +594,180 @@ int Conv::ToV8Value(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value
       return ErrorType;
   }
 
+  if(isBase(expectedType)) {
+    Handle<Value> baseVal;
+    result = ToV8Base(jniEnv, (jarray)jVal, getComponentType(expectedType), &baseVal);
+    if(result == OK)
+      *val = scope.Close(Handle<Value>(baseVal));
+    return result;
+  }
+  
   if(isSequence(expectedType)) {
     Handle<Array> seqVal;
-    result = ToV8Sequence(jniEnv, jVal, getComponentType(expectedType), &seqVal);
+    result = ToV8Sequence(jniEnv, (jarray)jVal, getComponentType(expectedType), &seqVal);
     if(result == OK)
-      *val = Handle<Value>(seqVal);
+      *val = scope.Close(Handle<Value>(seqVal));
     return result;
   }
   
   if(isArray(expectedType)) {
     Handle<Object> arrayVal;
-    result = ToV8Array(jniEnv, jVal, getComponentType(expectedType), &arrayVal);
+    result = arrayConv->ToV8Array(jniEnv, jVal, getComponentType(expectedType), &arrayVal);
     if(result == OK)
-      *val = Handle<Value>(arrayVal);
+      *val = scope.Close(Handle<Value>(arrayVal));
     return result;
   }
 
   if(isInterface(expectedType)) {
     Handle<Object> objectVal;
-    result = ToV8Interface(jniEnv, jVal, getComponentType(expectedType), &objectVal);
+    result = ToV8Interface(jniEnv, jVal, getClassId(expectedType), &objectVal);
     if(result == OK)
-      *val = Handle<Value>(objectVal);
+      *val = scope.Close(Handle<Value>(objectVal));
     return result;
   }
   
   if(isDict(expectedType)) {
     Handle<Object> objectVal;
-    result = ToV8Dict(jniEnv, jVal, getComponentType(expectedType), &objectVal);
+    result = ToV8Dict(jniEnv, jVal, getClassId(expectedType), &objectVal);
     if(result == OK)
-      *val = Handle<Value>(objectVal);
+      *val = scope.Close(Handle<Value>(objectVal));
     return result;
   }
+  return ErrorInternal;
+}
   
+int Conv::ToV8Base(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value> *val) {
+  HandleScope scope;
+  Handle<Value> local;
+  int result = OK;
   switch(expectedType) {
     default:
       return ErrorType;
     case TYPE_BOOL: {
       bool booleanValue = jniEnv->CallBooleanMethod(jVal, jni.anode.js.JSValue_Bool.getter);
-      *val = Handle<Value>(Boolean::New(booleanValue));
+      local = Handle<Value>(Boolean::New(booleanValue));
       break;
     }
     case TYPE_INT: {
       jint intValue = (jint)jniEnv->CallLongMethod(jVal, jni.anode.js.JSValue_Long.getter);
-      *val = Handle<Value>(Number::New(intValue));
+      local = Handle<Value>(Number::New(intValue));
       break;
     }
     case TYPE_LONG: {
       jlong longValue = jniEnv->CallLongMethod(jVal, jni.anode.js.JSValue_Long.getter);
-      *val = Handle<Value>(Number::New(longValue));
+      local = Handle<Value>(Number::New(longValue));
       break;
     }
     case TYPE_DOUBLE: {
       jdouble doubleValue = jniEnv->CallDoubleMethod(jVal, jni.anode.js.JSValue_Double.getter);
-      *val = Handle<Value>(Number::New(doubleValue));
+      local = Handle<Value>(Number::New(doubleValue));
       break;
     }
     case TYPE_STRING: {
       Handle<String> stringVal;
       result = ToV8String(jniEnv, (jstring)jVal, &stringVal);
       if(result == OK)
-        *val = Handle<Value>(stringVal);
+        local = Handle<Value>(stringVal);
       break;
     }
     case TYPE_DATE: {
-      Handle<Date> dateVal;
-      result = ToV8Date(jniEnv, jVal, &dateVal);
-      if(result == OK)
-        *val = Handle<Value>(dateVal);
-      break;
-    }
-    case TYPE_OBJECT: {
-      Handle<Object> objectVal;
-      result = ToV8Object(jniEnv, jVal, &objectVal);
-      if(result == OK)
-        *val = Handle<Value>(objectVal);
+      result = ToV8Date(jniEnv, jVal, &local);
       break;
     }
     case TYPE_OBJECT|TYPE_BOOL: {
       bool booleanValue = jniEnv->CallBooleanMethod(jVal, jni.java.lang.Boolean.getter);
-      *val = Handle<Value>(Boolean::New(booleanValue));
+      local = Handle<Value>(Boolean::New(booleanValue));
       break;
     }
     case TYPE_OBJECT|TYPE_INT: {
       jint intValue = jniEnv->CallIntMethod(jVal, jni.java.lang.Integer.getter);
-      *val = Handle<Value>(Number::New(intValue));
+      local = Handle<Value>(Number::New(intValue));
       break;
     }
     case TYPE_OBJECT|TYPE_LONG: {
       jlong longValue = jniEnv->CallLongMethod(jVal, jni.java.lang.Long.getter);
-      *val = Handle<Value>(Number::New(longValue));
+      local = Handle<Value>(Number::New(longValue));
       break; }
     case TYPE_OBJECT|TYPE_DOUBLE: {
       double doubleValue = jniEnv->CallDoubleMethod(jVal, jni.java.lang.Double.getter);
-      *val = Handle<Value>(Number::New(doubleValue));
+      local = Handle<Value>(Number::New(doubleValue));
       break;
     }
+  }
+  if(jniEnv->ExceptionCheck()) {
+    jniEnv->ExceptionClear();
+    result = ErrorVM;
+  }
+  *val = scope.Close(local);
+  return result;
+}
+
+int Conv::ToV8Sequence(JNIEnv *jniEnv, jarray jVal, int expectedType, Handle<Array> *val) {
+  unsigned int componentType = getComponentType(expectedType);
+  int length = jniEnv->GetArrayLength(jVal);
+  Local<Array> lVal = Local<Array>(Array::New(length));
+  int result = OK;
+  if(isJavaObject(componentType)) {
+    jobjectArray jOVal = (jobjectArray)jVal;
+    for(int i = 0; i < length; i++) {
+      Local<Value> elt;
+      jobject jElt = jniEnv->GetObjectArrayElement(jOVal, i);
+      result = ToV8Value(jniEnv, jElt, componentType, &elt);
+      if(result != OK) break;
+      lVal->Set(i, elt);
+    }
+    if(result == OK) {
+      *val = lVal;
+    }
+    if(jniEnv->ExceptionCheck()) {
+      jniEnv->ExceptionClear();
+      result = ErrorVM;
+    }
+    return result;
+  }
+  /* FIXME: use optimised buffers */
+  switch(componentType) {
+    case TYPE_BYTE: {
+        jbyteArray jBVal = (jbyteArray)jVal;
+        jbyte *elts = jniEnv->GetByteArrayElements(jBVal, 0);
+        for(int i = 0; i < length; i++) {
+          lVal->Set(i, Number::New(elts[i]));
+        }
+        jniEnv->ReleaseByteArrayElements(jBVal, elts, 0);
+      }
+      break;
+    case TYPE_INT: {
+        jintArray jIVal = (jintArray)jVal;
+        jint *elts = jniEnv->GetIntArrayElements(jIVal, 0);
+        for(int i = 0; i < length; i++) {
+          lVal->Set(i, Number::New(elts[i]));
+        }
+        jniEnv->ReleaseIntArrayElements(jIVal, elts, 0);
+      }
+      break;
+    case TYPE_LONG: {
+        jlongArray jJVal = (jlongArray)jVal;
+        jlong *elts = jniEnv->GetLongArrayElements(jJVal, 0);
+        for(int i = 0; i < length; i++) {
+          lVal->Set(i, Number::New(elts[i]));
+        }
+        jniEnv->ReleaseLongArrayElements(jJVal, elts, 0);
+      }
+      break;
+    case TYPE_DOUBLE: {
+        jdoubleArray jDVal = (jdoubleArray)jVal;
+        jdouble *elts = jniEnv->GetDoubleArrayElements(jDVal, 0);
+        for(int i = 0; i < length; i++) {
+          lVal->Set(i, Number::New(elts[i]));
+        }
+        jniEnv->ReleaseDoubleArrayElements(jDVal, elts, 0);
+      }
+      break;
+    default:
+      result = ErrorType;
+  }
+  if(result == OK) {
+    *val = lVal;
   }
   if(jniEnv->ExceptionCheck()) {
     jniEnv->ExceptionClear();
@@ -690,54 +776,125 @@ int Conv::ToV8Value(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value
   return result;
 }
 
-int Conv::ToV8Sequence(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Array> *val) {
-  return OK;
+int Conv::ToV8Interface(JNIEnv *jniEnv, jobject jVal, classId clsid, Handle<Object> *val) {
+  int result = UnwrapObject(jniEnv, jVal, val);
+  if(result == ErrorNotfound) {
+    Handle<Object> vInst;
+    Interface *interface = env->getInterface(clsid);
+    result = interface->PlatformCreate(jniEnv, jVal, val);
+    if(result == OK) {
+      result = BindToJavaObject(jniEnv, jVal, vInst, interface->getHiddenKey());
+      if(result == OK)
+        *val = vInst;
+    }
+  }
+  return result;
 }
 
-int Conv::ToV8Array(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object> *val) {
-  return OK;
-}
-
-int Conv::ToV8Interface(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object> *val) {
-  return OK;
-}
-
-int Conv::ToV8Dict(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object> *val) {
-  return OK;
+int Conv::ToV8Dict(JNIEnv *jniEnv, jobject jVal, classId clsid, Handle<Object> *val) {
+  Interface *interface = env->getInterface(clsid);
+  Local<Object> lVal = Object::New();
+  int result = interface->DictExport(jniEnv, jVal, lVal);
+  if(result == OK)
+    *val = lVal;
+  return result;
 }
 
 int Conv::ToV8String(JNIEnv *jniEnv, jstring jVal, Handle<String> *val) {
+  int len = jniEnv->GetStringUTFLength(jVal);
+  const char *data = jniEnv->GetStringUTFChars(jVal, 0);
+  *val = String::New(data, len);
+  jniEnv->ReleaseStringUTFChars(jVal, data);
   return OK;
 }
 
-int Conv::ToV8Date(JNIEnv *jniEnv, jobject jVal, Handle<Date> *val) {
+int Conv::ToV8Date(JNIEnv *jniEnv, jobject jVal, Handle<Value> *val) {
+  jlong dateVal = jniEnv->CallLongMethod(jVal, jni.java.util.Date.getter);
+  *val = Date::New((double)dateVal);
   return OK;
 }
 
-int Conv::ToV8Object(JNIEnv *jniEnv, jobject jVal, Handle<Object> *val) {
-  return OK;
+int Conv::UnwrapObject(JNIEnv *jniEnv, jobject jVal, Handle<Object> *val) {
+  jlong pVal = jniEnv->GetLongField(jVal, instHandle);
+  if(pVal) {
+    Local<Object> lVal = Local<Object>(*asHandle(pVal));
+    if(!lVal.IsEmpty()) {
+      *val = lVal;
+      return OK;
+    }
+  }
+  return ErrorNotfound;
+}
+
+int Conv::BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, Handle<Object> val, Handle<String> key) {
+  int result = OK;
+  Persistent<Object> pVal = Persistent<Object>::New(val);
+  jobject ob = jniEnv->NewGlobalRef(jLocal);
+  pVal.MakeWeak(ob, releaseJavaRef);
+  val->SetHiddenValue(key, External::Wrap(ob));
+  val->SetPointerInInternalField(0, ob);
+  jniEnv->SetLongField(jLocal, instHandle, asLong(pVal));
+  return result;
 }
 
 /* called from v8 when Weak Persistent references
  * to Java objects are eligible for collection */
 void Conv::releaseJavaRef(Persistent<Value> instHandle, void *jGlobalRef) {
-  Env::getEnv_nocheck()->getVM()->getJNIEnv()->DeleteGlobalRef((jobject)jGlobalRef);
+  jobject ob = (jobject)jGlobalRef;
+  Env *env = Env::getEnv_nocheck();
+  JNIEnv *jniEnv = Env::getEnv_nocheck()->getVM()->getJNIEnv();
+  jniEnv->SetLongField(ob, env->getConv()->instHandle, 0);
+  jniEnv->DeleteGlobalRef((jobject)jGlobalRef);
 }
 
 /* called by the Java environment for objects that have been finalized */
-void Conv::releaseV8Handle(JNIEnv *jniEnv, Persistent<Object> val, int classId) {
+void Conv::releaseV8Handle(JNIEnv *jniEnv, Persistent<Object> val, int type) {
   HandleScope scope;
-  if(classId == -1) {
-    /* platform object, just kill the reference, the object is gone anyway */
-    val.Dispose();
+  Handle<String> sHiddenKey;
+  if(type == -1) {
+    sHiddenKey = sObjectHiddenKey;
   } else {
-    /* user object, delete both refs as Java obj will never come back */
-    Handle<String> sHiddenKey = env->getInterface(classId)->getHiddenKey();
-    Local<Value> hiddenVal = val->GetHiddenValue(sHiddenKey);
-    if(!hiddenVal.IsEmpty() && !hiddenVal->IsUndefined()) {
-      jobject extRef = (jobject)External::Unwrap(hiddenVal);
-      jniEnv->DeleteGlobalRef(extRef);
-      val->DeleteHiddenValue(sHiddenKey);
-    }
+    sHiddenKey = env->getInterface(getClassId(type))->getHiddenKey();
+  }
+  Local<Value> hiddenVal = val->GetHiddenValue(sHiddenKey);
+  if(!hiddenVal.IsEmpty() && !hiddenVal->IsUndefined()) {
+    jobject extRef = (jobject)External::Unwrap(hiddenVal);
+    jniEnv->DeleteGlobalRef(extRef);
+    val->DeleteHiddenValue(sHiddenKey);
+  }
+  val.Dispose();
+}
+
+Handle<String> Conv::getTypeKey(unsigned int type) {
+  char keyStr[32];
+  sprintf(keyStr, "node::type::%x", type);
+  return Local<String>::New(String::New(keyStr));
+}
+
+jstring Conv::getJavaClassName(JNIEnv *jniEnv, jclass class_) {
+  return (jstring)jniEnv->CallObjectMethod(classClass, classGetName);
+}
+
+Handle<String> Conv::getV8ClassName(JNIEnv *jniEnv, jclass class_) {
+  Local<String> name;
+  ToV8String(jniEnv, getJavaClassName(jniEnv, class_), &name);
+  return name;
+}
+
+void Conv::ThrowV8ExceptionForErrno(int errno) {
+  switch(errno) {
+    case OK:
+      break;
+    case ErrorType:
+      ThrowException(Exception::TypeError(String::New("TypeError")));
+      break;
+    case ErrorNotfound:
+      ThrowException(Exception::ReferenceError(String::New("ReferenceError")));
+      break;
+    case ErrorVM:
+      ThrowException(Exception::Error(String::New("bridge: Internal VM error")));
+      break;
+    default:
+      ThrowException(Exception::Error(String::New("bridge: Unknown error")));
   }
 }

@@ -5,6 +5,9 @@
 
 #ifndef _Included_org_meshpoint_anode_bridge_BridgeNative
 #define _Included_org_meshpoint_anode_bridge_BridgeNative
+
+void ThrowForErrno(JNIEnv *jniEnv, int errno, const char *msg);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -67,18 +70,18 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_propertie
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    getIndexedProperty
- * Signature: (JJI)Ljava/lang/Object;
+ * Signature: (JJII)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getIndexedProperty
-  (JNIEnv *, jclass, jlong, jlong, jint);
+  (JNIEnv *, jclass, jlong, jlong, jint, jint);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    setIndexedProperty
- * Signature: (JJILjava/lang/Object;)V
+ * Signature: (JJIILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setIndexedProperty
-  (JNIEnv *, jclass, jlong, jlong, jint, jobject);
+  (JNIEnv *, jclass, jlong, jlong, jint, jint, jobject);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -96,14 +99,22 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_deleteIndexe
 JNIEXPORT jboolean JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_containsIndex
   (JNIEnv *, jclass, jlong, jlong, jint);
 
-/*
- * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    length
- * Signature: (JJ)I
- */
-JNIEXPORT jint JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_length
+  /*
+   * Class:     org_meshpoint_anode_bridge_BridgeNative
+   * Method:    getLength
+   * Signature: (JJ)I
+   */
+JNIEXPORT jint JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getLength
   (JNIEnv *, jclass, jlong, jlong);
-
+  
+  /*
+   * Class:     org_meshpoint_anode_bridge_BridgeNative
+   * Method:    getLength
+   * Signature: (JJI)V
+   */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setLength
+  (JNIEnv *, jclass, jlong, jlong, jint);
+  
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    invokeJSInterface
@@ -139,10 +150,10 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjec
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    bindInterface
- * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)J
+ * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)J
  */
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterface
-  (JNIEnv *, jclass, jlong, jobject, jint, jint, jint, jclass, jclass, jclass);
+  (JNIEnv *, jclass, jlong, jobject, jint, jint, jint, jclass, jclass, jclass, jclass);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative

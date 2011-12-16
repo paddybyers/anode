@@ -4,6 +4,8 @@
 #include "VM.h"
 #include <uv.h>
 
+namespace bridge {
+
 class JREVM : public VM {
 public:
 	JREVM();
@@ -18,4 +20,5 @@ private:
 	int            attach();
 };
 
+} // namespace bridge
 #endif

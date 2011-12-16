@@ -2,14 +2,18 @@
 
 #include "defines.h"
 #include <string.h>
+#include "ArrayConv.h"
+#include "Env.h"
+#include "VM.h"
 #include "Utils.cpp"
 
 using namespace v8;
+using namespace bridge;
 
-int Interface::Create(JNIEnv *jniEnv, Conv *conv, jobject jInterface, classId class_, int attrCount, int opCount, jclass importStub, jclass exportStub, jclass valueStub, Interface **inst) {
+int Interface::Create(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass, Interface **inst) {
   Interface *ob = new Interface();
   if(!ob) return ErrorMem;
-  int result = ob->init(jniEnv, conv, jInterface, class_, attrCount, opCount, importStub, exportStub, valueStub);
+  int result = ob->Init(jniEnv, env, jInterface, class_, attrCount, opCount, declaredClass);
   if(result == OK)
     *inst = ob;
   return result;
@@ -17,80 +21,100 @@ int Interface::Create(JNIEnv *jniEnv, Conv *conv, jobject jInterface, classId cl
 
 void Interface::dispose(JNIEnv *jniEnv) {
   hiddenKey.Dispose();
-  if(jImportStub)
-    jniEnv->DeleteGlobalRef(jImportStub);
-  if(jExportStub)
-    jniEnv->DeleteGlobalRef(jExportStub);
-  if(jValueStub)
-    jniEnv->DeleteGlobalRef(jValueStub);
+  function.Dispose();
+  functionTemplate.Dispose();
+  if(jUserStub)
+    jniEnv->DeleteGlobalRef(jUserStub);
+  if(jPlatformStub)
+    jniEnv->DeleteGlobalRef(jPlatformStub);
+  if(jDictStub)
+    jniEnv->DeleteGlobalRef(jDictStub);
   delete[] attributes;
   delete[] operations;
 }
 
-int Interface::init(JNIEnv *jniEnv, Conv *conv, jobject jInterface, classId class_, int attrCount, int opCount, jclass importStub, jclass exportStub, jclass valueStub) {
-  this->conv       = conv;
-  this->jInterface = jInterface;
-  this->class_     = class_;
-  this->attributes = TArray<Attribute>::New(attrCount);
-  this->operations = TArray<Operation>::New(opCount);
+int Interface::Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass) {
+  this->env           = env;
+  this->conv          = env->getConv();
+  this->declaredClass = declaredClass;
+  this->jInterface    = jInterface;
+  this->class_        = class_;
+  this->attributes    = TArray<Attribute>::New(attrCount);
+  this->operations    = TArray<Operation>::New(opCount);
   if(!attributes || !operations) return ErrorMem;
 
-  char keyStr[] = "node::interface::xxxx";
-  sprintf(&keyStr[17], "%x", class_);
-  hiddenKey = Persistent<String>::New(String::New(keyStr));
-
-  if(importStub) {
-    jImportStub = (jclass)jniEnv->NewGlobalRef(importStub);
-    jImportCtor = jniEnv->GetMethodID(importStub, "<init>", "(JLorg/meshpoint/anode/idl/IDLInterface;)V");
-  }
-
-  if(exportStub) {
-    jExportStub = (jclass)jniEnv->NewGlobalRef(exportStub);
-    jclass classClass = jniEnv->FindClass("java/lang/Class");
-    jmethodID classGetName = jniEnv->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
-    jstring jExportName = (jstring)jniEnv->CallObjectMethod(exportStub, classGetName);
-    const char *exportName = jniEnv->GetStringUTFChars(jExportName, 0);
-    int exportNameLen = jniEnv->GetStringUTFLength(jExportName);
-    char *methodSig = new char[exportNameLen + sizeof("(L;I[Ljava/lang/Object;)Ljava/lang/Object;")];
-    if(!methodSig) return ErrorMem;
-    methodSig[0] = '('; methodSig[1] = 'L';
-    memcpy(&methodSig[2], exportName, exportNameLen);
-    
-    memcpy(&methodSig[2 + exportNameLen], ";I[Ljava/lang/Object;)Ljava/lang/Object;", sizeof(";I[Ljava/lang/Object;)Ljava/lang/Object;"));
-    jExportInvoke  = jniEnv->GetStaticMethodID(exportStub, "__invoke", methodSig);
-    
-    memcpy(&methodSig[2 + exportNameLen], ";I)Ljava/lang/Object;", sizeof(";I)Ljava/lang/Object;"));
-    jExportGet     = jniEnv->GetStaticMethodID(exportStub, "__get", "methodSig");
-    
-    memcpy(&methodSig[2 + exportNameLen], ";ILjava/lang/Object;)V", sizeof(";ILjava/lang/Object;)V"));
-    jExportSet     = jniEnv->GetStaticMethodID(exportStub, "__set", "");
-
-    jExportGetArgs = jniEnv->GetStaticMethodID(exportStub, "__getArgs", "()[Ljava/lang/Object;");
-    
-    delete[] methodSig;
-  }
+  hiddenKey = Persistent<String>(Conv::getTypeKey(getInterfaceType(class_)));
+  sClassName = Persistent<String>::New(conv->getV8ClassName(jniEnv, declaredClass));
   
-  if(valueStub) {
-    jValueStub    = (jclass)jniEnv->NewGlobalRef(valueStub);
-    jValueCtor    = jniEnv->GetMethodID(valueStub, "<init>",    "()V");
-    jValueGetArgs = jniEnv->GetMethodID(valueStub, "__getArgs", "()[Ljava/lang/Object;");
-    jValueImport  = jniEnv->GetMethodID(valueStub, "__import",  "([Ljava/lang/Object;)V");
-    jValueExport  = jniEnv->GetMethodID(valueStub, "__export",  "()[Ljava/lang/Object;");
-  }
   return OK;
 }
 
-int Interface::initAttribute(JNIEnv *jniEnv, jint idx, jint type, jstring jName) {
-  return attributes->addr(idx)->init(jniEnv, conv, type, jName);
+int Interface::InitUserStub(JNIEnv *jniEnv, jclass userStub) {
+  jUserStub = (jclass)jniEnv->NewGlobalRef(userStub);
+  jUserCtor = jniEnv->GetMethodID(userStub, "<init>", "(JLorg/meshpoint/anode/idl/IDLInterface;)V");
+  return OK;
 }
 
-int Interface::initOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName, jint argCount, jint *argTypes) {
-  return operations->addr(idx)->init(jniEnv, conv, this, type, jName, argCount, argTypes);
+int Interface::InitPlatformStub(JNIEnv *jniEnv, jclass platformStub) {
+  jPlatformStub = (jclass)jniEnv->NewGlobalRef(platformStub);
+  jstring jPlatformName = conv->getJavaClassName(jniEnv, platformStub);
+  const char *platformName = jniEnv->GetStringUTFChars(jPlatformName, 0);
+  char *methodSig = new char[jniEnv->GetStringUTFLength(jPlatformName) + sizeof("(L;I[Ljava/lang/Object;)Ljava/lang/Object;")];
+  if(!methodSig) return ErrorMem;
+  
+  sprintf(methodSig, "(L%s;I[Ljava/lang/Object;)Ljava/lang/Object;", platformName);
+  jPlatformInvoke  = jniEnv->GetStaticMethodID(platformStub, "__invoke", methodSig);
+  
+  sprintf(methodSig, "(L%s;I)Ljava/lang/Object;", platformName);
+  jPlatformGet     = jniEnv->GetStaticMethodID(platformStub, "__get", "methodSig");
+  
+  sprintf(methodSig, "(L%s;ILjava/lang/Object;)V", platformName);
+  jPlatformSet     = jniEnv->GetStaticMethodID(platformStub, "__set", "");
+  
+  jPlatformGetArgs = jniEnv->GetStaticMethodID(platformStub, "__getArgs", "()[Ljava/lang/Object;");
+  
+  delete[] methodSig;
+  jniEnv->ReleaseStringUTFChars(jPlatformName, platformName);
+  
+  /* set up function template etc */
+  functionTemplate = Persistent<FunctionTemplate>::New(FunctionTemplate::New());
+  functionTemplate->SetClassName(sClassName);
+  instanceTemplate = Persistent<ObjectTemplate>::New(functionTemplate->InstanceTemplate());
+  instanceTemplate->SetInternalFieldCount(2);
+  return OK;
+}
+
+int Interface::InitDictStub(JNIEnv *jniEnv, jclass dictStub) {
+  jDictStub    = (jclass)jniEnv->NewGlobalRef(dictStub);
+  jDictCtor    = jniEnv->GetMethodID(dictStub, "<init>",    "()V");
+  jDictGetArgs = jniEnv->GetMethodID(dictStub, "__getArgs", "()[Ljava/lang/Object;");
+  jDictImport  = jniEnv->GetMethodID(dictStub, "__import",  "([Ljava/lang/Object;)V");
+  jDictExport  = jniEnv->GetMethodID(dictStub, "__export",  "()[Ljava/lang/Object;");
+  return OK;
+}
+
+int Interface::InitAttribute(JNIEnv *jniEnv, jint idx, jint type, jstring jName) {
+  Attribute *attr = attributes->addr(idx);
+  int result = attr->Init(jniEnv, conv, type, jName);
+  if(result == OK && jPlatformStub) {
+    instanceTemplate->SetAccessor(attr->name, PlatformAttrGet, PlatformAttrSet, Number::New(idx));
+  }
+  return result;
+}
+
+int Interface::InitOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName, jint argCount, jint *argTypes) {
+  Operation *op = operations->addr(idx);
+  int result = op->Init(jniEnv, conv, this, type, jName, argCount, argTypes);
+  if(result == OK && jPlatformStub) {
+    Local<FunctionTemplate> opTemp = FunctionTemplate::New(PlatformOpInvoke, Number::New(idx));
+    functionTemplate->PrototypeTemplate()->Set(op->name, opTemp);
+  }
+  return result;
 }
 
 int Interface::UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
-  if(!jImportStub) return ErrorNotfound;
-  jobject ob = jniEnv->NewObject(jImportStub, jImportCtor, handle, jInterface);
+  if(!jUserStub) return ErrorNotfound;
+  jobject ob = jniEnv->NewObject(jUserStub, jUserCtor, handle, jInterface);
   if(ob) {
     *jVal = ob;
     return OK;
@@ -98,9 +122,9 @@ int Interface::UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
   return ErrorVM;
 }
 
-int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jlong handle, jobject *jVal) {
-  jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jValueStub, jValueGetArgs);
-  jobject ob = jniEnv->NewObject(jValueStub, jValueCtor);
+int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
+  jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jDictStub, jDictGetArgs);
+  jobject ob = jniEnv->NewObject(jDictStub, jDictCtor);
   if(!args || !ob) return ErrorVM;
   jniEnv->MonitorEnter(args);
   int result = OK;
@@ -112,11 +136,11 @@ int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jlong handle, jobj
     jniEnv->SetObjectArrayElement(args, i, jMember);
   }
   if(result == OK) {
-    jniEnv->CallVoidMethod(ob, jValueImport, args);
+    jniEnv->CallVoidMethod(ob, jDictImport, args);
     *jVal = ob;
   }
   jniEnv->MonitorExit(args);  
-  return OK;
+  return result;
 }
 
 int Interface::UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobjectArray jArgs, jobject *jResult) {
@@ -188,10 +212,10 @@ int Interface::UserGet(JNIEnv *jniEnv, Handle<Object> target, int attrIdx, jobje
 }
 
 int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
-  jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jValueStub, jValueGetArgs);
+  jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jDictStub, jDictGetArgs);
   if(!args) return ErrorVM;
   jniEnv->MonitorEnter(args);
-  jniEnv->CallObjectMethod(jVal, jValueExport);
+  jniEnv->CallObjectMethod(jVal, jDictExport);
   int result = OK;
   for(int i = 0; i < attributes->getLength(); i++) {
     jobject jMember = jniEnv->GetObjectArrayElement(args, i);
@@ -204,29 +228,125 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
   return result;
 }
 
+int Interface::PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> *val) {
+  Local<Object> local = function->NewInstance();
+  int result = local.IsEmpty() ? ErrorVM : OK;
+  if(result == OK) {
+    local->SetPointerInInternalField(1, this);
+    *val = local;
+  }
+  return result;
+}
+
+Handle<Value> Interface::PlatformAttrGet(Local<String> property, const AccessorInfo& info) {
+  HandleScope scope;
+  jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
+  Interface *interface = (Interface *)info.This()->GetPointerFromInternalField(1);
+  int attrIdx = info.Data()->Int32Value();
+  Attribute *attr = interface->attributes->addr(attrIdx);
+  JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+  jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGet, ob, attrIdx);
+  if(jniEnv->ExceptionCheck()) {
+    jniEnv->ExceptionClear();
+    ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
+    return Undefined();
+  }
+  Local<Value> val;
+  int result = interface->conv->ToV8Value(jniEnv, jVal, attr->type, &val);
+  if(result == OK) {
+    return scope.Close(val);
+  }
+  interface->conv->ThrowV8ExceptionForErrno(result);
+  return Undefined();
+}
+
+void Interface::PlatformAttrSet(Local<String> property, Local<Value> value, const AccessorInfo& info) {
+  HandleScope scope;
+  jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
+  Interface *interface = (Interface *)info.This()->GetPointerFromInternalField(1);
+  int attrIdx = info.Data()->Int32Value();
+  Attribute *attr = interface->attributes->addr(attrIdx);
+  JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+  jobject jVal;
+  int result = interface->conv->ToJavaObject(jniEnv, value, attr->type, &jVal);
+  if(result == OK) {
+    jniEnv->CallStaticVoidMethod(interface->jPlatformStub, interface->jPlatformSet, ob, attrIdx, jVal);
+    if(jniEnv->ExceptionCheck()) {
+      jniEnv->ExceptionClear();
+      ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
+      return;
+    }
+  }
+  if(result != OK)
+    interface->conv->ThrowV8ExceptionForErrno(result);
+}
+
+Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
+  HandleScope scope;
+  jobject ob = (jobject)args.This()->GetPointerFromInternalField(0);
+  Interface *interface = (Interface *)args.This()->GetPointerFromInternalField(1);
+  int opIdx = args.Data()->Int32Value();
+  Operation *op = interface->operations->addr(opIdx);
+  JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+  jobjectArray jArgs = (jobjectArray)jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGetArgs);
+  jniEnv->MonitorEnter(jArgs);
+  int suppliedArgs = args.Length();
+  int expectedArgs = op->argCount;
+  int argsToProcess = (suppliedArgs < expectedArgs) ? suppliedArgs : expectedArgs;
+  int result = OK;
+  Local<Value> val;
+  jobject jItem;
+  for(int i = 0; i < argsToProcess; i++) {
+    result = interface->conv->ToJavaObject(jniEnv, args[i], op->argTypes[i], &jItem);
+    if(result != OK) break;
+    jniEnv->SetObjectArrayElement(jArgs, i, jItem);    
+  }
+  if(result == OK) {
+    for(int i = argsToProcess; i < expectedArgs; i++) {
+      result = interface->conv->ToJavaObject(jniEnv, Undefined(), op->argTypes[i], &jItem);
+      if(result != OK) break;
+      jniEnv->SetObjectArrayElement(jArgs, i, jItem);
+    }
+    if(result == OK) {
+      jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformInvoke, ob, opIdx, jArgs);
+      if(jniEnv->ExceptionCheck()) {
+        jniEnv->ExceptionClear();
+        result = ErrorVM;
+      }
+      if(result == OK) {
+        result = interface->conv->ToV8Value(jniEnv, jVal, op->type, &val);
+      }
+    }
+  }
+  jniEnv->MonitorExit(jArgs);
+  if(result == OK && !val.IsEmpty()) {
+    return scope.Close(val);
+  }
+  interface->conv->ThrowV8ExceptionForErrno(result);
+  return Undefined();  
+}
+
 Attribute::~Attribute() {
   if(!name.IsEmpty()) name.Dispose();
 }
 
-int Attribute::init(JNIEnv *jniEnv, Conv *conv, jint type, jstring jName) {
+int Attribute::Init(JNIEnv *jniEnv, Conv *conv, jint type, jstring jName) {
   this->type = type;
   Local<String> lName;
   int result = conv->ToV8String(jniEnv, jName, &lName);
-  if(result == OK)
+  if(result == OK) {
     name = Persistent<String>::New(lName);
+  }
   return result;
 }
 
 Operation::~Operation() {
   delete[] argTypes;
   delete[] vArgs;
-  if(!fInvoke.IsEmpty()) fInvoke.Dispose();
-  if(!fGet.IsEmpty()) fGet.Dispose();
-  if(!fSet.IsEmpty()) fSet.Dispose();
 }
 
-int Operation::init(JNIEnv *jniEnv, Conv *conv, Interface *interface, jint type, jstring jName, jint argCount, jint *argTypes) {
-  int result = Attribute::init(jniEnv, conv, type, jName);
+int Operation::Init(JNIEnv *jniEnv, Conv *conv, Interface *interface, jint type, jstring jName, jint argCount, jint *argTypes) {
+  int result = Attribute::Init(jniEnv, conv, type, jName);
   argTypes = new jint[argCount];
   vArgs = new Handle<Value>[argCount];
   if(result == OK)

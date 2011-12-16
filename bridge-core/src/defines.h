@@ -47,7 +47,8 @@ enum {
 	ErrorInvalid  = -6, /* invalid argument or value */
 	ErrorType     = -7, /* incompatible type */
   ErrorJS       = -8, /* V8 exception in user code */
-  ErrorTBD      = -9
+  ErrorInternal = -9, /* internal error */
+  ErrorTBD      = -10
 };
 
 /****************
@@ -65,8 +66,9 @@ enum {
   TYPE_INT       ,
   TYPE_LONG      ,
   TYPE_DOUBLE    ,
-  TYPE_STRING    ,
-  TYPE_MAP       , /*= 10 */
+  TYPE__OB_START ,
+  TYPE_STRING    , /*= 10 */
+  TYPE_MAP       ,
   TYPE_FUNCTION  ,
   TYPE_DATE      ,
   TYPE_OBJECT    = 16,
@@ -80,6 +82,10 @@ typedef unsigned short classId;
 
 inline classId getClassId(int type) {
   return (short)(type >> 16);
+}
+
+inline unsigned int getInterfaceType(classId clsid) {
+  return (clsid << 16) | TYPE_IDL;
 }
 
 inline bool isDictClass(classId class_) { return class_ & 1; }
@@ -104,8 +110,24 @@ inline bool isArray(int type) {
   return (type & TYPE_ARRAY) != 0;
 }
 
+inline bool isBase(int type) {
+  return (type < TYPE___END);
+}
+
+inline bool isJavaObject(int type) {
+  return (type > TYPE__OB_START);
+}
+
 inline int getComponentType(int type) {
   return (type & (~TYPE_ARRAY & ~TYPE_SEQUENCE));
+}
+
+inline int getArrayType(int type) {
+  return (type | TYPE_ARRAY);
+}
+
+inline int getSequenceType(int type) {
+  return (type | TYPE_SEQUENCE);
 }
 
 /******************************

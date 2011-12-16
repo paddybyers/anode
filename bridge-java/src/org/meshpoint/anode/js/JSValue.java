@@ -1,8 +1,6 @@
 package org.meshpoint.anode.js;
 
 import org.meshpoint.anode.idl.Types;
-import org.meshpoint.anode.type.IBoolean;
-import org.meshpoint.anode.type.INumber;
 
 /**
  * A variant to hold an arbitrary value, plus a pool of free
@@ -11,7 +9,7 @@ import org.meshpoint.anode.type.INumber;
  * The re-pooled objects are freed if the number available
  * exceeds a hard-coded count.
  */
-public final class JSValue implements IBoolean, INumber {
+public final class JSValue {
 	
 	/************************
 	 * private state
@@ -28,21 +26,21 @@ public final class JSValue implements IBoolean, INumber {
 	/**
 	 * JSNumber
 	 */
-	public static INumber asJSNumber(long l) {
+	public static JSValue asJSNumber(long l) {
 		JSValue result = get();
 		result.longValue = l;
 		result.type = Types.TYPE_LONG;
 		return result;
 	}
 
-	public static INumber asJSNumber(double d) {
+	public static JSValue asJSNumber(double d) {
 		JSValue result = get();
 		result.dblValue = d;
 		result.type = Types.TYPE_DOUBLE;
 		return result;
 	}
 
-	public static INumber asJSNumber(Number n) {
+	public static JSValue asJSNumber(Number n) {
 		JSValue result = get();
 		Class<? extends Number> nClass = n.getClass();
 		if(nClass == Float.class || nClass == Double.class) {
@@ -59,7 +57,6 @@ public final class JSValue implements IBoolean, INumber {
 		return result;
 	}
 
-	@Override
 	public long getLongValue() {
 		switch(type) {
 		case Types.TYPE_BYTE:
@@ -71,14 +68,12 @@ public final class JSValue implements IBoolean, INumber {
 		throw new Types.TypeError();
 	}
 
-	@Override
 	public double getDoubleValue() {
 		if(type == Types.TYPE_DOUBLE)
 			return dblValue;
 		throw new Types.TypeError();
 	}
 
-	@Override
 	public Number getNumberValue() {
 		Number result;
 		switch(type) {
@@ -106,27 +101,25 @@ public final class JSValue implements IBoolean, INumber {
 	/**
 	 * JSBoolean
 	 */
-	public static IBoolean asJSBoolean(boolean b) {
+	public static JSValue asJSBoolean(boolean b) {
 		JSValue result = get();
 		result.longValue = b ? 1 : 0;
 		result.type = Types.TYPE_BOOL;
 		return result;
 	}
 
-	public static IBoolean asJSBoolean(Boolean b) {
+	public static JSValue asJSBoolean(Boolean b) {
 		JSValue result = get();
 		result.longValue = b.booleanValue() ? 1 : 0;
 		result.type = Types.TYPE_BOOL;
 		return result;
 	}
 
-	@Override
 	public boolean getBooleanValue() {
 		if(type == Types.TYPE_BOOL)
 			return longValue != 0;
 		throw new Types.TypeError();
 	}
-
 
 	/**
 	 * The maximum number of cached instances

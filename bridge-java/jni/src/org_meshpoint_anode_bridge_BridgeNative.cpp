@@ -3,7 +3,38 @@
 #ifdef ANDROID
 #include <AndroidVM.h>
 #endif
+#include <ArrayConv.h>
+#include <Conv.h>
 #include <Env.h>
+
+using namespace v8;
+using namespace bridge;
+
+void ThrowForErrno(JNIEnv *jniEnv, int errno, const char *msg) {
+  switch(errno) {
+    case ErrorType:
+      jniEnv->ThrowNew(jniEnv->FindClass("org/meshpoint/anode/error/TypeError"), msg);
+      break;
+    case ErrorMem:
+      jniEnv->ThrowNew(jniEnv->FindClass("java/lang/OutOfMemoryError"), msg);
+      break;
+    case ErrorNotfound:
+      jniEnv->ThrowNew(jniEnv->FindClass("org/meshpoint/anode/error/ReferenceError"), msg);
+      break;
+    case ErrorJS:
+      jniEnv->ThrowNew(jniEnv->FindClass("org/meshpoint/anode/error/ScriptError"), msg);
+      break;
+    case ErrorVM:
+      jniEnv->ThrowNew(jniEnv->FindClass("org/meshpoint/anode/error/InternalError"), msg);
+      break;
+    default:
+      jstring jMsg = jniEnv->NewStringUTF(msg);
+      jclass jErrClass = jniEnv->FindClass("org/meshpoint/anode/error/GeneralError");
+      jmethodID ctor = jniEnv->GetMethodID(jErrClass, "<init>", "(ILjava/lang/String;)V");
+      jniEnv->Throw((jthrowable)jniEnv->NewObject(jErrClass, ctor, errno, jMsg));
+      break;
+  }
+}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -64,18 +95,36 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_propertie
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    getIndexedProperty
- * Signature: (JJI)Ljava/lang/Object;
+ * Signature: (JJII)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getIndexedProperty
-(JNIEnv *, jclass, jlong, jlong, jint);
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint jElementType, jint idx) {
+  Env *env = (Env *)jEnvHandle;
+  Handle<Object> instHandle = asHandle(jInstHandle);
+  jobject jVal = 0;
+  int result = env->getConv()->getArrayConv()->UserGetElement(jniEnv, instHandle, (unsigned int)jElementType, idx, &jVal);
+  if(result != OK) {
+    LOGV("Unable to get element on user array: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to get element on user array");
+  }
+  return jVal;
+}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    setIndexedProperty
- * Signature: (JJILjava/lang/Object;)V
+ * Signature: (JJIILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setIndexedProperty
-(JNIEnv *, jclass, jlong, jlong, jint, jobject);
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint jElementType, jint idx, jobject jVal) {
+  Env *env = (Env *)jEnvHandle;
+  Handle<Object> instHandle = asHandle(jInstHandle);
+  int result = env->getConv()->getArrayConv()->UserSetElement(jniEnv, instHandle, (unsigned int)jElementType, idx, jVal);
+  if(result != OK) {
+    LOGV("Unable to set element on user array: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to set element on user array");
+  }
+}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -95,11 +144,37 @@ JNIEXPORT jboolean JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_contains
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
- * Method:    length
+ * Method:    getLength
  * Signature: (JJ)I
  */
-JNIEXPORT jint JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_length
-(JNIEnv *, jclass, jlong, jlong);
+JNIEXPORT jint JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getLength
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle) {
+  Env *env = (Env *)jEnvHandle;
+  Handle<Object> instHandle = asHandle(jInstHandle);
+  int length = 0;
+  int result = env->getConv()->getArrayConv()->UserGetLength(jniEnv, instHandle, &length);
+  if(result != OK) {
+    LOGV("Unable to get length on user array: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to get length on user array");
+  }
+  return length;
+}
+
+/*
+ * Class:     org_meshpoint_anode_bridge_BridgeNative
+ * Method:    getLength
+ * Signature: (JJI)V
+ */
+JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setLength
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint length) {
+  Env *env = (Env *)jEnvHandle;
+  Handle<Object> instHandle = asHandle(jInstHandle);
+  int result = env->getConv()->getArrayConv()->UserSetLength(jniEnv, instHandle, length);
+  if(result != OK) {
+    LOGV("Unable to set length on user array: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to set length on user array");
+  }
+}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -112,8 +187,10 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSI
   Interface *interface = (Interface *)jInterfaceHandle;
   jobject jResult = 0;
   int result = interface->UserInvoke(jniEnv, instHandle, idx, jArgs, &jResult);
-  if(result != OK)
-    LOGV("Unable to get property on user interface: err = %d\n", result);
+  if(result != OK) {
+    LOGV("Unable to invoke on user interface: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to invoke on user interface");
+  }
   return jResult;
 }
 
@@ -128,8 +205,10 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getJSInte
   Interface *interface = (Interface *)jInterfaceHandle;
   jobject jVal = 0;
   int result = interface->UserGet(jniEnv, instHandle, idx, &jVal);
-  if(result != OK)
+  if(result != OK) {
     LOGV("Unable to get property on user interface: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to get property on user interface");
+  }
   return jVal;
 }
 
@@ -145,6 +224,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setJSInterfa
   int result = interface->UserSet(jniEnv, instHandle, idx, jVal);
   if(result != OK) {
     LOGV("Unable to set property on user interface: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to set property on user interface");
   }
 }
 
@@ -154,25 +234,30 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setJSInterfa
  * Signature: (JJI)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjectHandle
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint jClassId) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint type) {
   Env *env = (Env *)jEnvHandle;
   Persistent<Object> instHandle = asHandle(jInstHandle);
-  env->getConv()->releaseV8Handle(jniEnv, instHandle, jClassId);
+  env->getConv()->releaseV8Handle(jniEnv, instHandle, type);
 }
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    bindInterface
- * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)J
+ * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/Class;)J
  */
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterface
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass jUserStub, jclass jPlatformStub, jclass jDictStub) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass declaredClass, jclass jUserStub, jclass jPlatformStub, jclass jDictStub) {
   Env *env = (Env *)jEnvHandle;
   Interface *interface;
-  int result = Interface::Create(jniEnv, env->getConv(), jInterface, jClassId, attrCount, opCount, jUserStub, jPlatformStub, jDictStub, &interface);
-  if(result == OK)
+  int result = Interface::Create(jniEnv, env, jInterface, jClassId, attrCount, opCount, declaredClass, &interface);
+  if(result == OK) {
+    if(jUserStub != 0) interface->InitUserStub(jniEnv, jUserStub);
+    if(jPlatformStub != 0) interface->InitPlatformStub(jniEnv, jPlatformStub);
+    if(jDictStub != 0) interface->InitDictStub(jniEnv, jDictStub);
     return (jlong)interface;
+  }
   LOGV("Unable to create Interface: err = %d\n", result);
+  ThrowForErrno(jniEnv, result, "Unable to create Interface");
   return 0;
 }
 
@@ -184,9 +269,10 @@ JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterfa
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindAttribute
 (JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jint attrIdx, jint type, jstring jName) {
   Interface *interface = (Interface *)jInterfaceHandle;
-  int result = interface->initAttribute(jniEnv, attrIdx, type, jName);
+  int result = interface->InitAttribute(jniEnv, attrIdx, type, jName);
   if(result != OK) {
     LOGV("Unable to init Attribute: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to init Attribute");
   }
 }
 
@@ -199,10 +285,11 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOperatio
 (JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jint opIdx, jint type, jstring jName, jint argCount, jintArray jArgTypes) {
   Interface *interface = (Interface *)jInterfaceHandle;
   jint *argTypes = jniEnv->GetIntArrayElements(jArgTypes, 0);
-  int result = interface->initOperation(jniEnv, opIdx, type, jName, argCount, argTypes);
+  int result = interface->InitOperation(jniEnv, opIdx, type, jName, argCount, argTypes);
   jniEnv->ReleaseIntArrayElements(jArgTypes, argTypes, 0);
   if(result != OK) {
     LOGV("Unable to init Operation: err = %d\n", result);
+    ThrowForErrno(jniEnv, result, "Unable to init Operation");
   }
 }
 

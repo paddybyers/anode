@@ -5,60 +5,76 @@
 #include "Conv.h"
 #include "Utils.h"
 
+namespace bridge {
+
+class ArrayType;
 class Attribute;
 class Operation;
 
-using namespace v8;
-
 class Interface {
 public:
-  static int Create(JNIEnv *jniEnv, Conv *conv, jobject jInterface, classId class_, int attrCount, int opCount, jclass importStub, jclass exportStub, jclass valueStub, Interface **inst);
+  static int Create(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass, Interface **inst);
   void dispose(JNIEnv *jniEnv);
   ~Interface() {};
   
-  int initAttribute(JNIEnv *jniEnv, jint idx, jint type, jstring jName);
-  int initOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName, jint argCount, jint *argTypes);
-  inline Persistent<String> getHiddenKey() {return hiddenKey;}
-  static inline int classId2Idx(classId class_) {return class_ >> 1;}
+  int InitUserStub(JNIEnv *jniEnv, jclass userStub);
+  int InitPlatformStub(JNIEnv *jniEnv, jclass platformStub);
+  int InitDictStub(JNIEnv *jniEnv, jclass dictStub);
+  int InitAttribute(JNIEnv *jniEnv, jint idx, jint type, jstring jName);
+  int InitOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName, jint argCount, jint *argTypes);
   
-  int DictCreate(JNIEnv *jniEnv, Handle<Object> val, jlong handle, jobject *jVal);
-  int DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val);
+  int DictCreate(JNIEnv *jniEnv, v8::Handle<v8::Object> val, jobject *jVal);
+  int DictExport(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> val);
   
   int UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal);
-  int UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobjectArray jArgs, jobject *jResult);
-  int UserSet(JNIEnv *jniEnv, Handle<Object> target, int attrIdx, jobject jVal);
-  int UserGet(JNIEnv *jniEnv, Handle<Object> target, int attrIdx, jobject *jVal);
+  int UserInvoke(JNIEnv *jniEnv, v8::Handle<v8::Object> target, int opIdx, jobjectArray jArgs, jobject *jResult);
+  int UserSet(JNIEnv *jniEnv, v8::Handle<v8::Object> target, int attrIdx, jobject jVal);
+  int UserGet(JNIEnv *jniEnv, v8::Handle<v8::Object> target, int attrIdx, jobject *jVal);
 
-  classId operator=(classId) { return this->class_;}
-  jobject operator=(jobject) { return this->jInterface;}
+  int PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> *val);
 
+  inline v8::Persistent<v8::String> getHiddenKey() {return hiddenKey;}
+  static inline int classId2Idx(classId class_) {return class_ >> 1;}
+  inline jclass getDeclaredClass() {return declaredClass;}
+  
 private:
   Interface() : attributes(0), operations(0) {};
-  int init(JNIEnv *jniEnv, Conv *conv, jobject jInterface, classId class_, int attrCount, int opCount, jclass importStub, jclass exportStub, jclass valueStub);
+  int Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass);
 
+  static v8::Handle<v8::Value> PlatformAttrGet(v8::Local<v8::String> property, const v8::AccessorInfo& info);
+  static void PlatformAttrSet(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
+  static v8::Handle<v8::Value> PlatformOpInvoke(const v8::Arguments& args);
+
+  Env *env;
   Conv *conv;
-  Persistent<String> hiddenKey;
+  v8::Persistent<v8::String> hiddenKey;
+  v8::Persistent<v8::String> sClassName;
+  v8::Persistent<v8::FunctionTemplate> functionTemplate;
+  v8::Persistent<v8::Function> function;
+  v8::Persistent<v8::ObjectTemplate> instanceTemplate;
+
   classId class_;
   TArray<Attribute> *attributes;
   TArray<Operation> *operations;
   
   /* JNI */
+  jclass    declaredClass;
   jobject   jInterface;
 
-  jclass    jImportStub;
-  jmethodID jImportCtor;
+  jclass    jUserStub;
+  jmethodID jUserCtor;
 
-  jclass    jExportStub;
-  jmethodID jExportGetArgs;
-  jmethodID jExportInvoke;
-  jmethodID jExportGet;
-  jmethodID jExportSet;
+  jclass    jPlatformStub;
+  jmethodID jPlatformGetArgs;
+  jmethodID jPlatformInvoke;
+  jmethodID jPlatformGet;
+  jmethodID jPlatformSet;
   
-  jclass    jValueStub;
-  jmethodID jValueCtor;
-  jmethodID jValueGetArgs;
-  jmethodID jValueImport;
-  jmethodID jValueExport;
+  jclass    jDictStub;
+  jmethodID jDictCtor;
+  jmethodID jDictGetArgs;
+  jmethodID jDictImport;
+  jmethodID jDictExport;
   
   friend class Attribute;
   friend class Operation;
@@ -67,23 +83,21 @@ private:
 class Attribute {
 public:
   int type;
-  Persistent<String> name;
+  v8::Persistent<v8::String> name;
   Attribute() {};
   virtual ~Attribute();
-  int init(JNIEnv *jniEnv, Conv *conv, jint type, jstring jName);
+  int Init(JNIEnv *jniEnv, Conv *conv, jint type, jstring jName);
 };
 
 class Operation : public Attribute {
 public:
   int argCount;
   jint *argTypes;
-  Handle<Value> *vArgs;
-  Persistent<Function> fInvoke;
-  Persistent<Function> fGet;
-  Persistent<Function> fSet;
+  v8::Handle<v8::Value> *vArgs;
   Operation() : Attribute(), argTypes(0) {};
   virtual ~Operation();
-  int init(JNIEnv *jniEnv, Conv *conv, Interface *interface, jint type, jstring jName, jint argCount, jint *argTypes);
+  int Init(JNIEnv *jniEnv, Conv *conv, Interface *interface, jint type, jstring jName, jint argCount, jint *argTypes);
 };
 
+} // namespace bridge
 #endif
