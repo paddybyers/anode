@@ -55,7 +55,7 @@ int Interface::Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_
 
 int Interface::InitUserStub(JNIEnv *jniEnv, jclass userStub) {
   jUserStub = (jclass)jniEnv->NewGlobalRef(userStub);
-  jUserCtor = jniEnv->GetMethodID(userStub, "<init>", "(JLorg/meshpoint/anode/idl/IDLInterface;)V");
+  jUserCtor = jniEnv->GetMethodID(userStub, "<init>", "(J)V");
   return OK;
 }
 
@@ -124,7 +124,7 @@ int Interface::InitOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName,
 
 int Interface::UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
   if(!jUserStub) return ErrorInternal;
-  jobject ob = jniEnv->NewObject(jUserStub, jUserCtor, handle, jInterface);
+  jobject ob = jniEnv->NewObject(jUserStub, jUserCtor, handle);
   if(ob) {
     *jVal = ob;
     return OK;
@@ -141,7 +141,8 @@ int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
   int result = OK;
   for(int i = 0; i < attributes->getLength(); i++) {
     jobject jMember;
-    Local<Value> member = val->Has(attributes->addr(i)->name) ? val->Get(attributes->addr(i)->name) : Local<Value>();
+    Handle<String> attrName = attributes->addr(i)->name;
+    Local<Value> member = val->Has(attrName) ? val->Get(attrName) : Local<Value>();
     result = conv->ToJavaObject(jniEnv, member, attributes->addr(i)->type, &jMember);
     if(result != OK) break;
     jniEnv->SetObjectArrayElement(args, i, jMember);
@@ -164,7 +165,7 @@ int Interface::UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobj
   }
   if(result == OK) {
     Handle<Value> vRes;
-    if(target->IsFunction() && op->argCount == 1) {
+    if(target->IsFunction() && operations->getLength() == 1) {
       /* invoke as function if target is a function, and interface delcares only one operation */
       vRes = (Handle<Function>::Cast(target))->Call(target, op->argCount, op->vArgs);
     } else {

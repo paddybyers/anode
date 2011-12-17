@@ -179,12 +179,13 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setLength
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    invokeJSInterface
- * Signature: (JJJI[Ljava/lang/Object;)Ljava/lang/Object;
+ * Signature: (JJII[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSInterface
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobjectArray jArgs) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint classId, jint idx, jobjectArray jArgs) {
+  Env *env = (Env *)jEnvHandle;
   Handle<Object> instHandle = asHandle(jInstHandle);
-  Interface *interface = (Interface *)jInterfaceHandle;
+  Interface *interface = env->getInterface(classId);
   jobject jResult = 0;
   int result = interface->UserInvoke(jniEnv, instHandle, idx, jArgs, &jResult);
   if(result != OK) {
@@ -197,12 +198,13 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSI
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    getJSInterface
- * Signature: (JJJI)Ljava/lang/Object;
+ * Signature: (JJII)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getJSInterface
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInstHandle, jlong jInterfaceHandle, jint idx) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint classId, jint idx) {
+  Env *env = (Env *)jEnvHandle;
   Handle<Object> instHandle = asHandle(jInstHandle);
-  Interface *interface = (Interface *)jInterfaceHandle;
+  Interface *interface = env->getInterface(classId);
   jobject jVal = 0;
   int result = interface->UserGet(jniEnv, instHandle, idx, &jVal);
   if(result != OK) {
@@ -215,12 +217,13 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getJSInte
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    setJSInterface
- * Signature: (JJJILjava/lang/Object;)V
+ * Signature: (JJIILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setJSInterface
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInstHandle, jlong jInterfaceHandle, jint idx, jobject jVal) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint classId, jint idx, jobject jVal) {
+  Env *env = (Env *)jEnvHandle;
   Handle<Object> instHandle = asHandle(jInstHandle);
-  Interface *interface = (Interface *)jInterfaceHandle;
+  Interface *interface = env->getInterface(classId);
   int result = interface->UserSet(jniEnv, instHandle, idx, jVal);
   if(result != OK) {
     LOGV("Unable to set property on user interface: err = %d\n", result);

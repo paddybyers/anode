@@ -49,4 +49,7 @@ public class FinalizeQueue implements SynchronousOperation {
 	public synchronized boolean isPending() {
 		return count > 0;
 	}
+
+	@Override
+	public void cancel() {}
 }

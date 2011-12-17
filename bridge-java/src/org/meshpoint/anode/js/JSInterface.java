@@ -22,26 +22,26 @@ public class JSInterface {
 	public void release(int classId) {
 		env.finalizeQueue.put(instHandle, classId);
 	}
-	
+
 	/*********************
 	 * bridge API
 	 *********************/
 	protected Object __invoke(int classId, int opIdx, Object[] args) {
 		if(env.isEventThread())
-			return BridgeNative.invokeJSInterface(env.getHandle(), classId, instHandle, opIdx, args);
+			return BridgeNative.invokeJSInterface(env.getHandle(), instHandle, classId, opIdx, args);
 		return deferOp(OP.INVOKE, classId, opIdx, null, args);
 	}
 
 	protected Object __get(int classId, int attrIdx) {
 		if(env.isEventThread())
-			return BridgeNative.getJSInterface(env.getHandle(), classId, instHandle, attrIdx);
+			return BridgeNative.getJSInterface(env.getHandle(), instHandle, classId, attrIdx);
 		return deferOp(OP.GET, classId, attrIdx, null, null);
 		
 	}
 
 	protected void __set(int classId, int attrIdx, Object val) {
 		if(env.isEventThread())
-			BridgeNative.setJSInterface(env.getHandle(), classId, instHandle, attrIdx, val);
+			BridgeNative.setJSInterface(env.getHandle(), instHandle, classId, attrIdx, val);
 		deferOp(OP.SET, classId, attrIdx, val, null);
 	}
 
@@ -60,7 +60,7 @@ public class JSInterface {
 	
 	private enum OP {INVOKE, GET, SET};
 
-	private static ThreadLocal<SyncOp> threadSyncOp;
+	private static ThreadLocal<SyncOp> threadSyncOp = new ThreadLocal<SyncOp>();
 
 	private class SyncOp implements SynchronousOperation {
 
@@ -70,18 +70,19 @@ public class JSInterface {
 		private Object ob;
 		private int idx;
 		private boolean isPending;
+		private boolean isCancelled;
 
 		@Override
 		public void run() {
 			switch(op) {
 			case INVOKE:
-				ob = BridgeNative.invokeJSInterface(env.getHandle(), classId, instHandle, idx, args);
+				ob = BridgeNative.invokeJSInterface(env.getHandle(), instHandle, classId, idx, args);
 				break;
 			case GET:
-				ob = BridgeNative.getJSInterface(env.getHandle(), classId, instHandle, idx);
+				ob = BridgeNative.getJSInterface(env.getHandle(), instHandle, classId, idx);
 				break;
 			case SET:
-				BridgeNative.setJSInterface(env.getHandle(), classId, instHandle, idx, ob);
+				BridgeNative.setJSInterface(env.getHandle(), instHandle, classId, idx, ob);
 				break;
 			}
 			isPending = false;
@@ -97,8 +98,15 @@ public class JSInterface {
 			this.ob = val;
 			this.args = args;
 			this.isPending = true;
+			this.isCancelled = false;
 			env.waitForOperation(this);
-			return ob;
+			return isCancelled ? null : ob;
+		}
+
+		@Override
+		public void cancel() {
+			isCancelled = true;
+			isPending = false;
 		}
 	}
 }

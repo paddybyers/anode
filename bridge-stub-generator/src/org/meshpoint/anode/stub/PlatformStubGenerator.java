@@ -9,6 +9,7 @@ import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.idl.StubUtil;
+import org.meshpoint.anode.idl.Types;
 
 public class PlatformStubGenerator extends StubGenerator {
 
@@ -48,8 +49,8 @@ public class PlatformStubGenerator extends StubGenerator {
 						for(int i = 0; i < operations.length; i++) {
 							Operation op = operations[i];
 							registerName(op.name);
-							cw.writeln("case " + i + ": /* " + op.name + "*/", -1);
-							cw.writeln("result = " + getInvokeCaseBodyExpression(op, "\t\t\t") + ";");
+							cw.writeln("case " + i + ": /* " + op.name + " */", -1);
+							cw.writeln((op.type == Types.TYPE_UNDEFINED ? "" : "result = ") + getInvokeCaseBodyExpression(op, "\t\t\t") + ";");
 							cw.writeln("break;");
 						}
 						cw.writeln("default:", -1);
@@ -79,7 +80,7 @@ public class PlatformStubGenerator extends StubGenerator {
 						for(int i = 0; i < attributes.length; i++) {
 							Attribute attr = attributes[i];
 							registerName(attr.name);
-							cw.writeln("case " + i + ": /* " + attr.name + "*/", -1);
+							cw.writeln("case " + i + ": /* " + attr.name + " */", -1);
 							cw.writeln("result = " + getArgToObjectExpression(attr.type, getAttrAccessExpression(ifaceName, attr)) + ";");
 							cw.writeln("break;");
 						}
@@ -101,7 +102,7 @@ public class PlatformStubGenerator extends StubGenerator {
 					cw.openScope("switch(attrIdx)");
 						for(int i = 0; i < attributes.length; i++) {
 							Attribute attr = attributes[i];
-							cw.writeln("case " + i + ": /* " + attr.name + "*/", -1);
+							cw.writeln("case " + i + ": /* " + attr.name + " */", -1);
 							cw.writeln(getAttrAccessExpression(ifaceName, attr) + " = " + getObjectToArgExpression(attr.type, "val") + ";");
 							cw.writeln("break;");
 						}

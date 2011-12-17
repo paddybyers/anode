@@ -909,6 +909,8 @@ void Conv::releaseJavaRef(Persistent<Value> instHandle, void *jGlobalRef) {
   JNIEnv *jniEnv = Env::getEnv_nocheck()->getVM()->getJNIEnv();
   jniEnv->SetLongField(ob, env->getConv()->instHandle, 0);
   jniEnv->DeleteGlobalRef((jobject)jGlobalRef);
+//  instHandle.ClearWeak();
+  instHandle.Dispose();
 }
 
 /* called by the Java environment for objects that have been finalized */

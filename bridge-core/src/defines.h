@@ -115,7 +115,7 @@ inline bool isBase(int type) {
 }
 
 inline bool isJavaObject(int type) {
-  return (type > TYPE__OB_START);
+  return (type >= TYPE__OB_START);
 }
 
 inline int getComponentType(int type) {

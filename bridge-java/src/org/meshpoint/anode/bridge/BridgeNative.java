@@ -37,9 +37,9 @@ public class BridgeNative {
 	public native static void setLength(long envHandle, long instHandle, int length);
 
 	/* JSInterface */
-	public native static Object invokeJSInterface(long envHandle, long instHandle, long interfaceHandle, int opIdx, Object[] args);
-	public native static Object getJSInterface(long envHandle, long instHandle, long interfaceHandle, int attrIdx);
-	public native static void setJSInterface(long envHandle, long instHandle, long interfaceHandle, int attrIdx, Object val);
+	public native static Object invokeJSInterface(long envHandle, long instHandle, int classId, int opIdx, Object[] args);
+	public native static Object getJSInterface(long envHandle, long instHandle, int classId, int attrIdx);
+	public native static void setJSInterface(long envHandle, long instHandle, int classId, int attrIdx, Object val);
 	
 	/* instance handle management */
 	native static void releaseObjectHandle(long envHandle, long instHandle, int type);

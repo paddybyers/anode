@@ -118,26 +118,26 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setLength
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    invokeJSInterface
- * Signature: (JJJI[Ljava/lang/Object;)Ljava/lang/Object;
+ * Signature: (JJII[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSInterface
-  (JNIEnv *, jclass, jlong, jlong, jlong, jint, jobjectArray);
+  (JNIEnv *, jclass, jlong, jlong, jint, jint, jobjectArray);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    getJSInterface
- * Signature: (JJJI)Ljava/lang/Object;
+ * Signature: (JJII)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getJSInterface
-  (JNIEnv *, jclass, jlong, jlong, jlong, jint);
+  (JNIEnv *, jclass, jlong, jlong, jint, jint);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    setJSInterface
- * Signature: (JJJILjava/lang/Object;)V
+ * Signature: (JJIILjava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setJSInterface
-  (JNIEnv *, jclass, jlong, jlong, jlong, jint, jobject);
+  (JNIEnv *, jclass, jlong, jlong, jint, jint, jobject);
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative

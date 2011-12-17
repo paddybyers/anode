@@ -169,6 +169,10 @@ public abstract class StubGenerator {
 	protected static String getArgToObjectExpression(int type, String subExpr) throws GeneratorException {
 		String result = subExpr;
 
+		/* void */
+		if(type == Types.TYPE_UNDEFINED)
+			return result;
+
 		/* array + interface types */
 		if((type & (Types.TYPE_SEQUENCE|Types.TYPE_ARRAY|Types.TYPE_INTERFACE)) > 0)
 			return result;

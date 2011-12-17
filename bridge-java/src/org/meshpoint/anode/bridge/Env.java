@@ -32,6 +32,7 @@ public class Env {
 	private InterfaceManager interfaceManager;
 	private List<SynchronousOperation> pendingOps;
 	private HashMap<String, ModuleContext> modules;
+	private boolean allowPending = true;
 	private boolean isDisposed;
 	private boolean entryRequested;
 	private String TAG = "Env";
@@ -118,6 +119,7 @@ public class Env {
 			} catch(Throwable t) {}
 			modules.remove(moduleClassname);
 			result = true;
+			if(modules.isEmpty()) dispose();
 		}
 		return result;
 	}
@@ -148,6 +150,10 @@ public class Env {
 			}
 		}
 		synchronized(pendingOps) {
+			if(!allowPending) {
+				op.cancel();
+				return;
+			}
 			if(!pendingOps.contains(op))
 				pendingOps.add(op);
 			if(!entryRequested) {
@@ -158,6 +164,9 @@ public class Env {
 		synchronized(op) {
 			while(op.isPending())
 				try {op.wait();} catch(InterruptedException e) {}
+		}
+		synchronized(pendingOps) {
+			pendingOps.remove(op);
 		}
 	}
 	
@@ -175,6 +184,18 @@ public class Env {
 		}
 	}
 	
+	private void cancelScheduledOps() {
+		synchronized(pendingOps) {
+			for(SynchronousOperation op : pendingOps) {
+				synchronized(op) {
+					op.cancel();
+					op.notifyAll();
+				}
+			}
+			allowPending = false;
+		}
+	}
+
 	/********************
 	 * instance management
 	 ********************/
@@ -218,6 +239,7 @@ public class Env {
 			isDisposed = true;
 		}
 		if(iWillDispose) {
+			cancelScheduledOps();
 			for(ModuleContext ctx : modules.values())
 				ctx.getModule().stopModule();
 			interfaceManager.dispose();
