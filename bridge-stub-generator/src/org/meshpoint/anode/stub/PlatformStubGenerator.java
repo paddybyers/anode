@@ -28,13 +28,13 @@ public class PlatformStubGenerator extends StubGenerator {
 		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_PLATFORM);
 		try {
 			writePreamble(cw, className, null, null, StubUtil.MODE_PLATFORM);
+			emitMaxargsArray(cw, iface, true);
 
 			/*******************
 			 * invoke method
 			 *******************/
 			Operation[] operations = iface.getOperations();
 			if(operations.length > 0) {
-				emitMaxargsArray(cw, iface, true);
 				cw.openScope("static Object __invoke(" + ifaceName + " inst, int opIdx, Object[] args)");
 				if(operations.length == 1) {
 					/* no switch statement */

@@ -35,6 +35,7 @@ public:
 
   inline v8::Persistent<v8::String> getHiddenKey() {return hiddenKey;}
   static inline int classId2Idx(classId class_) {return class_ >> 1;}
+  static inline classId idx2ClassId(int idx, bool isDict) {return (idx << 1) + (int)isDict;}
   inline jclass getDeclaredClass() {return declaredClass;}
   
 private:

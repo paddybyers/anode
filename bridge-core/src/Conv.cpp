@@ -332,6 +332,13 @@ int Conv::BindToV8Object(JNIEnv *jniEnv, Handle<Object> val, Handle<String> key,
 }
 
 int Conv::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobject *jVal) {
+
+  /* empty, null and undefined convert to null for any nullable type */
+  if((expectedType >= TYPE__OB_START) && (val.IsEmpty() || val->IsNull() || val->IsUndefined())) {
+    *jVal = 0;
+    return OK;
+  }
+
   if(isSequence(expectedType))
     return ToJavaSequence(jniEnv, val, getComponentType(expectedType), (jarray *)jVal);
   
@@ -350,23 +357,23 @@ int Conv::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobj
     default:
       return ErrorType;
     case TYPE_BOOL: {
-      bool isVoid = val->BooleanValue();
+      bool isVoid = val.IsEmpty() ? false : val->BooleanValue();
       ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Bool.class_, jni.anode.js.JSValue_Bool.ctor, isVoid);
       break;
     }
     case TYPE_BYTE:
     case TYPE_INT: {
-      jint intValue = val->Int32Value();
+      jint intValue = val.IsEmpty() ? 0 : val->Int32Value();
       ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Long.class_, jni.anode.js.JSValue_Long.ctor, (jlong)intValue);
       break;
     }
     case TYPE_LONG: {
-      jlong longValue = val->IntegerValue();
+      jlong longValue = val.IsEmpty() ? 0 : val->IntegerValue();
       ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Long.class_, jni.anode.js.JSValue_Long.ctor, longValue);
       break;
     }
     case TYPE_DOUBLE: {
-      jdouble doubleValue = val->NumberValue();
+      jdouble doubleValue = val.IsEmpty() ? 0 : val->NumberValue();
       ob = jniEnv->CallStaticObjectMethod(jni.anode.js.JSValue_Double.class_, jni.anode.js.JSValue_Double.ctor, doubleValue);
       break;
     }
@@ -466,49 +473,42 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
         ob = jniEnv->NewByteArray(len);
         if(ob) {
           /* FIXME: see if this case can be optimised */
-          jbyte *buf = new jbyte[len];
-          if(!buf) return ErrorMem;
+          jbyte *buf = jniEnv->GetByteArrayElements((jbyteArray)ob, 0);
           for(int i = 0; i < len; i++)
             buf[i] = (jbyte)oVal->Get(i)->Uint32Value();
         
-          jniEnv->SetByteArrayRegion((jbyteArray)ob, 0, len, (const jbyte *)&buf);
-          delete[] buf;
+          jniEnv->ReleaseByteArrayElements((jbyteArray)ob, buf, 0);
           break;
         }
       case TYPE_INT:
         ob = jniEnv->NewIntArray(len);
         if(ob) {
-          jint *buf = new jint[len];
-          if(!buf) return ErrorMem;
+          jint *buf = jniEnv->GetIntArrayElements((jintArray)ob, 0);
           for(int i = 0; i < len; i++)
             buf[i] = oVal->Get(i)->Int32Value();
         
-          jniEnv->SetIntArrayRegion((jintArray)ob, 0, len, (const jint *)&buf);
-          delete[] buf;
+          jniEnv->ReleaseIntArrayElements((jintArray)ob, buf, 0);
           break;
         }
       case TYPE_LONG:
         ob = jniEnv->NewLongArray(len);
         if(ob) {
-          jlong *buf = new jlong[len];
-          if(!buf) return ErrorMem;
+          jlong *buf = jniEnv->GetLongArrayElements((jlongArray)ob, 0);
           for(int i = 0; i < len; i++)
             buf[i] = oVal->Get(i)->IntegerValue();
         
-          jniEnv->SetLongArrayRegion((jlongArray)ob, 0, len, (const jlong *)&buf);
-          delete[] buf;
+          jniEnv->ReleaseLongArrayElements((jlongArray)ob, buf, 0);
           break;
         }
       case TYPE_DOUBLE:
         ob = jniEnv->NewDoubleArray(len);
         if(ob) {
-          jdouble *buf = new jdouble[len];
+          jdouble *buf = jniEnv->GetDoubleArrayElements((jdoubleArray)ob, 0);
           if(!buf) return ErrorMem;
           for(int i = 0; i < len; i++)
             buf[i] = oVal->Get(i)->NumberValue();
         
-          jniEnv->SetDoubleArrayRegion((jdoubleArray)ob, 0, len, (const jdouble *)&buf);
-          delete[] buf;
+          jniEnv->ReleaseDoubleArrayElements((jdoubleArray)ob, buf, 0);
           break;
         }
     }
@@ -545,7 +545,7 @@ int Conv::ToJavaDate(JNIEnv *jniEnv, Handle<Value> val, jobject *jVal) {
   } else {
     dateTime = val->NumberValue();
   }
-  jobject ob = jniEnv->NewObject(jni.java.util.Date.class_, jni.java.util.Date.ctor, floor(dateTime));
+  jobject ob = jniEnv->NewObject(jni.java.util.Date.class_, jni.java.util.Date.ctor, (jlong)dateTime);
   if(ob) {
     *jVal = ob;
     return OK;
@@ -635,6 +635,11 @@ int Conv::ToJavaString(JNIEnv *jniEnv, Handle<Value> val, jstring *jVal) {
  ****************************/
 
 int Conv::ToV8Value(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value> *val) {
+  if(jVal == 0) {
+    *val = Undefined();
+    return OK;
+  }
+  
   HandleScope scope;
   int result = OK;
   if(expectedType == TYPE_NONE || expectedType == TYPE_OBJECT) {

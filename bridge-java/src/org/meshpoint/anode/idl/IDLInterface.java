@@ -34,20 +34,24 @@ public class IDLInterface {
 	/**
 	 * A class encapsulating the metadata for an attribute
 	 */
-	public class Attribute {
+	public class Attribute implements Comparable<Attribute> {
 		public String name;
 		public int type;
 		public int modifiers;
+		@Override
+		public int compareTo(Attribute attr) { return name.compareTo(attr.name); }
 	}
 
 	/**
 	 * A class encapsulating the metadata for an operation (method)
 	 */
-	public class Operation {
+	public class Operation implements Comparable<Operation> {
 		public String name;
 		public int type;
 		public int modifiers;
 		public int[] args;
+		@Override
+		public int compareTo(Operation op) { return name.compareTo(op.name); }
 	}
 
 	/********************

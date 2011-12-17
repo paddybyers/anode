@@ -231,7 +231,7 @@ int ArrayConv::WrapV8Array(JNIEnv *jniEnv, Handle<Array> val, jobject *jVal) {
 
 int ArrayConv::GetArrayType(JNIEnv *jniEnv, classId class_, ArrayType **ref) {
   int result = OK;
-  int idx = class_ >> 1;
+  int idx = Interface::classId2Idx(class_);
   *ref = interfaces->get(idx);
   if(!ref) {
     interfaces->put(idx, (*ref = new ArrayType(env, jniEnv, getInterfaceType(class_), "ObjectArray", "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V")));

@@ -141,7 +141,7 @@ int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
   int result = OK;
   for(int i = 0; i < attributes->getLength(); i++) {
     jobject jMember;
-    Local<Value> member = val->Get(attributes->addr(i)->name);
+    Local<Value> member = val->Has(attributes->addr(i)->name) ? val->Get(attributes->addr(i)->name) : Local<Value>();
     result = conv->ToJavaObject(jniEnv, member, attributes->addr(i)->type, &jMember);
     if(result != OK) break;
     jniEnv->SetObjectArrayElement(args, i, jMember);
@@ -370,9 +370,13 @@ Operation::~Operation() {
 
 int Operation::Init(JNIEnv *jniEnv, Conv *conv, Interface *interface, jint type, jstring jName, jint argCount, jint *argTypes) {
   int result = Attribute::Init(jniEnv, conv, type, jName);
-  argTypes = new jint[argCount];
+  this->argCount = argCount;
+  this->argTypes = new jint[argCount];
   vArgs = new Handle<Value>[argCount];
   if(result == OK)
-    result = (argTypes && vArgs) ? OK : ErrorMem;
+    result = (this->argTypes && vArgs) ? OK : ErrorMem;
+  if(result == OK) {
+    memcpy(this->argTypes, argTypes, argCount * sizeof(jint));
+  }
   return result;
 }

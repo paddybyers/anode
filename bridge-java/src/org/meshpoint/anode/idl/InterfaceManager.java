@@ -5,6 +5,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 
 import org.meshpoint.anode.bridge.Env;
@@ -42,7 +43,7 @@ public class InterfaceManager {
 	}
 
 	public synchronized IDLInterface getById(int id) {
-		return interfaces.get(id);
+		return interfaces.get(classId2Idx(id));
 	}
 	
 	public synchronized IDLInterface getByName(String name) {
@@ -81,10 +82,11 @@ public class InterfaceManager {
 		result = defineClass(javaClass);
 		return result;
 	}
-	
+
 	private IDLInterface defineClass(Class<?> javaClass) {
 		String canonicalName = javaClass.getCanonicalName().intern();
-		if(canonicalName == "java.lang.Object")
+		/* terminate when at Object or some other framework class */
+		if(canonicalName == "java.lang.Object" || canonicalName.startsWith("org.meshpoint.anode"))
 			return null;
 
 		/* add to manager, and resolve parent */
@@ -110,6 +112,7 @@ public class InterfaceManager {
 			}
 		}
 		result.attributes = attributeList.toArray(new Attribute[attributeList.size()]);
+		Arrays.sort(result.attributes);
 		
 		/* resolve methods */
 		ArrayList<Operation> operationList = new ArrayList<Operation>();
@@ -139,6 +142,7 @@ public class InterfaceManager {
 			}
 		}
 		result.operations = operationList.toArray(new Operation[operationList.size()]);
+		Arrays.sort(result.operations);
 
 		/* init the native part */
 		if(getEnv() != null) result.initNative();
@@ -148,11 +152,19 @@ public class InterfaceManager {
 	/**********************
 	 * private
 	 **********************/
+	
+	private static int classId2Idx(int classId) {
+		return classId >> 1;
+	}
+
+	private static int idx2ClassId(int idx, boolean isDict) {
+		return (idx << 1) + (isDict ? 1 : 0);
+	}
+
 	synchronized int put(IDLInterface iface) {
 		int result = (int)iface.getId();
 		if(result == -1) {
-			result = interfaces.size() * 2;
-			if(iface.isValueType()) ++result;
+			result = idx2ClassId(interfaces.size(), iface.isValueType());
 			interfaces.add(iface);
 			nameMap.put(iface.getName(), iface);
 			classMap.put(iface.getJavaClass(), iface);
