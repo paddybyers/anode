@@ -3,6 +3,8 @@
 
 #include "VM.h"
 
+namespace bridge {
+
 class AndroidVM : public VM {
 public:
 	AndroidVM(JNIEnv *jniEnv, jobject jAndroidContext);
@@ -12,5 +14,7 @@ public:
 private:
 	jobject jAndroidContext;
 };
+
+} // namespace bridge
 
 #endif

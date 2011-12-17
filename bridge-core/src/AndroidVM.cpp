@@ -1,5 +1,7 @@
 #include "AndroidVM.h"
 
+using namespace bridge;
+
 AndroidVM::AndroidVM(JNIEnv *jniEnv, jobject jAndroidContext) : VM() {
 	this->jniEnv = jniEnv;
 	this->jAndroidContext = jAndroidContext;

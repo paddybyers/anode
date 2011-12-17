@@ -23,14 +23,11 @@ LOCAL_CPP_EXTENSION := .cpp
 
 LOCAL_SRC_FILES := \
 	src/AndroidVM.cpp \
+	src/ArrayConv.cpp \
+	src/Conv.cpp \
 	src/Env.cpp \
-	src/Module.cpp \
-	src/InboundInterface.cpp \
-	src/InboundOperation.cpp \
-	src/InboundAttribute.cpp \
-    src/OutboundInterface.cpp \
-    src/OutboundOperation.cpp \
-    src/OutboundAttribute.cpp \
+	src/Interface.cpp \
+	src/Utils.cpp \
 	src/VM.cpp
 
 LOCAL_STATIC_LIBRARIES := 

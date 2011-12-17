@@ -35,7 +35,7 @@ using namespace v8;
  * so the reactive initEnv() won't occur*/
 void Env::setupEnv(VM *vm) {
   static_init();
-	initEnv(vm);
+	initOnce(vm);
 }
 #endif
 
