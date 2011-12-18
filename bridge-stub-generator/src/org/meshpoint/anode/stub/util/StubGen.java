@@ -3,6 +3,7 @@ package org.meshpoint.anode.stub.util;
 import java.io.File;
 import java.io.IOException;
 
+import org.meshpoint.anode.idl.Dictionary;
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.stub.PlatformStubGenerator;
@@ -104,10 +105,8 @@ public class StubGen {
 
 	private static int processMode(String modeStr) {
 		if(modeStr == null) {
-			System.err.println("Internal error: mode is null");
-			return ERR_BAD_MODE;
-		}
-		if(modeStr.equals("user"))
+			mode = MODE.NONE;		}
+		else if(modeStr.equals("user"))
 			mode = MODE.USER;
 		else if(modeStr.equals("platform"))
 			mode = MODE.PLATFORM;
@@ -147,6 +146,16 @@ public class StubGen {
 		}
 		
 		StubGenerator generator = null;
+		if(mode == MODE.NONE) {
+			/* choose the mode based on the interface */
+			Class<?> javaClass = iface.getJavaClass();
+			if(javaClass.isInterface())
+				mode = MODE.USER;
+			else if(Dictionary.class.isAssignableFrom(javaClass))
+				mode = MODE.DICT;
+			else
+				mode = MODE.PLATFORM;
+		}
 		switch(mode) {
 		default:
 		case USER:
