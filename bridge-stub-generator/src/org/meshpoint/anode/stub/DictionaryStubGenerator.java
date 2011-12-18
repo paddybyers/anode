@@ -12,12 +12,6 @@ import org.meshpoint.anode.idl.StubUtil;
 public class DictionaryStubGenerator extends StubGenerator {
 
 	/********************
-	 * private state
-	 ********************/
-	
-	private static final String STUB_IFACE = "org.meshpoint.anode.java.DictionaryStub";
-	
-	/********************
 	 * public API
 	 ********************/
 	
@@ -33,7 +27,7 @@ public class DictionaryStubGenerator extends StubGenerator {
 		String className = iface.getStubClassname();
 		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_DICT);
 		try {
-			writePreamble(cw, className, iface.getName(), STUB_IFACE, StubUtil.MODE_DICT);
+			writePreamble(cw, className, null, null, StubUtil.MODE_DICT);
 				/*******************
 				 * attribute methods
 				 *******************/
@@ -41,20 +35,20 @@ public class DictionaryStubGenerator extends StubGenerator {
 				emitArgsArray(cw, attributes.length, true);
 	
 				/* __import */
-				cw.openScope("public void __import(Object[] vals)");
+				cw.openScope("public static void __import(" + iface.getName() + " ob, Object[] vals)");
 					for(int i = 0; i < attributes.length; i++) {
 						Attribute attr = attributes[i];
 						registerName(attr.name);
-						cw.writeln(attr.name + " = " + getObjectToArgExpression(attr.type, "vals[" + i + "]") + ";");
+						cw.writeln("ob." + attr.name + " = " + getObjectToArgExpression(attr.type, "vals[" + i + "]") + ";");
 					}
 				cw.closeScope();
 				cw.writeln();	
 
 				/* __export */
-				cw.openScope("public Object[] __export()");
+				cw.openScope("public static Object[] __export(" + iface.getName() + " ob)");
 					for(int i = 0; i < attributes.length; i++) {
 						Attribute attr = attributes[i];
-						cw.writeln("__args[" + i + "] = " + getArgToObjectExpression(attr.type, attr.name) + ";");
+						cw.writeln("__args[" + i + "] = " + getArgToObjectExpression(attr.type, "ob." + attr.name) + ";");
 					}
 					cw.writeln("return __args;");
 				cw.closeScope();

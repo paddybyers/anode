@@ -93,10 +93,24 @@ int Interface::InitPlatformStub(JNIEnv *jniEnv, jclass platformStub) {
 
 int Interface::InitDictStub(JNIEnv *jniEnv, jclass dictStub) {
   jDictStub    = (jclass)jniEnv->NewGlobalRef(dictStub);
-  jDictCtor    = jniEnv->GetMethodID(dictStub, "<init>", "()V");
+  jDictCtor    = jniEnv->GetMethodID(declaredClass, "<init>", "()V");
   jDictGetArgs = jniEnv->GetStaticMethodID(dictStub, "__getArgs", "()[Ljava/lang/Object;");
-  jDictImport  = jniEnv->GetMethodID(dictStub, "__import", "([Ljava/lang/Object;)V");
-  jDictExport  = jniEnv->GetMethodID(dictStub, "__export", "()[Ljava/lang/Object;");
+
+  jstring jDictName = conv->getJavaClassName(jniEnv, declaredClass, true);
+  const char *dictName = jniEnv->GetStringUTFChars(jDictName, 0);
+  int nameLen = jniEnv->GetStringUTFLength(jDictName);
+  char *methodSig = new char[nameLen + sizeof("(L;[Ljava/lang/Object;)V")];
+  if(!methodSig) return ErrorMem;
+  
+  sprintf(methodSig, "(L%s;[Ljava/lang/Object;)V", dictName);
+  jDictImport  = jniEnv->GetStaticMethodID(dictStub, "__import", methodSig);
+  
+  sprintf(methodSig, "(L%s;)[Ljava/lang/Object;", dictName);
+  jDictExport  = jniEnv->GetStaticMethodID(dictStub, "__export", methodSig);
+  
+  delete[] methodSig;
+  jniEnv->ReleaseStringUTFChars(jDictName, dictName);
+  
   return OK;
 }
 
@@ -134,7 +148,7 @@ int Interface::UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
 int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
   if(!jDictStub) return ErrorInternal;
   jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jDictStub, jDictGetArgs);
-  jobject ob = jniEnv->NewObject(jDictStub, jDictCtor);
+  jobject ob = jniEnv->NewObject(declaredClass, jDictCtor);
   if(!args || !ob) return ErrorVM;
   jniEnv->MonitorEnter(args);
   int result = OK;
@@ -147,7 +161,7 @@ int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
     jniEnv->SetObjectArrayElement(args, i, jMember);
   }
   if(result == OK) {
-    jniEnv->CallVoidMethod(ob, jDictImport, args);
+    jniEnv->CallStaticVoidMethod(jDictStub, jDictImport, ob, args);
     *jVal = ob;
   }
   jniEnv->MonitorExit(args);  
@@ -227,7 +241,7 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
   jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jDictStub, jDictGetArgs);
   if(!args) return ErrorVM;
   jniEnv->MonitorEnter(args);
-  jniEnv->CallObjectMethod(jVal, jDictExport);
+  jniEnv->CallStaticObjectMethod(jDictStub, jDictExport, jVal);
   int result = OK;
   for(int i = 0; i < attributes->getLength(); i++) {
     jobject jMember = jniEnv->GetObjectArrayElement(args, i);
