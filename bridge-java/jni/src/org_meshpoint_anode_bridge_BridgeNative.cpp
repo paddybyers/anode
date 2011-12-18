@@ -2,7 +2,9 @@
 
 #ifdef ANDROID
 #include <AndroidVM.h>
-#endif
+# include <jni.h>
+#endif /* ANDROID */
+
 #include <ArrayConv.h>
 #include <Conv.h>
 #include <Env.h>
@@ -42,7 +44,7 @@ void ThrowForErrno(JNIEnv *jniEnv, int errno, const char *msg) {
  * Signature: (JJLjava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callAsFunction
-(JNIEnv *, jclass, jlong, jlong, jobject, jobjectArray);
+(JNIEnv *, jclass, jlong, jlong, jobject, jobjectArray) {return 0;}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -50,7 +52,7 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callAsFun
  * Signature: (JJ[Ljava/lang/Object;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callAsConstructor
-(JNIEnv *, jclass, jlong, jlong, jobjectArray);
+(JNIEnv *, jclass, jlong, jlong, jobjectArray) {return 0;}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -58,7 +60,7 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_callAsCon
  * Signature: (JJLjava/lang/String;)Ljava/lang/Object;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getProperty
-(JNIEnv *, jclass, jlong, jlong, jstring);
+(JNIEnv *, jclass, jlong, jlong, jstring) {return 0;}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -66,7 +68,7 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_getProper
  * Signature: (JJLjava/lang/String;Ljava/lang/Object;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setProperty
-(JNIEnv *, jclass, jlong, jlong, jstring, jobject);
+(JNIEnv *, jclass, jlong, jlong, jstring, jobject) {}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -74,7 +76,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setProperty
  * Signature: (JJLjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_deleteProperty
-(JNIEnv *, jclass, jlong, jlong, jstring);
+(JNIEnv *, jclass, jlong, jlong, jstring) {}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -82,7 +84,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_deleteProper
  * Signature: (JJLjava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_containsProperty
-(JNIEnv *, jclass, jlong, jlong, jstring);
+(JNIEnv *, jclass, jlong, jlong, jstring) {return 0;}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -90,7 +92,7 @@ JNIEXPORT jboolean JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_contains
  * Signature: (JJ)Ljava/util/Collection;
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_properties
-(JNIEnv *, jclass, jlong, jlong);
+(JNIEnv *, jclass, jlong, jlong) {return 0;}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -132,7 +134,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setIndexedPr
  * Signature: (JJI)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_deleteIndexedProperty
-(JNIEnv *, jclass, jlong, jlong, jint);
+(JNIEnv *, jclass, jlong, jlong, jint) {}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -140,7 +142,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_deleteIndexe
  * Signature: (JJI)Z
  */
 JNIEXPORT jboolean JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_containsIndex
-(JNIEnv *, jclass, jlong, jlong, jint);
+(JNIEnv *, jclass, jlong, jlong, jint) {return 0;}
 
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
@@ -356,8 +358,10 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_requestEntry
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setContext
   (JNIEnv *jniEnv, jclass, jobject ctx) {
+	LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_setContext: ent\n");
 #ifdef ANDROID
 	AndroidVM *vm = new AndroidVM(jniEnv, ctx);
 	Env::setupEnv(vm);
 #endif
+	LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_setContext: ret\n");
 }

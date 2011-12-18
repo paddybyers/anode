@@ -1,7 +1,6 @@
 #include "ArrayConv.h"
 #include "Env.h"
 #include "VM.h"
-#include "Utils.cpp"
 #include <string.h>
 #include <math.h>
 
@@ -25,7 +24,7 @@ ArrayType::ArrayType(Env *env,
   js.class_   = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass(nameBuf));
   sprintf(nameBuf, "org/meshpoint/anode/java/%s", ClassName);
   java.class_ = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass(nameBuf));
-  js.ctor     = jniEnv->GetMethodID(js.class_,   "<init>",     "(J)V");
+  js.ctor     = jniEnv->GetMethodID(js.class_,   "<init>",     jsCtor);
   getLength   = jniEnv->GetMethodID(java.class_, "getLength",  "()I");
   setLength   = jniEnv->GetMethodID(java.class_, "setLength",  "(I)V");
   getElement  = jniEnv->GetMethodID(java.class_, "getElement", javaGetterSig);
@@ -202,12 +201,18 @@ ArrayConv::ArrayConv(Env *env, Conv *conv, JNIEnv *jniEnv) {
   typeToArray[TYPE_INT]      = new ArrayType(env, jniEnv, TYPE_INT,      "IntegerArray", "(J)V", "(I)I", "(II)V", ArrayType::IntegerGet, ArrayType::IntegerSet);
   typeToArray[TYPE_LONG]     = new ArrayType(env, jniEnv, TYPE_LONG,     "LongArray",    "(J)V", "(I)J", "(IJ)V", ArrayType::LongGet, ArrayType::LongSet);
   typeToArray[TYPE_DOUBLE]   = new ArrayType(env, jniEnv, TYPE_DOUBLE,   "DoubleArray",  "(J)V", "(I)D", "(ID)V", ArrayType::DoubleGet, ArrayType::DoubleSet);
-  typeToArray[TYPE_STRING]   = new ArrayType(env, jniEnv, TYPE_STRING,   "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
-  typeToArray[TYPE_MAP]      = new ArrayType(env, jniEnv, TYPE_MAP,      "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
-  typeToArray[TYPE_FUNCTION] = new ArrayType(env, jniEnv, TYPE_FUNCTION, "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
-  typeToArray[TYPE_DATE]     = new ArrayType(env, jniEnv, TYPE_DATE,     "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
-  typeToArray[TYPE_OBJECT]   = new ArrayType(env, jniEnv, TYPE_OBJECT,   "ObjectArray",  "(J)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
+  typeToArray[TYPE_STRING]   = new ArrayType(env, jniEnv, TYPE_STRING,   "ObjectArray",  "(JI)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
+  typeToArray[TYPE_MAP]      = new ArrayType(env, jniEnv, TYPE_MAP,      "ObjectArray",  "(JI)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
+  typeToArray[TYPE_FUNCTION] = new ArrayType(env, jniEnv, TYPE_FUNCTION, "ObjectArray",  "(JI)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
+  typeToArray[TYPE_DATE]     = new ArrayType(env, jniEnv, TYPE_DATE,     "ObjectArray",  "(JI)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
+  typeToArray[TYPE_OBJECT]   = new ArrayType(env, jniEnv, TYPE_OBJECT,   "ObjectArray",  "(JI)V", "(I)Ljava/lang/Object;", "(ILjava/lang/Object;)V");
+
   interfaces = TArray<ArrayType*>::New();
+  
+  if(jniEnv->ExceptionCheck()) {
+    LOGV("Env::ArrayConv(): JNI error\n");
+    jniEnv->ExceptionClear();
+  }
 }
 
 ArrayConv::~ArrayConv() {}

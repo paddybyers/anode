@@ -5,7 +5,7 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_MODULE := bridge-addon
+LOCAL_MODULE := bridge
 
 LOCAL_CFLAGS := \
 	-D__POSIX__ \
@@ -16,19 +16,27 @@ LOCAL_CPPFLAGS :=
 
 LOCAL_C_INCLUDES := \
 	src \
-	$(ANODE_ROOT)/bridge-core/src \
+	../bridge-core/src \
 	$(NODE_ROOT)/src \
 	$(NODE_ROOT)/deps/v8/include \
 	$(NODE_ROOT)/deps/uv/include
 
 LOCAL_LDLIBS := \
-	$(ANODE_ROOT)/bridge-java/libs/armeabi/libjnibridge.so \
-	$(ANODE_ROOT)/libnode/libs/armeabi/libjninode.so
+	$(ANODE_ROOT)/libnode/libs/armeabi/libjninode.so \
+	-llog
 
 LOCAL_CPP_EXTENSION := .cpp
 
 LOCAL_SRC_FILES := \
-	src/Bridge.cpp
+	src/AndroidVM.cpp \
+	src/ArrayConv.cpp \
+	src/Bridge.cpp \
+	src/Conv.cpp \
+	src/Env.cpp \
+	src/Interface.cpp \
+	src/Utils.cpp \
+	src/VM.cpp \
+	../bridge-java/jni/src/org_meshpoint_anode_bridge_BridgeNative.cpp
 
 LOCAL_STATIC_LIBRARIES := 
 

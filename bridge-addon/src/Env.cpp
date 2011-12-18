@@ -10,7 +10,6 @@
 #include "ArrayConv.h"
 #include "Conv.h"
 #include "Interface.h"
-#include "Utils.cpp"
 
 using namespace bridge;
 
@@ -34,8 +33,10 @@ using namespace v8;
 /* preemptively called when starting a node instance
  * so the reactive initEnv() won't occur*/
 void Env::setupEnv(VM *vm) {
-  static_init();
-	initOnce(vm);
+  LOGV("Env::setupEnv(): ent\n");
+  pthread_once(&key_once, static_init);
+  initOnce(vm);
+  LOGV("Env::setupEnv(): ret\n");
 }
 #endif
 
@@ -60,23 +61,12 @@ Env *Env::getEnv() {
 }
 
 Env::Env(VM *vm) {
-  /* node state */
-	nodeIsolate = node::Isolate::GetCurrent();
-	v8Isolate = v8::Isolate::GetCurrent();
-  
-  /* java state */
+  /* vm */
 #ifndef ANDROID
-	if(!vm)
-		vm = new JREVM();
+  if(!vm)
+    vm = new JREVM();
 #endif
-	this->vm = vm;
-  conv = new Conv(this, vm->getJNIEnv());
-  interfaces = TArray<Interface*>::New();
-  initJava(nodeIsolate);
-  
-  /* async */
-  async.data = this;
-  moduleCount = 0;
+  this->vm = vm;
 }
 
 void Env::moduleLoaded() {
@@ -104,7 +94,30 @@ Env::~Env() {
 	delete vm;
 }
 
-int Env::initJava(node::Isolate *nodeIsolate) {
+int Env::init() {
+  LOGV("Env::init(): ent, this=%p\n", this);
+  int result = initV8();
+  if(result == OK) {
+    conv = new Conv(this, vm->getJNIEnv());
+    interfaces = TArray<Interface*>::New();
+    result = initJava();
+    
+    /* async */
+    async.data = this;
+    moduleCount = 0;
+  }
+  LOGV("Env::init(): ret\n");
+  return result;
+}
+
+int Env::initV8() {
+  /* node state */
+  nodeIsolate = node::Isolate::GetCurrent();
+  v8Isolate = v8::Isolate::GetCurrent();
+  return OK;
+}
+
+int Env::initJava() {
   int result = OK;
   nodeIsolate->exitHandler = Env::atExit;
   JNIEnv *jniEnv = vm->getJNIEnv();

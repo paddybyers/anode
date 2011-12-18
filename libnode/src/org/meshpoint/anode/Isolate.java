@@ -9,8 +9,11 @@ import org.meshpoint.anode.Runtime.StateListener;
 import org.meshpoint.anode.bridge.BridgeNative;
 
 import android.content.Context;
+import android.util.Log;
 
 public class Isolate {
+
+	private static String TAG = "anode::Isolate";
 
 	/**************************
 	 * private state
@@ -142,7 +145,9 @@ public class Isolate {
 
 		public void run() {
 			try {
+				Log.v(TAG, "Isolate.run(): setting context");
 				BridgeNative.setContext(ctx);
+				Log.v(TAG, "Isolate.run(): set context");
 				synchronized(this) {
 					setState(Runtime.STATE_STARTED);
 				}

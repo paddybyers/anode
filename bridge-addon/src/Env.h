@@ -10,22 +10,23 @@
 #endif
 
 #include "Interface.h"
-#include "Utils.h"
+#include "Utils.cpp"
 
 namespace bridge {
 
 class Conv;
 class VM;
 
-class LIB_EXPORT Env {
+class Env {
 public:
 #ifdef ANDROID
-	static LIB_EXPORT void setupEnv(VM *vm);
+	static void setupEnv(VM *vm);
 #endif
-	static LIB_EXPORT Env *getEnv();
-	static LIB_EXPORT Env *getEnv_nocheck();
-	LIB_EXPORT v8::Local<v8::Value> load(v8::Handle<v8::String> moduleName, v8::Handle<v8::Object> moduleExports);
-	LIB_EXPORT v8::Local<v8::Value> unload(v8::Handle<v8::String> moduleName);
+	static Env *getEnv();
+	static Env *getEnv_nocheck();
+  int init();
+  v8::Local<v8::Value> load(v8::Handle<v8::String> moduleName, v8::Handle<v8::Object> moduleExports);
+  v8::Local<v8::Value> unload(v8::Handle<v8::String> moduleName);
   inline Conv *getConv() {return conv;}
   inline Interface *getInterface(classId class_) {return interfaces->get(Interface::classId2Idx(class_));}
   inline void putInterface(classId class_, Interface *interface) {interfaces->put(Interface::classId2Idx(class_), interface);}
@@ -35,7 +36,8 @@ public:
 private:
 	Env(VM *vm);
 	~Env();
-  int initJava(node::Isolate *nodeIsolate);
+  int initV8();
+  int initJava();
   static void atExit();
   static void asyncCb(uv_async_t *async, int status);
   

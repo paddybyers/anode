@@ -5,7 +5,6 @@
 #include "ArrayConv.h"
 #include "Env.h"
 #include "VM.h"
-#include "Utils.cpp"
 
 using namespace v8;
 using namespace bridge;
@@ -343,6 +342,7 @@ Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
     return scope.Close(val);
   }
   interface->conv->ThrowV8ExceptionForErrno(result);
+  LOGV("Interface::PlatformOpInvoke(): ret (error), result = %d\n", result);
   return Undefined();  
 }
 

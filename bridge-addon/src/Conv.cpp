@@ -9,6 +9,7 @@ using namespace v8;
 using namespace bridge;
 
 Conv::Conv(Env *env, JNIEnv *jniEnv) {
+  LOGV("Conv::Conv(): ent\n");
   this->env = env;
   arrayConv = new ArrayConv(env, this, env->getVM()->getJNIEnv());
 
@@ -56,7 +57,7 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
 
   jni.anode.js.JSObject.ctor         = jniEnv->GetMethodID(jni.anode.js.JSObject.class_,             "<init>",      "(J)V");
   jni.anode.js.JSFunction.ctor       = jniEnv->GetMethodID(jni.anode.js.JSFunction.class_,           "<init>",      "(J)V");
-  jni.anode.js.JSInterface.ctor      = jniEnv->GetMethodID(jni.anode.js.JSInterface.class_,          "<init>",      "(JLorg/meshpoint/anode/idl/IDLInterface;)V");
+  jni.anode.js.JSInterface.ctor      = jniEnv->GetMethodID(jni.anode.js.JSInterface.class_,          "<init>",      "(J)V");
   jni.anode.js.JSValue_Bool.ctor     = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Bool.class_,   "asJSBoolean", "(Z)Lorg/meshpoint/anode/js/JSValue;");
   jni.anode.js.JSValue_Long.ctor     = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Long.class_,   "asJSNumber",  "(J)Lorg/meshpoint/anode/js/JSValue;");
   jni.anode.js.JSValue_Double.ctor   = jniEnv->GetStaticMethodID(jni.anode.js.JSValue_Double.class_, "asJSNumber",  "(D)Lorg/meshpoint/anode/js/JSValue;");
@@ -92,6 +93,12 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   stringReplace         = jniEnv->GetMethodID(jni.java.lang.String.class_, "replace", "(CC)Ljava/lang/String;");
   instHandle            = jniEnv->GetFieldID(baseClass, "instHandle", "J");
   instType              = jniEnv->GetFieldID(baseClass, "type", "I");
+
+  LOGV("Conv::Conv(): ret\n");
+  if(jniEnv->ExceptionCheck()) {
+    LOGV("Conv::Conv(): JNI error\n");
+    jniEnv->ExceptionClear();
+  }
 }
 
 Conv::~Conv() {
@@ -320,14 +327,14 @@ int Conv::WrapV8Interface(JNIEnv *jniEnv, Handle<Object> val, classId class_, jo
   return result;
 }
 
-int Conv::BindToV8Object(JNIEnv *jniEnv, Handle<Object> val, Handle<String> key, jobject jLocal, jobject *jGlobal) {
+int Conv::BindToV8Object(JNIEnv *jniEnv, Handle<Object> val, Handle<String> key, jobject jLocal, jobject *jHard) {
   if(!jLocal || jniEnv->ExceptionCheck()) {
     jniEnv->ExceptionClear();
     return ErrorVM;
   }
-  jobject ref = jniEnv->NewWeakGlobalRef(jLocal);
-  val->SetHiddenValue(key, External::Wrap(ref));
-  *jGlobal = ref;
+  jobject jWeak = jniEnv->NewWeakGlobalRef(jLocal);
+  val->SetHiddenValue(key, External::Wrap(jWeak));
+  *jHard = jLocal;
   return OK;
 }
 

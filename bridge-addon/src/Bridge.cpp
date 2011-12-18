@@ -4,6 +4,7 @@
 #include "Env.h"
 
 using namespace v8;
+using namespace bridge;
 
 /*
  * Creates an instance of a java module, specified by name.
@@ -55,14 +56,18 @@ Handle<Value> Unload(const Arguments& args) {
 	}
   
   Local<String> moduleName = args[0]->ToString();
-  bridge::Env::getEnv_nocheck()->unload(moduleName);
+  Env::getEnv_nocheck()->unload(moduleName);
   return Undefined();
 }
 
 void init(Handle<Object> target) {
-  bridge::Env::getEnv();
-  target->Set(String::NewSymbol("load"), FunctionTemplate::New(Load)->GetFunction());
-  target->Set(String::NewSymbol("unload"), FunctionTemplate::New(Unload)->GetFunction());
+  int result = Env::getEnv()->init();
+  if(result == OK) {
+    target->Set(String::NewSymbol("load"), FunctionTemplate::New(Load)->GetFunction());
+    target->Set(String::NewSymbol("unload"), FunctionTemplate::New(Unload)->GetFunction());
+    return;
+  }
+  LOGV("Fatal error in Bridge::init(): errno = %d\n", result);
 }
 
 NODE_MODULE(bridge, init);

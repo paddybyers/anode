@@ -99,6 +99,7 @@ public class JSInterface {
 			this.args = args;
 			this.isPending = true;
 			this.isCancelled = false;
+			/* FIXME: consider not waiting if void */
 			env.waitForOperation(this);
 			return isCancelled ? null : ob;
 		}

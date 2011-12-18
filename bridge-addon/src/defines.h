@@ -22,6 +22,7 @@
 /****************
  * log
  ****************/
+#define DEBUG
 #ifdef DEBUG
 # ifdef ANDROID
 #  include <android/log.h>

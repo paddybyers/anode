@@ -32,6 +32,11 @@
 	</natures>
 	<linkedResources>
 		<link>
+			<name>bridge-java</name>
+			<type>2</type>
+			<location>/Users/paddy/data/work/dev/android/anode/bridge-java/src</location>
+		</link>
+		<link>
 			<name>libbridge_src</name>
 			<type>2</type>
 			<location>/Users/paddy/data/work/dev/android/anode/bridge-java/src</location>
@@ -40,6 +45,11 @@
 			<name>libnode_src</name>
 			<type>2</type>
 			<locationURI>_android_libnode_9e68607/src</locationURI>
+		</link>
+		<link>
+			<name>sample_src</name>
+			<type>2</type>
+			<location>/Users/paddy/data/work/dev/android/anode/api/src</location>
 		</link>
 	</linkedResources>
 </projectDescription>

@@ -18,8 +18,9 @@ final class RuntimeNative {
 	private static String PACKAGE_NAME = "org.meshpoint.anode";
 	private static String TAG = "anode::RuntimeNative";
 	private static String RUNTIME_LIBRARY = "libjninode.so";
-	private static String BRIDGE_LIBRARY = "libjnibridge.so";
-	private static String LIBRARY_PATH = "/data/data/" + PACKAGE_NAME + "/app";
+	private static String BRIDGE_LIBRARY = "bridge.node";
+	private static String RUNTIME_PATH = "/data/data/" + PACKAGE_NAME + "/app";
+	private static String MODULE_PATH = "/data/data/" + PACKAGE_NAME + "/node_modules";
 	
 	static final int SIGINT  = 2;
 	static final int SIGABRT = 6;
@@ -35,9 +36,11 @@ final class RuntimeNative {
 	 */
 	static void init(Context ctx, String[] argv) throws IOException {
 		try {
-			extractLibs(ctx);
-			System.load(LIBRARY_PATH + '/' + RUNTIME_LIBRARY);
-			System.load(LIBRARY_PATH + '/' + BRIDGE_LIBRARY);
+			extractLib(ctx, RUNTIME_PATH, RUNTIME_LIBRARY);
+			System.load(RUNTIME_PATH + '/' + RUNTIME_LIBRARY);
+			extractLib(ctx, MODULE_PATH, BRIDGE_LIBRARY);
+			System.load(MODULE_PATH + '/' + BRIDGE_LIBRARY);
+			Log.v(TAG, "init: loaded libraries");
 			nodeInit(argv);
 		} catch(UnsatisfiedLinkError e) {
 			Log.v(TAG, "init: unable to load library: " + e);
@@ -103,12 +106,12 @@ final class RuntimeNative {
 	 * Extract the library from assets to the default library location.
 	 * @throws IOException 
 	 */
-	private static void extractLibs(Context ctx) throws IOException {
+	private static void extractLib(Context ctx, String path, String name) throws IOException {
 		File dir, so, pkg;
-		if(!(dir = new File(LIBRARY_PATH)).exists())
+		if(!(dir = new File(path)).exists())
 			dir.mkdirs();
 		
-		if((so = new File(dir, RUNTIME_LIBRARY)).exists()) {
+		if((so = new File(dir, name)).exists()) {
 			/* check to see if this timestamp pre-dates
 			 * the current package */
 			if((pkg = new File(ctx.getPackageResourcePath())).exists()) {
@@ -121,7 +124,7 @@ final class RuntimeNative {
 			so.delete();
 		}
 		Log.v(TAG, "extractLib: copying library");
-		InputStream in = ctx.getAssets().open(RUNTIME_LIBRARY);
+		InputStream in = ctx.getAssets().open(name);
 		FileOutputStream out = new FileOutputStream(so);
 		int read;
 		byte[] buf = new byte[8192];
