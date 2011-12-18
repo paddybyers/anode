@@ -38,8 +38,10 @@ public class DictionaryStubGenerator extends StubGenerator {
 				cw.openScope("public static void __import(" + iface.getName() + " ob, Object[] vals)");
 					for(int i = 0; i < attributes.length; i++) {
 						Attribute attr = attributes[i];
-						registerName(attr.name);
-						cw.writeln("ob." + attr.name + " = " + getObjectToArgExpression(attr.type, "vals[" + i + "]") + ";");
+						if((attr.modifiers & Modifier.STATIC) == 0) {
+							registerName(attr.name);
+							cw.writeln("ob." + attr.name + " = " + getObjectToArgExpression(attr.type, "vals[" + i + "]") + ";");
+						}
 					}
 				cw.closeScope();
 				cw.writeln();	
@@ -48,7 +50,8 @@ public class DictionaryStubGenerator extends StubGenerator {
 				cw.openScope("public static Object[] __export(" + iface.getName() + " ob)");
 					for(int i = 0; i < attributes.length; i++) {
 						Attribute attr = attributes[i];
-						cw.writeln("__args[" + i + "] = " + getArgToObjectExpression(attr.type, "ob." + attr.name) + ";");
+						if((attr.modifiers & Modifier.STATIC) == 0)
+							cw.writeln("__args[" + i + "] = " + getArgToObjectExpression(attr.type, "ob." + attr.name) + ";");
 					}
 					cw.writeln("return __args;");
 				cw.closeScope();

@@ -41,7 +41,12 @@ public class PlatformStubGenerator extends StubGenerator {
 					/* no switch statement */
 					Operation op = operations[0];
 					registerName(op.name);
-					cw.writeln("return " + getInvokeCaseBodyExpression(op, "\t\t") + ";");
+					if(op.type == Types.TYPE_UNDEFINED) {
+						cw.writeln(getInvokeCaseBodyExpression(op, "\t\t") + ";");
+						cw.writeln("return null;");
+					} else {
+						cw.writeln("return " + getInvokeCaseBodyExpression(op, "\t\t") + ";");
+					}
 				} else {
 					/* switch needed */
 					cw.writeln("Object result = null;");
@@ -102,11 +107,14 @@ public class PlatformStubGenerator extends StubGenerator {
 					cw.openScope("switch(attrIdx)");
 						for(int i = 0; i < attributes.length; i++) {
 							Attribute attr = attributes[i];
-							cw.writeln("case " + i + ": /* " + attr.name + " */", -1);
-							cw.writeln(getAttrAccessExpression(ifaceName, attr) + " = " + getObjectToArgExpression(attr.type, "val") + ";");
-							cw.writeln("break;");
+							if((attr.modifiers & Modifier.FINAL) == 0) {
+								cw.writeln("case " + i + ": /* " + attr.name + " */", -1);
+								cw.writeln(getAttrAccessExpression(ifaceName, attr) + " = " + getObjectToArgExpression(attr.type, "val") + ";");
+								cw.writeln("break;");
+							}
 						}
 						cw.writeln("default:", -1);
+						cw.writeln("throw new UnsupportedOperationException();");
 					cw.closeScope();
 				}
 				cw.closeScope();
