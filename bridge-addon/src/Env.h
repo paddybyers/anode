@@ -10,7 +10,7 @@
 #endif
 
 #include "Interface.h"
-#include "Utils.cpp"
+#include "Utils-inl.h"
 
 namespace bridge {
 

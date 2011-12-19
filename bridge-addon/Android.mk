@@ -34,7 +34,6 @@ LOCAL_SRC_FILES := \
 	src/Conv.cpp \
 	src/Env.cpp \
 	src/Interface.cpp \
-	src/Utils.cpp \
 	src/VM.cpp \
 	../bridge-java/jni/src/org_meshpoint_anode_bridge_BridgeNative.cpp
 

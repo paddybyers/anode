@@ -3,7 +3,7 @@
 
 #include "defines.h"
 #include "Conv.h"
-#include "Utils.h"
+#include "Utils-inl.h"
 
 namespace bridge {
 

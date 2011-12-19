@@ -1,3 +1,6 @@
+#ifndef BRIDGE_UTILSINL_H
+#define BRIDGE_UTILSINL_H
+
 #include "Utils.h"
 #include "defines.h"
 #include <string.h>
@@ -61,3 +64,5 @@ template <class T> int TArray<T>::alloc(unsigned int count) {
 template <class T> TArray<T>::~TArray() {
   delete[] arr;
 }
+
+#endif
