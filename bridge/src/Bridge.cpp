@@ -1,6 +1,6 @@
 #include "Bridge.h"
 
-#include <defines.h>
+#include "defines.h"
 #include "Env.h"
 
 using namespace v8;

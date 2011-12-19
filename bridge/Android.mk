@@ -15,14 +15,13 @@ LOCAL_CFLAGS := \
 LOCAL_CPPFLAGS :=
 
 LOCAL_C_INCLUDES := \
-	src \
-	../bridge-core/src \
+	$(LOCAL_PATH)/src \
 	$(NODE_ROOT)/src \
 	$(NODE_ROOT)/deps/v8/include \
 	$(NODE_ROOT)/deps/uv/include
 
 LOCAL_LDLIBS := \
-	$(ANODE_ROOT)/libnode/libs/armeabi/libjninode.so \
+	$(ANODE_ROOT)/libs/armeabi/libjninode.so \
 	-llog
 
 LOCAL_CPP_EXTENSION := .cpp

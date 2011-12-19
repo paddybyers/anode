@@ -20,7 +20,7 @@ LOCAL_MODULE := jninode
 
 LOCAL_C_INCLUDES += \
 	$(LOCAL_PATH) \
-	$(NODE_PATH)/src
+	$(NODE_ROOT)/src
 
 LOCAL_CFLAGS +=  \
 	-include sys/select.h
@@ -34,8 +34,7 @@ LOCAL_STATIC_LIBRARIES := \
 	v8 \
 	pty
 
-LOCAL_SHARED_LIBRARIES := \
-	libjnibridge
+LOCAL_SHARED_LIBRARIES :=
 
 LOCAL_LDLIBS += \
 	-lz \
@@ -50,3 +49,4 @@ $(call import-module,deps/http_parser)
 $(call import-module,deps/v8)
 $(call import-module,pty)
 $(call import-module,node)
+
