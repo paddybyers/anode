@@ -40,6 +40,9 @@ LOCAL_LDLIBS += \
 	-lssl \
 	-lcrypto
 
+LOCAL_LDFLAGS += \
+   -L $(NODE_PATH)/../openssl-android/libs/armeabi
+
 include $(BUILD_SHARED_LIBRARY)
 
 $(call import-module,deps/uv)
