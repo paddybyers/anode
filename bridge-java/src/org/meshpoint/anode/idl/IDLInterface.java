@@ -1,8 +1,5 @@
 package org.meshpoint.anode.idl;
 
-import org.meshpoint.anode.bridge.BridgeNative;
-import org.meshpoint.anode.bridge.Env;
-
 /**
  * An interface defined in IDL for use within one or more modules
  * @author paddy
@@ -14,9 +11,7 @@ public class IDLInterface {
 	 ********************/
 
 	private static final int MAX_NAME_LENGTH = 80;
-	private InterfaceManager mgr;
-	private long ifaceHandle;
-	private int id = -1;
+	private short id = -1;
 	private String name;
 	private Class<?> javaClass;
 	private boolean isCallback;
@@ -59,7 +54,6 @@ public class IDLInterface {
 	 ********************/
 	
 	public IDLInterface(InterfaceManager mgr, Class<?> javaClass) {
-		this.mgr = mgr;
 		name = javaClass.getCanonicalName();
 		this.javaClass = javaClass;
 		if(Callback.class.isAssignableFrom(javaClass))
@@ -69,12 +63,8 @@ public class IDLInterface {
 		id = mgr.put(this);
 	}
 
-	public int getId() {
+	public short getId() {
 		return id;
-	}
-
-	public long getHandle() {
-		return ifaceHandle;
 	}
 
 	public Class<?> getJavaClass() {
@@ -108,39 +98,4 @@ public class IDLInterface {
 	
 	public boolean isCallback() { return isCallback; }
 	public boolean isValueType() { return isValueType; }
-
-	/*********************
-	 * private
-	 *********************/
-	
-	void initNative() {
-		long envHandle = mgr.getEnv().getHandle();
-		ifaceHandle = BridgeNative.bindInterface(envHandle, this, id, attributes.length, operations.length, javaClass);
-		try {
-			Class<?> userStub = mgr.getStubClass(this, StubUtil.MODE_USER);
-			BridgeNative.bindUserStub(envHandle, ifaceHandle, userStub);
-		} catch(ClassNotFoundException e) {}
-		try {
-			Class <?> platformStub = mgr.getStubClass(this, StubUtil.MODE_PLATFORM);
-			BridgeNative.bindPlatformStub(envHandle, ifaceHandle, platformStub);
-		} catch(ClassNotFoundException e) {}
-		try {
-			Class<?> dictStub = mgr.getStubClass(this, StubUtil.MODE_DICT);
-			BridgeNative.bindDictStub(envHandle, ifaceHandle, dictStub);
-		} catch(ClassNotFoundException e) {}
-		for(int i = 0; i < attributes.length; i++) {
-			Attribute attr = attributes[i];
-			BridgeNative.bindAttribute(envHandle, ifaceHandle, i, attr.type, attr.name);
-		}
-		for(int i = 0; i < operations.length; i++) {
-			Operation op = operations[i];
-			BridgeNative.bindOperation(envHandle, ifaceHandle, i, op.type, op.name, op.args.length, op.args);
-		}
-	}
-
-	void dispose() {
-		Env env = mgr.getEnv();
-		if(env != null)
-			BridgeNative.releaseInterface(env.getHandle(), ifaceHandle);		
-	}
 }

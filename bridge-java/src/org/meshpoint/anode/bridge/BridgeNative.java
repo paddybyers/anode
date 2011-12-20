@@ -7,9 +7,7 @@ import org.meshpoint.anode.idl.IDLInterface;
 public class BridgeNative {
 	
 	private static final String LIBRARY_PATH = System.getenv("NODE_ROOT");
-//	private static final String LIBRARY_PATH = "/data/data/org.meshpoint.anode/node_modules";
 	private static final String BRIDGE_LIBRARY = "bridge.node";
-
 
 	static {
 		try {
@@ -18,7 +16,6 @@ public class BridgeNative {
 			System.err.println("Unable to load bridge native library: " + LIBRARY_PATH);
 		}
 	}
-
 
 	/* IFunction */
 	native static Object callAsFunction(long envHandle, long instHandle, Object target, Object[] args);

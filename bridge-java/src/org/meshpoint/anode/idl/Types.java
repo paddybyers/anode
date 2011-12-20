@@ -19,11 +19,6 @@ import org.w3c.dom.Array;
  */
 public class Types {
 	
-	/* JS value types */
-	public enum JSType {
-		UNDEFINED, NULL, BOOLEAN, NUMBER, STRING, OBJECT
-	}
-	
 	public static Object jsNull;
 	public static Object jsUndefined;
 	
@@ -68,42 +63,11 @@ public class Types {
 	}
 	
 	public static short getClassId(int type) {
-		return (short)(type >> 16);
+		return type2classid(type);
 	}
 	
-	public static JSType toJSType(int type) {
-		JSType result = JSType.OBJECT;
-		if(type < TYPE_OBJECT) {
-			switch(type) {
-			case TYPE_NONE:
-				throw new Types.TypeError();
-			case TYPE_UNDEFINED:
-				result = JSType.UNDEFINED;
-				break;
-			case TYPE_NULL:
-				result = JSType.NULL;
-				break;
-			case TYPE_BOOL:
-				result = JSType.BOOLEAN;
-				break;
-			case TYPE_BYTE:
-			case TYPE_SHORT:
-			case TYPE_INT:
-			case TYPE_LONG:
-			case TYPE_DOUBLE:
-				result = JSType.NUMBER;
-				break;
-			case TYPE_STRING:
-				result = JSType.STRING;
-				break;
-			default:
-			}
-		}
-		return result;
-	}
-	
-	public static int classid2Type(int classid) { return TYPE_INTERFACE | (classid << 16); }
-	public static int type2classid(int type) { return type >> 16; }
+	public static int classid2Type(short classid) { return TYPE_INTERFACE | (((int)classid) << 16); }
+	public static short type2classid(int type) { return (short)(type >> 16); }
 	
 	public static int fromJavaType(InterfaceManager interfaceManager, Type javaType) {
 		/* parameterised types are not supported */
@@ -159,6 +123,14 @@ public class Types {
 		return TYPE_INVALID;
 	}
 	
+	public static IDLInterface baseInterface(InterfaceManager interfaceManager, int type) {
+		if((type & (TYPE_SEQUENCE | TYPE_ARRAY)) != 0)
+			return baseInterface(interfaceManager, type & ~(TYPE_SEQUENCE | TYPE_ARRAY));
+		if(isInterface(type))
+			return interfaceManager.getById(getClassId(type));
+		return null;
+	}
+
 	public class Map {}
 	public class Function {}
 

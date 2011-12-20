@@ -1,5 +1,6 @@
 package org.meshpoint.anode.java;
 
+import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.idl.Types;
 
 public class ObjectArray<T> extends Array implements org.w3c.dom.ObjectArray<T> {
@@ -12,7 +13,7 @@ public class ObjectArray<T> extends Array implements org.w3c.dom.ObjectArray<T> 
 	public ObjectArray(T[] data, boolean isFixedLength) {
 		super(0, isFixedLength);
 		this.data = data;
-		type = Types.fromJavaType(env.getInterfaceManager(), data.getClass());
+		type = Types.fromJavaType(InterfaceManager.getInstance(), data.getClass());
 	}
 
 	@Override

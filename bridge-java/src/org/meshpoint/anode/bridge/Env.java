@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.meshpoint.anode.idl.BoundInterface;
 import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.InterfaceManager;
 import org.meshpoint.anode.idl.Types;
@@ -32,6 +33,7 @@ public class Env {
 	private InterfaceManager interfaceManager;
 	private List<SynchronousOperation> pendingOps;
 	private HashMap<String, ModuleContext> modules;
+	private RandomAccessArray boundInterfaces;
 	private boolean allowPending = true;
 	private boolean isDisposed;
 	private boolean entryRequested;
@@ -64,7 +66,7 @@ public class Env {
 	 * @return
 	 */
 	static synchronized Env create(long nodeIsolate) {
-		Env result = new Env(nodeIsolate);
+		Env result = new Env(nodeIsolate, InterfaceManager.getInstance());
 		currentEnv.set(result);
 		return result;
 	}
@@ -77,6 +79,13 @@ public class Env {
 		return currentEnv.get();
 	}
 	
+	public static short getInterfaceId(Class<?> javaClass) {
+		Env env = currentEnv.get();
+		short classId = env.interfaceManager.getByClass(javaClass).getId();
+		env.bindInterface(classId);
+		return classId;
+	}
+
 	public long getHandle() {return envHandle;}
 
 	/**
@@ -123,11 +132,11 @@ public class Env {
 		}
 		return result;
 	}
-
+	
 	public InterfaceManager getInterfaceManager() {
 		return interfaceManager;
 	}
-	
+
 	public int findClass(Class<?> javaClass) {
 		return Types.fromJavaType(interfaceManager, javaClass);
 	}
@@ -203,7 +212,7 @@ public class Env {
 		return JSObject.class;
 	}
 	
-	Class<?> getStubClass(int classId, int mode) {
+	Class<?> getStubClass(short classId, int mode) {
 		Class<?> result = null;
 		IDLInterface iface = interfaceManager.getById(classId);
 		if(iface != null) {
@@ -216,16 +225,26 @@ public class Env {
 		return result;
 	}
 	
+	public void bindInterface(short classId) {
+		int idx = InterfaceManager.classId2Idx(classId);
+		if(boundInterfaces.get(idx) == null) {
+			BoundInterface bound = new BoundInterface(this, classId);
+			boundInterfaces.put(idx, bound);
+			bound.bind();
+		}
+	}
+
 	/********************
 	 * private
 	 ********************/
-	private Env(long envHandle) {
+	private Env(long envHandle, InterfaceManager interfaceManager) {
 		this.envHandle  = envHandle;
+		this.interfaceManager = interfaceManager;
 		this.eventThread = Thread.currentThread();
-		interfaceManager = new InterfaceManager(this, null);
 		pendingOps = new ArrayList<SynchronousOperation>();
 		pendingOps.add(finalizeQueue = new FinalizeQueue(this));
 		modules = new HashMap<String, ModuleContext>();
+		boundInterfaces = new RandomAccessArray();
 	}
 	
 	public void finalize() {dispose();}
@@ -240,10 +259,41 @@ public class Env {
 		}
 		if(iWillDispose) {
 			cancelScheduledOps();
-			for(ModuleContext ctx : modules.values())
+			for(ModuleContext ctx : modules.values()) {
 				ctx.getModule().stopModule();
-			interfaceManager.dispose();
+			}
+			for(int i = 0; i < boundInterfaces.size(); i++) {
+				boundInterfaces.get(i).dispose();
+			}
 		}
 	}
 
+	private class RandomAccessArray {
+		private static final int increment = 16;
+		private BoundInterface[] elements;
+		private RandomAccessArray() { elements = new BoundInterface[increment]; }
+
+		private int size() { return elements.length; }
+
+		private BoundInterface get(int idx) {
+			BoundInterface elt = null;
+			if(idx < elements.length)
+				elt = elements[idx];
+			return elt;
+		}
+
+		private void put(int idx, BoundInterface elt) {
+			if(idx >= elements.length) {
+				synchronized(this) {
+					if(idx >= elements.length) {
+						BoundInterface[] newElements = new BoundInterface[(idx + increment) & -increment];
+						System.arraycopy(elements, 0, newElements, 0, elements.length);
+						elements = newElements;
+					}
+				}
+			}
+			elements[idx] = elt;
+		}
+		
+	}
 }

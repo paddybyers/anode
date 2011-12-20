@@ -8,13 +8,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 
 public class InterfaceManager {
 
-	private Env env;
+	private static InterfaceManager mgr = new InterfaceManager(null);
 	private ClassLoader classLoader;
 	private ArrayList<IDLInterface> interfaces;
 	private HashMap<String, IDLInterface> nameMap;
@@ -23,9 +22,10 @@ public class InterfaceManager {
 	/******************
 	 * public API
 	 ******************/
+	
+	public static InterfaceManager getInstance() { return mgr; }
 
-	public InterfaceManager(Env env, ClassLoader classLoader) {
-		this.env = env;
+	public InterfaceManager(ClassLoader classLoader) {
 		if(classLoader == null)
 			classLoader = this.getClass().getClassLoader();
 		this.classLoader = classLoader;
@@ -34,15 +34,11 @@ public class InterfaceManager {
 		classMap = new HashMap<Class<?>, IDLInterface>();
 	}
 	
-	Env getEnv() {
-		return env;
-	}
-
 	ClassLoader getClassLoader() {
 		return classLoader;
 	}
 
-	public synchronized IDLInterface getById(int id) {
+	public synchronized IDLInterface getById(short id) {
 		return interfaces.get(classId2Idx(id));
 	}
 	
@@ -143,38 +139,31 @@ public class InterfaceManager {
 		}
 		result.operations = operationList.toArray(new Operation[operationList.size()]);
 		Arrays.sort(result.operations);
-
-		/* init the native part */
-		if(getEnv() != null) result.initNative();
+		
 		return result;
 	}
 	
 	/**********************
 	 * private
 	 **********************/
-	
-	private static int classId2Idx(int classId) {
+
+	public static int classId2Idx(short classId) {
 		return classId >> 1;
 	}
 
-	private static int idx2ClassId(int idx, boolean isDict) {
-		return (idx << 1) + (isDict ? 1 : 0);
+	private static short idx2ClassId(int idx, boolean isDict) {
+		return (short)((idx << 1) + (isDict ? 1 : 0));
 	}
 
-	synchronized int put(IDLInterface iface) {
-		int result = (int)iface.getId();
+	synchronized short put(IDLInterface iface) {
+		short result = iface.getId();
 		if(result == -1) {
 			result = idx2ClassId(interfaces.size(), iface.isValueType());
 			interfaces.add(iface);
 			nameMap.put(iface.getName(), iface);
 			classMap.put(iface.getJavaClass(), iface);
 		}
+		System.out.println("put: " + result + ", " + iface.getJavaClass().getName());
 		return result;
-	}
-	
-	public void dispose() {
-		for(IDLInterface iface : interfaces) {
-			iface.dispose();
-		}
 	}
 }

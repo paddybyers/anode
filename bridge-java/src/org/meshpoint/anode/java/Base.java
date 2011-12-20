@@ -1,7 +1,6 @@
 package org.meshpoint.anode.java;
 
 import org.meshpoint.anode.bridge.Env;
-import org.meshpoint.anode.idl.IDLInterface;
 import org.meshpoint.anode.idl.Types;
 
 public class Base {
@@ -16,8 +15,9 @@ public class Base {
 	/*********************
 	 * private API
 	 *********************/
-	protected Base(IDLInterface iface) {
-		type = Types.classid2Type(iface.getId());
+	protected Base(short classId) {
+		env.bindInterface(classId);
+		type = Types.classid2Type(classId);
 	}
 
 	protected Base(int type) {
