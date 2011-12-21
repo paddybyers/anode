@@ -163,7 +163,6 @@ public class InterfaceManager {
 			nameMap.put(iface.getName(), iface);
 			classMap.put(iface.getJavaClass(), iface);
 		}
-		System.out.println("put: " + result + ", " + iface.getJavaClass().getName());
 		return result;
 	}
 }
