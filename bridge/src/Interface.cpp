@@ -34,7 +34,6 @@ void Interface::dispose(JNIEnv *jniEnv) {
 }
 
 int Interface::Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass) {
-  LOGV("Interface::Init: ent, this=%p\n", this);
   this->env           = env;
   this->conv          = env->getConv();
   this->declaredClass = (jclass)jniEnv->NewGlobalRef(declaredClass);
@@ -50,7 +49,6 @@ int Interface::Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_
   jPlatformStub = jUserStub = jDictStub = 0;
   
   env->putInterface(class_, this);
-  LOGV("Interface::Init: ret\n");
   return OK;
 }
 
