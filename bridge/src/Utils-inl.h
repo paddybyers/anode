@@ -53,7 +53,8 @@ template <class T> int TArray<T>::alloc(unsigned int count) {
   if(count > 0) {
     T *arr = new T[count];
     if(!arr) return ErrorMem;
-    memcpy(arr, this->arr, this->count * sizeof(T));
+    if(this->arr)
+      memcpy(arr, this->arr, this->count * sizeof(T));
     memset(&arr[this->count], 0, (count - this->count) * sizeof(T));
     this->count = count;
     this->arr = arr;
