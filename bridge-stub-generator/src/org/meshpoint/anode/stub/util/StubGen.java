@@ -134,7 +134,7 @@ public class StubGen {
 
 	private static InterfaceManager setupLoader(String[] classPath) {
 		ClassLoader loader = new DirectoryClassLoader(classPath);
-		return new InterfaceManager(null, loader);
+		return new InterfaceManager(loader);
 	}
 
 	private static int processStub(InterfaceManager mgr, MODE mode, String name) {

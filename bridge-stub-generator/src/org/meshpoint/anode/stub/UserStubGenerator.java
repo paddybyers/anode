@@ -37,7 +37,7 @@ public class UserStubGenerator extends StubGenerator {
 				/***************
 				 * statics
 				 ****************/
-				cw.writeln("static int classId = org.meshpoint.anode.bridge.Env.getCurrent().getInterfaceManager().getByClass(" + iface.getName() + ".class).getId();");
+				cw.writeln("static int classId = org.meshpoint.anode.bridge.Env.getInterfaceId(" + iface.getName() + ".class);");
 				cw.writeln();
 
 				/***************

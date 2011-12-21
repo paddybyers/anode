@@ -94,9 +94,9 @@ public abstract class StubGenerator {
 		
 		/* interface types */
 		if((type & Types.TYPE_INTERFACE) > 0) {
-			IDLInterface typeIface = mgr.getById(type >> 16);
+			IDLInterface typeIface = mgr.getById(Types.type2classid(type));
 			if(typeIface == null)
-				throw new GeneratorException("Internal error: referenced class not found (id = " + (type >> 16) + ")", null);
+				throw new GeneratorException("Internal error: referenced class not found (id = " + Types.type2classid(type) + ")", null);
 			return typeIface.getName();
 		}
 		
