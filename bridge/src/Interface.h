@@ -87,7 +87,7 @@ public:
   int type;
   v8::Persistent<v8::String> name;
   Attribute() {};
-  virtual ~Attribute();
+  ~Attribute();
   int Init(JNIEnv *jniEnv, Conv *conv, jint type, jstring jName);
 };
 
@@ -97,7 +97,7 @@ public:
   jint *argTypes;
   v8::Handle<v8::Value> *vArgs;
   Operation() : Attribute(), argTypes(0) {};
-  virtual ~Operation();
+  ~Operation();
   int Init(JNIEnv *jniEnv, Conv *conv, Interface *interface, jint type, jstring jName, jint argCount, jint *argTypes);
 };
 
