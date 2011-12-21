@@ -35,11 +35,11 @@ ArrayType::ArrayType(Env *env,
   sClassName  = Persistent<String>::New(String::New(ClassName));
 }
 
-int ArrayType::UserNew(JNIEnv *jniEnv, jobject *jVal) {
+int ArrayType::UserNew(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
   if(isJavaObject(componentType))
-    *jVal = jniEnv->NewObject(js.class_, js.ctor, componentType);
+    *jVal = jniEnv->NewObject(js.class_, js.ctor, handle, componentType);
   else
-    *jVal = jniEnv->NewObject(js.class_, js.ctor);
+    *jVal = jniEnv->NewObject(js.class_, js.ctor, handle);
   return *jVal ? OK : ErrorVM;
 }
 
@@ -263,7 +263,7 @@ int ArrayConv::ToJavaArray(JNIEnv *jniEnv, Handle<Value> val, int componentType,
 int ArrayConv::WrapV8Array(JNIEnv *jniEnv, Handle<Object> val, int componentType, ArrayType *arr, jobject *jVal) {
   Persistent<Object> pVal = Persistent<Object>::New(val);
   jobject ob;
-  if(arr->UserNew(jniEnv, &ob) == OK) {
+  if(arr->UserNew(jniEnv, asLong(pVal), &ob) == OK) {
     return conv->BindToV8Object(jniEnv, val, arr->sHiddenKey, ob, jVal);
   }
   if(jniEnv->ExceptionCheck())
@@ -296,7 +296,8 @@ int ArrayConv::UserGetLength(JNIEnv *jniEnv, Handle<Object> val, int *length) {
   Handle<Value> vLength = val->Get(sLength);
   if(vLength.IsEmpty()) return ErrorNotfound;
   if(tryCatch.HasCaught()) return ErrorJS;
-  return (int)val->IntegerValue();
+  *length = (int)vLength->IntegerValue();
+  return OK;
 }
 
 int ArrayConv::UserSetLength(JNIEnv *jniEnv, Handle<Object> val, int length) {

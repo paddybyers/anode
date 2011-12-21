@@ -36,7 +36,7 @@ public:
             eltSetter setter = 0
   );
   ~ArrayType() {}
-  int UserNew(JNIEnv *jniEnv, jobject *jVal);
+  int UserNew(JNIEnv *jniEnv, jlong handle, jobject *jVal);
   int PlatformNew(JNIEnv *jniEnv, v8::Handle<v8::Object> *val);
   void dispose(JNIEnv *jniEnv);
 private:
