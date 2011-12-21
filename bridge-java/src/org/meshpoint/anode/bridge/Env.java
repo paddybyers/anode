@@ -263,7 +263,8 @@ public class Env {
 				ctx.getModule().stopModule();
 			}
 			for(int i = 0; i < boundInterfaces.size(); i++) {
-				boundInterfaces.get(i).dispose();
+				BoundInterface b = boundInterfaces.get(i);
+				if(b != null) b.dispose();
 			}
 		}
 	}
