@@ -916,7 +916,6 @@ void Conv::releaseJavaRef(Persistent<Value> instHandle, void *jGlobalRef) {
   JNIEnv *jniEnv = Env::getEnv_nocheck()->getVM()->getJNIEnv();
   jniEnv->SetLongField(ob, env->getConv()->instHandle, 0);
   jniEnv->DeleteGlobalRef((jobject)jGlobalRef);
-//  instHandle.ClearWeak();
   instHandle.Dispose();
 }
 
@@ -971,6 +970,8 @@ void Conv::ThrowV8ExceptionForErrno(int errno) {
       ThrowException(Exception::Error(String::New("bridge: Internal VM error")));
       break;
     default:
-      ThrowException(Exception::Error(String::New("bridge: Unknown error")));
+      char buf[32];
+      sprintf(buf, "bridge: Unknown error: %d", errno);
+      ThrowException(Exception::Error(String::New(buf)));
   }
 }

@@ -46,7 +46,7 @@ private:
   int                moduleCount;  
   uv_async_t         async;
 
-	static Env         *initOnce(VM *vm);
+	static Env         *initThread(VM *vm);
 	node::Isolate      *nodeIsolate;
 	v8::Isolate        *v8Isolate;
 	VM                 *vm;

@@ -34,6 +34,7 @@ void Interface::dispose(JNIEnv *jniEnv) {
 }
 
 int Interface::Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass) {
+  LOGV("Interface::Init: ent, this=%p\n", this);
   this->env           = env;
   this->conv          = env->getConv();
   this->declaredClass = (jclass)jniEnv->NewGlobalRef(declaredClass);
@@ -49,6 +50,7 @@ int Interface::Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_
   jPlatformStub = jUserStub = jDictStub = 0;
   
   env->putInterface(class_, this);
+  LOGV("Interface::Init: ret\n");
   return OK;
 }
 
@@ -255,6 +257,7 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
 }
 
 int Interface::PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> *val) {
+  LOGV("Interface::PlatformCreate: ent, this=%p\n", this);
   if(!jPlatformStub) return ErrorInternal;
   if(function.IsEmpty()) function = Persistent<Function>::New(functionTemplate->GetFunction());
   Local<Object> local = function->NewInstance();
@@ -263,6 +266,7 @@ int Interface::PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Objec
     local->SetPointerInInternalField(1, this);
     *val = local;
   }
+  LOGV("Interface::PlatformCreate: ret, result=%d\n", result);
   return result;
 }
 

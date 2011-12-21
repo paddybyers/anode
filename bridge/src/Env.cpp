@@ -15,16 +15,19 @@ using namespace bridge;
 
 static pthread_key_t key;
 static pthread_once_t key_once = PTHREAD_ONCE_INIT;
-static void static_init() {
+
+static void initProcess() {
+  LOGV("Env::initProcess(): ent\n");
 	pthread_key_create(&key, 0);
 #ifndef ANDROID
 	/* JRE VM */
-	int result = JREVM::static_init();
+	int result = JREVM::initProcess();
 	if(result != OK) {
 		/* fatal */
 		LOGV("Fatal error in static initialisation of Env\n");
 	}
 #endif //ANDROID
+  LOGV("Env::initProcess(): ret\n");
 }
 
 using namespace v8;
@@ -34,28 +37,32 @@ using namespace v8;
  * so the reactive initEnv() won't occur*/
 void Env::setupEnv(VM *vm) {
   LOGV("Env::setupEnv(): ent\n");
-  pthread_once(&key_once, static_init);
-  initOnce(vm);
+  pthread_once(&key_once, initProcess);
+  initThread(vm);
   LOGV("Env::setupEnv(): ret\n");
 }
 #endif
 
 /* called on the first occasion that the Env is obtained in a process */
-Env *Env::initOnce(VM *vm) {
+Env *Env::initThread(VM *vm) {
+  LOGV("Env::initThread(): ent\n");
 	Env *result = new Env(vm);
 	pthread_setspecific(key, result);
+  LOGV("Env::initThread(): ret\n");
 	return result;
 }
 
 Env *Env::getEnv_nocheck() {
-	return (Env *)pthread_getspecific(key);
+	Env *result = (Env *)pthread_getspecific(key);
+  LOGV("Env::getEnv_nocheck(): result = %p\n", result);
+	return result;
 }
 
 Env *Env::getEnv() {
-	pthread_once(&key_once, static_init);
+	pthread_once(&key_once, initProcess);
 	Env *result;
 	if((result = getEnv_nocheck()) == 0) {
-		result = initOnce(0);
+		result = initThread(0);
 	}
 	return result;
 }
@@ -80,6 +87,7 @@ void Env::moduleUnloaded() {
 }
 
 Env::~Env() {
+  LOGV("Env::~Env(): ent, this=%p\n", this);
   JNIEnv *jniEnv = vm->getJNIEnv();
   jniEnv->CallVoidMethod(jEnv, releaseMethodId);
   jniEnv->DeleteGlobalRef(jEnv);
@@ -92,6 +100,7 @@ Env::~Env() {
   }
   delete interfaces;
 	delete vm;
+  LOGV("Env::~Env(): ret, this=%p\n", this);
 }
 
 int Env::init() {
@@ -155,6 +164,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
   HandleScope scope;
 	Local<Value> module;
   
+  LOGV("Env::load(): ent\n");
   /* wrap the exports object */
   jobject jExports;
   JNIEnv *jniEnv = vm->getJNIEnv();

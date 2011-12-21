@@ -66,7 +66,7 @@ int JREVM::createContext(jobject jEnv, jobject jExports, jobject *jCtx) {
   return result;
 }
 
-int JREVM::static_init() {
+int JREVM::initProcess() {
 	attachCount = 0;
 	pthread_mutex_init(&mtx, 0);
 	return createVM();

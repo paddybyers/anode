@@ -10,7 +10,7 @@ class JREVM : public VM {
 public:
 	JREVM();
 	virtual ~JREVM();
-	static int static_init();
+	static int initProcess();
   virtual int createContext(jobject jEnv, jobject jExports, jobject *jCtx);
 
 private:
