@@ -123,12 +123,12 @@ int Env::initV8() {
   /* node state */
   nodeIsolate = node::Isolate::GetCurrent();
   v8Isolate = v8::Isolate::GetCurrent();
+  nodeIsolate->setExitHandler(Env::atExit);
   return OK;
 }
 
 int Env::initJava() {
   int result = OK;
-  nodeIsolate->exitHandler = Env::atExit;
   JNIEnv *jniEnv = vm->getJNIEnv();
   jEnvClass = (jclass)(jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/bridge/Env")));
   createMethodId = jniEnv->GetStaticMethodID(jEnvClass, "create", "(J)Lorg/meshpoint/anode/bridge/Env;");
