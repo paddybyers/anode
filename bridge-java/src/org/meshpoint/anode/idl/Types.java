@@ -1,5 +1,6 @@
 package org.meshpoint.anode.idl;
 
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,6 +8,11 @@ import java.util.Date;
 import java.util.List;
 
 import org.w3c.dom.Array;
+import org.w3c.dom.ByteArray;
+import org.w3c.dom.DoubleArray;
+import org.w3c.dom.IntegerArray;
+import org.w3c.dom.LongArray;
+import org.w3c.dom.ObjectArray;
 
 /**
  * A single integer is used to represent a type of any argument
@@ -70,9 +76,16 @@ public class Types {
 	public static short type2classid(int type) { return (short)(type >> 16); }
 	
 	public static int fromJavaType(InterfaceManager interfaceManager, Type javaType) {
-		/* parameterised types are not supported */
-		if(!(javaType instanceof Class))
+		/* parameterised types are only supported for ObjectArray<T> */
+		if(javaType instanceof ParameterizedType) {
+			ParameterizedType paramType = (ParameterizedType)javaType;
+			if(paramType.getRawType() == ObjectArray.class) {
+				Type[] typeArgs = paramType.getActualTypeArguments();
+				if(typeArgs.length == 1)
+					return TYPE_ARRAY | fromJavaType(interfaceManager, typeArgs[0]);
+			}
 			return TYPE_INVALID;
+		}
 		/* handle sequence types; mutidimensional types are not supported */
 		Class<?> javaClass = (Class<?>)javaType;
 		if(javaClass.isArray()) {
@@ -82,9 +95,10 @@ public class Types {
 		}
 		/* handle array types; mutidimensional types are not supported */
 		if(Array.class.isAssignableFrom(javaClass)) {
-			Class<?> componentClass = javaClass.getComponentType();
-			if(Array.class.isAssignableFrom(componentClass)) throw new IllegalArgumentException("Types.fromJavaType: mutidimensional arrays are not supported");
-			return TYPE_ARRAY | fromJavaType(interfaceManager, componentClass);
+			int componentType = getArrayComponentType(javaClass);
+			if(componentType != TYPE_INVALID)
+				componentType |= TYPE_ARRAY;
+			return componentType;
 		}
 		/* handle dictionary types */
 		if(Dictionary.class.isAssignableFrom(javaClass)) {
@@ -121,6 +135,19 @@ public class Types {
 			class_ = class_.getSuperclass();
 		}
 		return TYPE_INVALID;
+	}
+	
+	public static int getArrayComponentType(Class <?> javaClass) {
+		int result = TYPE_INVALID;
+		if(ByteArray.class.isAssignableFrom(javaClass))
+			result = TYPE_BYTE;
+		else if(IntegerArray.class.isAssignableFrom(javaClass))
+			result = TYPE_INT;
+		else if(LongArray.class.isAssignableFrom(javaClass))
+			result = TYPE_LONG;
+		else if(DoubleArray.class.isAssignableFrom(javaClass))
+			result = TYPE_DOUBLE;
+		return result;
 	}
 	
 	public static IDLInterface baseInterface(InterfaceManager interfaceManager, int type) {
