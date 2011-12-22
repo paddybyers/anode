@@ -16,12 +16,21 @@ public class JSByteArray extends JSArray implements ByteArray {
 
 	@Override
 	public byte getElement(int index) {
-		return (byte)((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, (Types.TYPE_BYTE|Types.TYPE_ARRAY), index)).getLongValue();
+		if(env.isEventThread()) {
+			return (byte)((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, Types.TYPE_BYTE, index)).getLongValue();
+		}
+		SyncOp op = deferOp(OP.GET_ELEMENT, Types.TYPE_BYTE, index, null);
+		if(op == null) return 0;
+		return (byte)((JSValue)op.ob).getLongValue();
 	}
 
 	@Override
 	public void setElement(int index, byte value) {
-		BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_BYTE, index, JSValue.asJSNumber((long)value));
+		Object element = JSValue.asJSNumber((long)value);
+		if(env.isEventThread())
+			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_BYTE, index, element);
+		else
+			deferOp(OP.SET_ELEMENT, Types.TYPE_BYTE, index, element);
 	}
 
 }

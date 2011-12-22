@@ -16,12 +16,21 @@ public class JSDoubleArray extends JSArray implements DoubleArray {
 
 	@Override
 	public double getElement(int index) {
-		return ((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, (Types.TYPE_DOUBLE|Types.TYPE_ARRAY), index)).getDoubleValue();
+		if(env.isEventThread()) {
+			return ((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, Types.TYPE_DOUBLE, index)).getDoubleValue();
+		}
+		SyncOp op = deferOp(OP.GET_ELEMENT, Types.TYPE_DOUBLE, index, null);
+		if(op == null) return 0;
+		return ((JSValue)op.ob).getDoubleValue();
 	}
 
 	@Override
 	public void setElement(int index, double value) {
-		BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_DOUBLE, index, JSValue.asJSNumber(value));
+		Object element = JSValue.asJSNumber(value);
+		if(env.isEventThread())
+			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_DOUBLE, index, element);
+		else
+			deferOp(OP.SET_ELEMENT, Types.TYPE_DOUBLE, index, element);
 	}
 
 }

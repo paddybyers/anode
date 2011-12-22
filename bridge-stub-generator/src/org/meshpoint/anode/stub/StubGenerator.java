@@ -87,7 +87,7 @@ public abstract class StubGenerator {
 		
 		if((type & Types.TYPE_ARRAY) > 0) {
 			int componentType = type & ~Types.TYPE_ARRAY;
-			if(type < Types.TYPE_STRING)
+			if(componentType < Types.TYPE_STRING)
 				return "org.w3c.dom." + getType(componentType|Types.TYPE_OBJECT) + "Array";
 			return "org.w3c.dom.ObjectArray<" + getType(componentType) + ">";
 		}

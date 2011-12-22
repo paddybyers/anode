@@ -4,6 +4,8 @@
 	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="src" path="libbridge_src"/>
 	<classpathentry kind="src" path="sample_src"/>
+	<classpathentry kind="src" path="webinos_impl_src"/>
+	<classpathentry kind="src" path="webinos_api_src"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry kind="lib" path="contrib/jtar-1.0.4.jar"/>
 	<classpathentry kind="src" path="libnode_src"/>

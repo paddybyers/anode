@@ -16,12 +16,21 @@ public class JSLongArray extends JSArray implements LongArray {
 
 	@Override
 	public long getElement(int index) {
-		return ((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, (Types.TYPE_LONG|Types.TYPE_ARRAY), index)).getLongValue();
+		if(env.isEventThread()) {
+			return ((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, Types.TYPE_LONG, index)).getLongValue();
+		}
+		SyncOp op = deferOp(OP.GET_ELEMENT, Types.TYPE_LONG, index, null);
+		if(op == null) return 0;
+		return ((JSValue)op.ob).getLongValue();
 	}
 
 	@Override
 	public void setElement(int index, long value) {
-		BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_LONG, index, JSValue.asJSNumber(value));
+		Object element = JSValue.asJSNumber(value);
+		if(env.isEventThread())
+			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_LONG, index, element);
+		else
+			deferOp(OP.SET_ELEMENT, Types.TYPE_LONG, index, element);
 	}
 
 }

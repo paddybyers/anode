@@ -17,12 +17,16 @@ public class JSObjectArray<T> extends JSArray implements ObjectArray<T> {
 	@SuppressWarnings("unchecked")
 	@Override
 	public T getElement(int index) {
-		return (T)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, componentType, index);
+		if(env.isEventThread())
+			return (T)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, componentType, index);
+		return (T)deferOp(OP.GET_ELEMENT, componentType, index, null).ob;
 	}
 
 	@Override
 	public void setElement(int index, T value) {
-		BridgeNative.setIndexedProperty(env.getHandle(), instHandle, componentType, index, value);
+		if(env.isEventThread())
+			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, componentType, index, value);
+		deferOp(OP.SET_ELEMENT, componentType, index, value);
 	}
 
 }

@@ -16,12 +16,21 @@ public class JSIntegerArray extends JSArray implements IntegerArray {
 
 	@Override
 	public int getElement(int index) {
-		return (int)((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, (Types.TYPE_INT|Types.TYPE_ARRAY), index)).getLongValue();
+		if(env.isEventThread()) {
+			return (int)((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, Types.TYPE_INT, index)).getLongValue();
+		}
+		SyncOp op = deferOp(OP.GET_ELEMENT, Types.TYPE_INT, index, null);
+		if(op == null) return 0;
+		return (int)((JSValue)op.ob).getLongValue();
 	}
 
 	@Override
 	public void setElement(int index, int value) {
-		BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_INT, index, JSValue.asJSNumber((int)value));
+		Object element = JSValue.asJSNumber((long)value);
+		if(env.isEventThread())
+			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_INT, index, element);
+		else
+			deferOp(OP.SET_ELEMENT, Types.TYPE_INT, index, element);
 	}
 
 }

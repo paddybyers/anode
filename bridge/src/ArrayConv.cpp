@@ -307,20 +307,20 @@ int ArrayConv::UserSetLength(JNIEnv *jniEnv, Handle<Object> val, int length) {
   return OK;
 }
 
-int ArrayConv::UserGetElement(JNIEnv *jniEnv, Handle<Object> val, unsigned int type, int idx, jobject *jVal) {
+int ArrayConv::UserGetElement(JNIEnv *jniEnv, Handle<Object> val, unsigned int elementType, int idx, jobject *jVal) {
   HandleScope scope;
   TryCatch tryCatch;
   Handle<Value> vElement = val->Get(idx);
   if(vElement.IsEmpty()) return ErrorNotfound;
   if(tryCatch.HasCaught()) return ErrorJS;
-  return conv->ToJavaObject(jniEnv, vElement, getComponentType((unsigned int)type), jVal);
+  return conv->ToJavaObject(jniEnv, vElement, elementType, jVal);
 }
 
-int ArrayConv::UserSetElement(JNIEnv *jniEnv, Handle<Object> val, unsigned int type, int idx, jobject jVal) {
+int ArrayConv::UserSetElement(JNIEnv *jniEnv, Handle<Object> val, unsigned int elementType, int idx, jobject jVal) {
   HandleScope scope;
   TryCatch tryCatch;
   Handle<Value> vElement;
-  int result = conv->ToV8Value(jniEnv, jVal, getComponentType((unsigned int)type), &vElement);
+  int result = conv->ToV8Value(jniEnv, jVal, elementType, &vElement);
   if(result == OK) {
     val->Set(idx, vElement);
     if(tryCatch.HasCaught()) result =  ErrorJS;
@@ -328,12 +328,12 @@ int ArrayConv::UserSetElement(JNIEnv *jniEnv, Handle<Object> val, unsigned int t
   return result;
 }
 
-int ArrayConv::GetRefsForComponentType(JNIEnv *jniEnv, unsigned int componentType, ArrayType **ref) {
+int ArrayConv::GetRefsForComponentType(JNIEnv *jniEnv, unsigned int elementType, ArrayType **ref) {
   int result = OK;
-  if(isInterfaceOrDict(componentType)) {
-    result = GetArrayType(jniEnv, getClassId(componentType), ref);
+  if(isInterfaceOrDict(elementType)) {
+    result = GetArrayType(jniEnv, getClassId(elementType), ref);
   } else {
-    *ref = typeToArray[componentType];
+    *ref = typeToArray[elementType];
     result = *ref ? OK : ErrorType;
   }
   return result;

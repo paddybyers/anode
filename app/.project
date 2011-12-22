@@ -51,5 +51,15 @@
 			<type>2</type>
 			<location>/Users/paddy/data/work/dev/android/anode/api/src</location>
 		</link>
+		<link>
+			<name>webinos_api_src</name>
+			<type>2</type>
+			<location>/Users/paddy/data/work/dev/webinos/wp4/webinos/common/android/api/src</location>
+		</link>
+		<link>
+			<name>webinos_impl_src</name>
+			<type>2</type>
+			<location>/Users/paddy/data/work/dev/webinos/wp4/webinos/common/android/impl/src</location>
+		</link>
 	</linkedResources>
 </projectDescription>
