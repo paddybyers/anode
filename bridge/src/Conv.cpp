@@ -921,7 +921,10 @@ int Conv::BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, Handle<Object> val, I
   int result = BindToJavaObject(jniEnv, jLocal, val, &ob);
   if(result == OK) {
     Handle<Value> vOb = External::Wrap(ob);
-    val->SetHiddenValue(interface->getHiddenKey(), vOb);
+    while(interface != 0) {
+      val->SetHiddenValue(interface->getHiddenKey(), vOb);
+      interface = interface->getParent();
+    }
   }
   return result;
 }
