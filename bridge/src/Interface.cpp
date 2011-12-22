@@ -87,6 +87,10 @@ int Interface::InitPlatformStub(JNIEnv *jniEnv, jclass platformStub) {
   /* set up function template etc */
   functionTemplate = Persistent<FunctionTemplate>::New(FunctionTemplate::New(PlatformCtor));
   functionTemplate->SetClassName(sClassName);
+  
+  if(parent != 0) {
+    functionTemplate->Inherit(parent->functionTemplate);
+  }
   instanceTemplate = Persistent<ObjectTemplate>::New(functionTemplate->InstanceTemplate());
   instanceTemplate->SetInternalFieldCount(2);
   return OK;

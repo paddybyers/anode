@@ -854,7 +854,7 @@ int Conv::ToV8Interface(JNIEnv *jniEnv, jobject jVal, classId clsid, Handle<Obje
     Interface *interface = env->getInterface(clsid);
     result = interface->PlatformCreate(jniEnv, jVal, &vInst);
     if(result == OK) {
-      result = BindToJavaObject(jniEnv, jVal, vInst, interface->getHiddenKey());
+      result = BindToJavaObject(jniEnv, jVal, vInst, interface);
       if(result == OK)
         *val = vInst;
     }
@@ -897,14 +897,32 @@ int Conv::UnwrapObject(JNIEnv *jniEnv, jobject jVal, Handle<Object> *val) {
   return ErrorNotfound;
 }
 
-int Conv::BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, Handle<Object> val, Handle<String> key) {
+int Conv::BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, Handle<Object> val, jobject *jGlobal) {
   int result = OK;
   Persistent<Object> pVal = Persistent<Object>::New(val);
   jobject ob = jniEnv->NewGlobalRef(jLocal);
   pVal.MakeWeak(ob, releaseJavaRef);
-  val->SetHiddenValue(key, External::Wrap(ob));
   val->SetPointerInInternalField(0, ob);
   jniEnv->SetLongField(jLocal, instHandle, asLong(pVal));
+  *jGlobal = ob;
+  return result;
+}
+
+int Conv::BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, Handle<Object> val, Handle<String> key) {
+  jobject ob;
+  int result = BindToJavaObject(jniEnv, jLocal, val, &ob);
+  if(result == OK)
+    val->SetHiddenValue(key, External::Wrap(ob));
+  return result;
+}
+
+int Conv::BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, Handle<Object> val, Interface *interface) {
+  jobject ob;
+  int result = BindToJavaObject(jniEnv, jLocal, val, &ob);
+  if(result == OK) {
+    Handle<Value> vOb = External::Wrap(ob);
+    val->SetHiddenValue(interface->getHiddenKey(), vOb);
+  }
   return result;
 }
 

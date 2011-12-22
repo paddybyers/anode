@@ -7,6 +7,7 @@ namespace bridge {
 
 class ArrayConv;
 class Env;
+class Interface;
 
 /* Class to perform conversions between v8 and java values
  * and hold assocoiated per-env state */
@@ -129,7 +130,9 @@ public:
   int UnwrapObject(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> *val);
 
   /* connect the handles */
+  int BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, v8::Handle<v8::Object> val, jobject *jGlobal);
   int BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, v8::Handle<v8::Object> val, v8::Handle<v8::String> key);
+  int BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, v8::Handle<v8::Object> val, Interface *interface);
   
   void releaseV8Handle(JNIEnv *jniEnv, v8::Persistent<v8::Object> intHandle, int type);
   static void releaseJavaRef(v8::Persistent<v8::Value> instHandle, void *jGlobalRef);
