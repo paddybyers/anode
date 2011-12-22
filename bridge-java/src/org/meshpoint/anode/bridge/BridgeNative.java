@@ -45,7 +45,7 @@ public class BridgeNative {
 	native static void releaseObjectHandle(long envHandle, long instHandle, int type);
 	
 	/* interface handle management */
-	public native static long bindInterface(long envHandle, IDLInterface iface, int classId, int attrCount, int opCount, Class<?> declaredClass);
+	public native static long bindInterface(long envHandle, long parentHandle, IDLInterface iface, int classId, int attrCount, int opCount, Class<?> declaredClass);
 	public native static void bindAttribute(long envHandle, long ifaceHandle, int attrIdx, int type, String name);
 	public native static void bindOperation(long envHandle, long ifaceHandle, int opIdx, int type, String name, int argCount, int[] argTypes);
 	public native static void releaseInterface(long envHandle, long ifaceHandle);

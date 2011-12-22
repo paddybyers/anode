@@ -225,13 +225,15 @@ public class Env {
 		return result;
 	}
 	
-	public void bindInterface(short classId) {
+	public BoundInterface bindInterface(short classId) {
 		int idx = InterfaceManager.classId2Idx(classId);
-		if(boundInterfaces.get(idx) == null) {
-			BoundInterface bound = new BoundInterface(this, classId);
-			boundInterfaces.put(idx, bound);
-			bound.bind();
+		BoundInterface result;
+		if((result = boundInterfaces.get(idx)) == null) {
+			result = new BoundInterface(this, classId);
+			boundInterfaces.put(idx, result);
+			result.bind();
 		}
+		return result;
 	}
 
 	/********************

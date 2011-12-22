@@ -32,12 +32,17 @@ public class UserStubGenerator extends StubGenerator {
 			throw new GeneratorException("UserStubGenerator: class must be an interface", null);
 		String className = iface.getStubClassname();
 		ClassWriter cw = new ClassWriter(className, StubUtil.MODE_USER);
+		String parentName = STUB_BASE;
+		IDLInterface parent;
+		if((parent = iface.getParent()) != null)
+			parentName = parent.getStubClassname();
+
 		try {
-			writePreamble(cw, className, STUB_BASE, iface.getName(), StubUtil.MODE_USER);
+			writePreamble(cw, className, parentName, iface.getName(), StubUtil.MODE_USER);
 				/***************
 				 * statics
 				 ****************/
-				cw.writeln("static int classId = org.meshpoint.anode.bridge.Env.getInterfaceId(" + iface.getName() + ".class);");
+				cw.writeln("private static int classId = org.meshpoint.anode.bridge.Env.getInterfaceId(" + iface.getName() + ".class);");
 				cw.writeln();
 
 				/***************
@@ -49,7 +54,7 @@ public class UserStubGenerator extends StubGenerator {
 				/***************
 				 * finalizer
 				 ****************/
-				cw.writeln("public void finalize() { super.release(classId); }");
+				cw.writeln("public void finalize() { super.release(classId); " + (parent == null ? "" : "super.finalize(); ") + "}");
 				cw.writeln();
 	
 				/*******************

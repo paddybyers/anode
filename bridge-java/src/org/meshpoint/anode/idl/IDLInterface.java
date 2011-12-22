@@ -71,6 +71,10 @@ public class IDLInterface {
 		return javaClass;
 	}
 
+	public IDLInterface getParent() {
+		return parent;
+	}
+	
 	public String getName() {
 		return name;
 	}

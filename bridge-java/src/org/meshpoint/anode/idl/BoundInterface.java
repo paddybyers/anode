@@ -18,7 +18,9 @@ public class BoundInterface {
 	public void bind() {
 		/* create native binding for this interface */
 		long envHandle = env.getHandle();
-		ifaceHandle = BridgeNative.bindInterface(envHandle, iface, iface.getId(), iface.getAttributes().length, iface.getOperations().length, iface.getJavaClass());
+		IDLInterface parent = iface.getParent();
+		long parentHandle = (parent == null) ? 0 : env.bindInterface(parent.getId()).ifaceHandle;
+		ifaceHandle = BridgeNative.bindInterface(envHandle, parentHandle, iface, iface.getId(), iface.getAttributes().length, iface.getOperations().length, iface.getJavaClass());
 		InterfaceManager mgr = env.getInterfaceManager();
 
 		/* bind stubs */

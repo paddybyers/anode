@@ -248,13 +248,14 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseObjec
 /*
  * Class:     org_meshpoint_anode_bridge_BridgeNative
  * Method:    bindInterface
- * Signature: (JLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;)J
+ * Signature: (JJLorg/meshpoint/anode/idl/IDLInterface;IIILjava/lang/Class;)J
  */
 JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterface
-(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass declaredClass) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jParentHandle, jobject jInterface, jint jClassId, jint attrCount, jint opCount, jclass declaredClass) {
   Env *env = (Env *)jEnvHandle;
+  Interface *parent = (Interface *)jParentHandle;
   Interface *interface;
-  int result = Interface::Create(jniEnv, env, jInterface, jClassId, attrCount, opCount, declaredClass, &interface);
+  int result = Interface::Create(jniEnv, env, parent, jInterface, jClassId, attrCount, opCount, declaredClass, &interface);
   if(result == OK) {
     return (jlong)interface;
   }

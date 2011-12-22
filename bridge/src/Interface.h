@@ -13,7 +13,7 @@ class Operation;
 
 class Interface {
 public:
-  static int Create(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass, Interface **inst);
+  static int Create(JNIEnv *jniEnv, Env *env, Interface *parent, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass, Interface **inst);
   void dispose(JNIEnv *jniEnv);
   ~Interface() {};
   
@@ -40,7 +40,7 @@ public:
   
 private:
   Interface() : attributes(0), operations(0) {};
-  int Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass);
+  int Init(JNIEnv *jniEnv, Env *env, Interface *parent, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass);
 
   static v8::Handle<v8::Value> PlatformAttrGet(v8::Local<v8::String> property, const v8::AccessorInfo& info);
   static void PlatformAttrSet(v8::Local<v8::String> property, v8::Local<v8::Value> value, const v8::AccessorInfo& info);
@@ -48,7 +48,9 @@ private:
   static v8::Handle<v8::Value> PlatformCtor(const v8::Arguments& args);
 
   Env *env;
+  Interface *parent;
   Conv *conv;
+  
   v8::Persistent<v8::String> hiddenKey;
   v8::Persistent<v8::String> sClassName;
   v8::Persistent<v8::FunctionTemplate> functionTemplate;

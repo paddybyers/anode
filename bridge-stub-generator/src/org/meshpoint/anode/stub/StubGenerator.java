@@ -58,7 +58,7 @@ public abstract class StubGenerator {
 		lw.writeln();
 		lw.writeln("package " + StubUtil.getStubPackage(mode) + ';');
 		lw.writeln();
-		StringBuffer header = new StringBuffer().append("public final class ").append(className);
+		StringBuffer header = new StringBuffer().append("public class ").append(className);
 		if(superclassName != null) header.append(" extends ").append(superclassName);
 		if(implementsName != null) header.append(" implements ").append(implementsName);
 		lw.openScope(header.toString());

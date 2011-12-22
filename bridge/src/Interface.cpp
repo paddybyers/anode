@@ -9,10 +9,10 @@
 using namespace v8;
 using namespace bridge;
 
-int Interface::Create(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass, Interface **inst) {
+int Interface::Create(JNIEnv *jniEnv, Env *env, Interface *parent, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass, Interface **inst) {
   Interface *ob = new Interface();
   if(!ob) return ErrorMem;
-  int result = ob->Init(jniEnv, env, jInterface, class_, attrCount, opCount, declaredClass);
+  int result = ob->Init(jniEnv, env, parent, jInterface, class_, attrCount, opCount, declaredClass);
   if(result == OK)
     *inst = ob;
   return result;
@@ -33,8 +33,9 @@ void Interface::dispose(JNIEnv *jniEnv) {
   delete operations;
 }
 
-int Interface::Init(JNIEnv *jniEnv, Env *env, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass) {
+int Interface::Init(JNIEnv *jniEnv, Env *env, Interface *parent, jobject jInterface, classId class_, int attrCount, int opCount, jclass declaredClass) {
   this->env           = env;
+  this->parent        = parent;
   this->conv          = env->getConv();
   this->declaredClass = (jclass)jniEnv->NewGlobalRef(declaredClass);
   this->jInterface    = jInterface;
@@ -178,7 +179,7 @@ int Interface::UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobj
   }
   if(result == OK) {
     Handle<Value> vRes;
-    if(target->IsFunction() && operations->getLength() == 1) {
+    if(target->IsFunction() && parent == 0 && operations->getLength() == 1) {
       /* invoke as function if target is a function, and interface delcares only one operation */
       vRes = (Handle<Function>::Cast(target))->Call(target, op->argCount, op->vArgs);
     } else {

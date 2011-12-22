@@ -88,9 +88,15 @@ public class InterfaceManager {
 		/* add to manager, and resolve parent */
 		IDLInterface result = new IDLInterface(this, javaClass);
 		result.modifiers = javaClass.getModifiers();
-		Class<?> parentClass = javaClass.getSuperclass();
-		if(parentClass != null)
-			result.parent = loadClass(parentClass);
+		if(javaClass.isInterface()) {
+			Class<?>[] parentInterfaces = javaClass.getInterfaces();
+			if(parentInterfaces.length == 1)
+				result.parent = loadClass(parentInterfaces[0]);
+		} else {
+			Class<?> parentClass = javaClass.getSuperclass();
+			if(parentClass != null)
+				result.parent = loadClass(parentClass);
+		}
 
 		/* resolve fields */
 		ArrayList<Attribute> attributeList = new ArrayList<Attribute>();
