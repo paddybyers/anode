@@ -24,6 +24,7 @@ public:
   int InitOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName, jint argCount, jint *argTypes);
   
   int DictCreate(JNIEnv *jniEnv, v8::Handle<v8::Object> val, jobject *jVal);
+  int DictImport(JNIEnv *jnIEnv, v8::Handle<v8::Object> val, jobject jVal);
   int DictExport(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> val);
   
   int UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal);

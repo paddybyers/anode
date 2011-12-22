@@ -148,9 +148,17 @@ int Interface::UserCreate(JNIEnv *jniEnv, jlong handle, jobject *jVal) {
 
 int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
   if(!jDictStub) return ErrorInternal;
-  jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jDictStub, jDictGetArgs);
   jobject ob = jniEnv->NewObject(declaredClass, jDictCtor);
-  if(!args || !ob) return ErrorVM;
+  if(!ob) return ErrorVM;
+  int result = DictImport(jniEnv, val, ob);
+  if(result == OK) {
+    *jVal = ob;
+  }
+  return result;
+}
+
+int Interface::DictImport(JNIEnv *jniEnv, Handle<Object> val, jobject jVal) {
+  jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jDictStub, jDictGetArgs);
   jniEnv->MonitorEnter(args);
   int result = OK;
   for(int i = 0; i < attributes->getLength(); i++) {
@@ -162,10 +170,12 @@ int Interface::DictCreate(JNIEnv *jniEnv, Handle<Object> val, jobject *jVal) {
     jniEnv->SetObjectArrayElement(args, i, jMember);
   }
   if(result == OK) {
-    jniEnv->CallStaticVoidMethod(jDictStub, jDictImport, ob, args);
-    *jVal = ob;
+    jniEnv->CallStaticVoidMethod(jDictStub, jDictImport, jVal, args);
   }
-  jniEnv->MonitorExit(args);  
+  jniEnv->MonitorExit(args);
+  if(result == OK && parent != 0) {
+    result = parent->DictImport(jniEnv, val, jVal);
+  }
   return result;
 }
 
@@ -252,6 +262,9 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
     val->Set(attributes->addr(i)->name, member);
   }
   jniEnv->MonitorExit(args);
+  if(result == OK && parent != 0) {
+    result = parent->DictExport(jniEnv, jVal, val);
+  }
   return result;
 }
 
