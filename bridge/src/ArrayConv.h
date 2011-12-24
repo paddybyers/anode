@@ -39,6 +39,9 @@ public:
   int UserNew(JNIEnv *jniEnv, jlong handle, jobject *jVal);
   int PlatformNew(JNIEnv *jniEnv, v8::Handle<v8::Object> *val);
   void dispose(JNIEnv *jniEnv);
+  
+  inline v8::Handle<v8::String> getHiddenKey() { return sHiddenKey; }
+
 private:
   Env *env;
   eltGetter getter;

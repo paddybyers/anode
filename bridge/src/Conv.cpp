@@ -944,16 +944,27 @@ void Conv::releaseJavaRef(Persistent<Value> instHandle, void *jGlobalRef) {
 void Conv::releaseV8Handle(JNIEnv *jniEnv, Persistent<Object> val, int type) {
   HandleScope scope;
   Handle<String> sHiddenKey;
+  Interface *interface = 0;
+  ArrayType *arr = 0;
   if(type == -1) {
     sHiddenKey = sObjectHiddenKey;
-  } else {
-    sHiddenKey = env->getInterface(getClassId(type))->getHiddenKey();
+  } else if(isArray(type)) {
+    arrayConv->GetRefsForComponentType(jniEnv, getComponentType(type), &arr);
+    sHiddenKey = arr->getHiddenKey();
+  } else if(isInterface(type)) {
+    interface = env->getInterface(getClassId(type));
+    sHiddenKey = interface->getHiddenKey();
   }
   Local<Value> hiddenVal = val->GetHiddenValue(sHiddenKey);
   if(!hiddenVal.IsEmpty() && !hiddenVal->IsUndefined()) {
     jobject extRef = (jobject)External::Unwrap(hiddenVal);
     jniEnv->DeleteGlobalRef(extRef);
     val->DeleteHiddenValue(sHiddenKey);
+    if(interface) {
+      while((interface = interface->getParent())) {
+        val->DeleteHiddenValue(interface->getHiddenKey());
+      }
+    }
   }
   val.Dispose();
 }

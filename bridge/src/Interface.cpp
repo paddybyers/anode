@@ -125,7 +125,7 @@ int Interface::InitAttribute(JNIEnv *jniEnv, jint idx, jint type, jstring jName)
   if(result == OK && jPlatformStub) {
     char buf[32];
     attr->name->WriteUtf8(buf);
-    functionTemplate->InstanceTemplate()->SetAccessor(attr->name, PlatformAttrGet, PlatformAttrSet, Number::New(idx));
+    functionTemplate->InstanceTemplate()->SetAccessor(attr->name, PlatformAttrGet, PlatformAttrSet, Number::New((class_ << 16) + idx));
   }
   return result;
 }
@@ -134,7 +134,7 @@ int Interface::InitOperation(JNIEnv *jniEnv, jint idx, jint type, jstring jName,
   Operation *op = operations->addr(idx);
   int result = op->Init(jniEnv, conv, this, type, jName, argCount, argTypes);
   if(result == OK && jPlatformStub) {
-    Local<FunctionTemplate> opTemp = FunctionTemplate::New(PlatformOpInvoke, Number::New(idx));
+    Local<FunctionTemplate> opTemp = FunctionTemplate::New(PlatformOpInvoke, Number::New((class_ << 16) + idx));
     functionTemplate->PrototypeTemplate()->Set(op->name, opTemp);
   }
   return result;
@@ -273,7 +273,7 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
 }
 
 int Interface::PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Object> *val) {
-  LOGV("Interface::PlatformCreate: ent, this=%p\n", this);
+  //LOGV("Interface::PlatformCreate: ent, this=%p\n", this);
   if(!jPlatformStub) return ErrorInternal;
   if(function.IsEmpty()) function = Persistent<Function>::New(functionTemplate->GetFunction());
   Local<Object> local = function->NewInstance();
@@ -282,7 +282,7 @@ int Interface::PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Objec
     local->SetPointerInInternalField(1, this);
     *val = local;
   }
-  LOGV("Interface::PlatformCreate: ret, result=%d\n", result);
+  //LOGV("Interface::PlatformCreate: ret, result=%d\n", result);
   return result;
 }
 
@@ -290,7 +290,12 @@ Handle<Value> Interface::PlatformAttrGet(Local<String> property, const AccessorI
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
   Interface *interface = (Interface *)info.This()->GetPointerFromInternalField(1);
-  int attrIdx = info.Data()->Int32Value();
+  int attrData = info.Data()->Int32Value();
+  int attrIdx = attrData & 0xffff;
+  int clsid = attrData >> 16;
+  while(clsid != interface->class_)
+    interface = interface->getParent();
+
   Attribute *attr = interface->attributes->addr(attrIdx);
   JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
   jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGet, ob, attrIdx);
@@ -312,7 +317,12 @@ void Interface::PlatformAttrSet(Local<String> property, Local<Value> value, cons
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
   Interface *interface = (Interface *)info.This()->GetPointerFromInternalField(1);
-  int attrIdx = info.Data()->Int32Value();
+  int attrData = info.Data()->Int32Value();
+  int attrIdx = attrData & 0xffff;
+  int clsid = attrData >> 16;
+  while(clsid != interface->class_)
+    interface = interface->getParent();
+
   Attribute *attr = interface->attributes->addr(attrIdx);
   JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
   jobject jVal;
@@ -333,7 +343,12 @@ Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
   HandleScope scope;
   jobject ob = (jobject)args.This()->GetPointerFromInternalField(0);
   Interface *interface = (Interface *)args.This()->GetPointerFromInternalField(1);
-  int opIdx = args.Data()->Int32Value();
+  int opData = args.Data()->Int32Value();
+  int opIdx = opData & 0xffff;
+  int clsid = opData >> 16;
+  while(clsid != interface->class_)
+    interface = interface->getParent();
+
   Operation *op = interface->operations->addr(opIdx);
   JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
   int result = OK;

@@ -6,5 +6,6 @@ public abstract class Array extends Base {
 	
 	protected Array(int type, boolean isFixedLength) {
 		super(type);
+		this.isFixedLength = isFixedLength;
 	}
 }

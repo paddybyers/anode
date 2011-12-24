@@ -54,7 +54,7 @@ Env *Env::initThread(VM *vm) {
 
 Env *Env::getEnv_nocheck() {
 	Env *result = (Env *)pthread_getspecific(key);
-  LOGV("Env::getEnv_nocheck(): result = %p\n", result);
+  //LOGV("Env::getEnv_nocheck(): result = %p\n", result);
 	return result;
 }
 

@@ -15,6 +15,10 @@ public class BoundInterface {
 		iface = env.getInterfaceManager().getById(classId);
 	}
 	
+	public Env getEnv() { return env; }
+	
+	public int getType() { return Types.classid2Type(iface.getId()); }
+	
 	public void bind() {
 		/* create native binding for this interface */
 		long envHandle = env.getHandle();
