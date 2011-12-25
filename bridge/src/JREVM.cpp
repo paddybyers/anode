@@ -140,7 +140,7 @@ int JREVM::createVM() {
 	/* start a VM for this process */
 	JavaVMInitArgs jvmInitargs;
 #ifdef DEBUG
-	jvmInitargs.nOptions = 4;
+	jvmInitargs.nOptions = 5;
 #else
 	jvmInitargs.nOptions = 2
 #endif
@@ -166,6 +166,8 @@ int JREVM::createVM() {
 	options[2].extraInfo    = 0;
 	options[3].optionString = (char *)"-Xrunjdwp:transport=dt_socket,server=y,address=8000,suspend=n";
 	options[3].extraInfo    = 0;
+	options[4].optionString = (char *)"-verbose:gc";
+	options[4].extraInfo    = 0;
 #endif
 
   JNIEnv *tmpEmv;
