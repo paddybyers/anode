@@ -936,7 +936,7 @@ void Conv::releaseJavaRef(Persistent<Value> instHandle, void *jGlobalRef) {
   Env *env = Env::getEnv_nocheck();
   JNIEnv *jniEnv = Env::getEnv_nocheck()->getVM()->getJNIEnv();
   jniEnv->SetLongField(ob, env->getConv()->instHandle, 0);
-  jniEnv->DeleteGlobalRef((jobject)jGlobalRef);
+  jniEnv->DeleteGlobalRef(ob);
   instHandle.Dispose();
 }
 

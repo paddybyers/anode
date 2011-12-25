@@ -92,7 +92,7 @@ int Interface::InitPlatformStub(JNIEnv *jniEnv, jclass platformStub) {
     functionTemplate->Inherit(parent->functionTemplate);
   }
   instanceTemplate = Persistent<ObjectTemplate>::New(functionTemplate->InstanceTemplate());
-  instanceTemplate->SetInternalFieldCount(2);
+  instanceTemplate->SetInternalFieldCount(1);
   return OK;
 }
 
@@ -279,7 +279,6 @@ int Interface::PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Objec
   Local<Object> local = function->NewInstance();
   int result = local.IsEmpty() ? ErrorVM : OK;
   if(result == OK) {
-    local->SetPointerInInternalField(1, this);
     *val = local;
   }
   //LOGV("Interface::PlatformCreate: ret, result=%d\n", result);
@@ -289,110 +288,110 @@ int Interface::PlatformCreate(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Objec
 Handle<Value> Interface::PlatformAttrGet(Local<String> property, const AccessorInfo& info) {
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
-  Interface *interface = (Interface *)info.This()->GetPointerFromInternalField(1);
   int attrData = info.Data()->Int32Value();
   int attrIdx = attrData & 0xffff;
   int clsid = attrData >> 16;
-  while(clsid != interface->class_)
-    interface = interface->getParent();
-
-  Attribute *attr = interface->attributes->addr(attrIdx);
-  JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
-  jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGet, ob, attrIdx);
-  if(jniEnv->ExceptionCheck()) {
-    jniEnv->ExceptionClear();
-    ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
-    return Undefined();
+  Env *env = Env::getEnv_nocheck();
+  Interface *interface = env->getInterface(clsid);
+  if(interface) {
+    Attribute *attr = interface->attributes->addr(attrIdx);
+    JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+    jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGet, ob, attrIdx);
+    if(jniEnv->ExceptionCheck()) {
+      jniEnv->ExceptionClear();
+      ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
+      return Undefined();
+    }
+    Local<Value> val;
+    int result = interface->conv->ToV8Value(jniEnv, jVal, attr->type, &val);
+    if(result == OK) {
+      return scope.Close(val);
+    }
+    interface->conv->ThrowV8ExceptionForErrno(result);
   }
-  Local<Value> val;
-  int result = interface->conv->ToV8Value(jniEnv, jVal, attr->type, &val);
-  if(result == OK) {
-    return scope.Close(val);
-  }
-  interface->conv->ThrowV8ExceptionForErrno(result);
   return Undefined();
 }
 
 void Interface::PlatformAttrSet(Local<String> property, Local<Value> value, const AccessorInfo& info) {
   HandleScope scope;
   jobject ob = (jobject)info.This()->GetPointerFromInternalField(0);
-  Interface *interface = (Interface *)info.This()->GetPointerFromInternalField(1);
   int attrData = info.Data()->Int32Value();
   int attrIdx = attrData & 0xffff;
   int clsid = attrData >> 16;
-  while(clsid != interface->class_)
-    interface = interface->getParent();
-
-  Attribute *attr = interface->attributes->addr(attrIdx);
-  JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
-  jobject jVal;
-  int result = interface->conv->ToJavaObject(jniEnv, value, attr->type, &jVal);
-  if(result == OK) {
-    jniEnv->CallStaticVoidMethod(interface->jPlatformStub, interface->jPlatformSet, ob, attrIdx, jVal);
-    if(jniEnv->ExceptionCheck()) {
-      jniEnv->ExceptionClear();
-      ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
-      return;
+  Env *env = Env::getEnv_nocheck();
+  Interface *interface = env->getInterface(clsid);
+  if(interface) {
+    Attribute *attr = interface->attributes->addr(attrIdx);
+    JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+    jobject jVal;
+    int result = interface->conv->ToJavaObject(jniEnv, value, attr->type, &jVal);
+    if(result == OK) {
+      jniEnv->CallStaticVoidMethod(interface->jPlatformStub, interface->jPlatformSet, ob, attrIdx, jVal);
+      if(jniEnv->ExceptionCheck()) {
+        jniEnv->ExceptionClear();
+        ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
+        return;
+      }
     }
+    if(result != OK)
+      interface->conv->ThrowV8ExceptionForErrno(result);
   }
-  if(result != OK)
-    interface->conv->ThrowV8ExceptionForErrno(result);
 }
 
 Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
   HandleScope scope;
   jobject ob = (jobject)args.This()->GetPointerFromInternalField(0);
-  Interface *interface = (Interface *)args.This()->GetPointerFromInternalField(1);
   int opData = args.Data()->Int32Value();
   int opIdx = opData & 0xffff;
   int clsid = opData >> 16;
-  while(clsid != interface->class_)
-    interface = interface->getParent();
-
-  Operation *op = interface->operations->addr(opIdx);
-  JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
-  int result = OK;
-  jobjectArray jArgs = 0;
-  Local<Value> val;
-  int expectedArgs = op->argCount;
-  if(expectedArgs > 0) {
-    jArgs = (jobjectArray)jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGetArgs);
-    jniEnv->MonitorEnter(jArgs);
-    int suppliedArgs = args.Length();
-    int argsToProcess = (suppliedArgs < expectedArgs) ? suppliedArgs : expectedArgs;
-    jobject jItem;
-    for(int i = 0; i < argsToProcess; i++) {
-      result = interface->conv->ToJavaObject(jniEnv, args[i], op->argTypes[i], &jItem);
-      if(result != OK) break;
-      jniEnv->SetObjectArrayElement(jArgs, i, jItem);    
-    }
-    if(result == OK) {
-      for(int i = argsToProcess; i < expectedArgs; i++) {
-        result = interface->conv->ToJavaObject(jniEnv, Undefined(), op->argTypes[i], &jItem);
+  Env *env = Env::getEnv_nocheck();
+  Interface *interface = env->getInterface(clsid);
+  if(interface) {
+    Operation *op = interface->operations->addr(opIdx);
+    JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+    int result = OK;
+    jobjectArray jArgs = 0;
+    Local<Value> val;
+    int expectedArgs = op->argCount;
+    if(expectedArgs > 0) {
+      jArgs = (jobjectArray)jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGetArgs);
+      jniEnv->MonitorEnter(jArgs);
+      int suppliedArgs = args.Length();
+      int argsToProcess = (suppliedArgs < expectedArgs) ? suppliedArgs : expectedArgs;
+      jobject jItem;
+      for(int i = 0; i < argsToProcess; i++) {
+        result = interface->conv->ToJavaObject(jniEnv, args[i], op->argTypes[i], &jItem);
         if(result != OK) break;
-        jniEnv->SetObjectArrayElement(jArgs, i, jItem);
+        jniEnv->SetObjectArrayElement(jArgs, i, jItem);    
+      }
+      if(result == OK) {
+        for(int i = argsToProcess; i < expectedArgs; i++) {
+          result = interface->conv->ToJavaObject(jniEnv, Undefined(), op->argTypes[i], &jItem);
+          if(result != OK) break;
+          jniEnv->SetObjectArrayElement(jArgs, i, jItem);
+        }
       }
     }
-  }
-  if(result == OK) {
-    jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformInvoke, ob, opIdx, jArgs);
-    if(jniEnv->ExceptionCheck()) {
-      jniEnv->ExceptionClear();
-      result = ErrorVM;
-    }
     if(result == OK) {
-      result = interface->conv->ToV8Value(jniEnv, jVal, op->type, &val);
+      jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformInvoke, ob, opIdx, jArgs);
+      if(jniEnv->ExceptionCheck()) {
+        jniEnv->ExceptionClear();
+        result = ErrorVM;
+      }
+      if(result == OK) {
+        result = interface->conv->ToV8Value(jniEnv, jVal, op->type, &val);
+      }
     }
+    if(expectedArgs > 0) {
+      jniEnv->MonitorExit(jArgs);
+    }
+    if(result == OK && !val.IsEmpty()) {
+      return scope.Close(val);
+    }
+    interface->conv->ThrowV8ExceptionForErrno(result);
+    LOGV("Interface::PlatformOpInvoke(): ret (error), result = %d\n", result);
   }
-  if(expectedArgs > 0) {
-    jniEnv->MonitorExit(jArgs);
-  }
-  if(result == OK && !val.IsEmpty()) {
-    return scope.Close(val);
-  }
-  interface->conv->ThrowV8ExceptionForErrno(result);
-  LOGV("Interface::PlatformOpInvoke(): ret (error), result = %d\n", result);
-  return Undefined();  
+  return Undefined(); 
 }
 
 Handle<Value> Interface::PlatformCtor(const Arguments& args) {
