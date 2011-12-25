@@ -39,17 +39,18 @@
  ****************/
 
 enum {
-	OK            =  0,
-	ErrorMem      = -1, /* out of memory */
-	ErrorConfig   = -2, /* configuration error */
-	ErrorVM       = -3, /* Java exception in user (module) code */
-	ErrorIO       = -4, /* IO error */
-	ErrorNotfound = -5, /* resource not found */
-	ErrorInvalid  = -6, /* invalid argument or value */
-	ErrorType     = -7, /* incompatible type */
-  ErrorJS       = -8, /* V8 exception in user code */
-  ErrorInternal = -9, /* internal error */
-  ErrorTBD      = -10
+	OK              =  0,
+	ErrorMem        = -1, /* out of memory */
+	ErrorConfig     = -2, /* configuration error */
+	ErrorVM         = -3, /* Java exception java framework code */
+	ErrorIO         = -4, /* IO error */
+	ErrorNotfound   = -5, /* resource not found */
+	ErrorInvalid    = -6, /* invalid argument or value */
+	ErrorType       = -7, /* incompatible type */
+  ErrorJS         = -8, /* V8 exception in user code */
+  ErrorInvocation = -9, /* Java exception in user (module) code */
+  ErrorInternal   = -10, /* internal error */
+  ErrorTBD        = -11
 };
 
 /****************

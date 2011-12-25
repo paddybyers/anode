@@ -75,9 +75,7 @@ Handle<Value> ArrayType::PlatformLengthGet(Local<String> property, const Accesso
   ArrayType *arr = (ArrayType *)info.This()->GetPointerFromInternalField(1);
   JNIEnv *jniEnv = arr->env->getVM()->getJNIEnv();
   jint length = jniEnv->CallIntMethod(ob, arr->getLength);
-  if(jniEnv->ExceptionCheck()) {
-    jniEnv->ExceptionClear();
-    ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
+  if(arr->env->getConv()->CheckForException(jniEnv)) {
     return Undefined();
   }
   return scope.Close(Integer::New(length));
@@ -94,10 +92,7 @@ void ArrayType::PlatformLengthSet(Local<String> property, Local<Value> value, co
   }
   jint length = (jint)value->IntegerValue();
   jniEnv->CallVoidMethod(ob, arr->setLength, length);
-  if(jniEnv->ExceptionCheck()) {
-    jniEnv->ExceptionClear();
-    ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
-  }
+  arr->env->getConv()->CheckForException(jniEnv);
 }
 
 void ArrayType::DoubleSet(ArrayType *arr, JNIEnv *jniEnv, jobject ob, uint32_t index, v8::Handle<v8::Value> elt) {
@@ -113,8 +108,7 @@ Handle<Value> ArrayType::PlatformElementGet(uint32_t index, const AccessorInfo& 
   if(arr->getter) return scope.Close((arr->getter)(arr, jniEnv, ob, index));
   /* else do object call */
   jobject jVal = jniEnv->CallObjectMethod(ob, arr->getElement, index);
-  if(jniEnv->ExceptionCheck()) {
-    jniEnv->ExceptionClear();
+  if(arr->env->getConv()->CheckForException(jniEnv)) {
     return Undefined();
   }
   Local<Value> val;
@@ -141,9 +135,8 @@ Handle<Value> ArrayType::PlatformElementSet(uint32_t index, Local<Value> value, 
   int result = arr->env->getConv()->ToJavaObject(jniEnv, value, arr->componentType, &jVal);
   if(result == OK) {
     jniEnv->CallVoidMethod(ob, arr->setElement, index, jVal);
-    if(jniEnv->ExceptionCheck()) {
-      jniEnv->ExceptionClear();
-      result = ErrorVM;
+    if(arr->env->getConv()->CheckForException(jniEnv)) {
+      return Undefined();
     }
   }
   if(result != OK)

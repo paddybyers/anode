@@ -140,7 +140,9 @@ public:
   jstring getJavaClassName(JNIEnv *jniEnv, jclass class_, bool replace);
   v8::Handle<v8::String> getV8ClassName(JNIEnv *jniEnv, jclass class_);
   
+  void ThrowV8ExceptionForThrowable(JNIEnv *jniEnv, jthrowable throwable);
   static void ThrowV8ExceptionForErrno(int errno);
+  bool CheckForException(JNIEnv *jniEnv);
   
 private:
   Env *env;
@@ -159,6 +161,7 @@ private:
   jmethodID classGetComponentType;
   jmethodID classGetName;
   jmethodID stringReplace;
+  jmethodID objectToString;
   jfieldID instHandle;
   jfieldID instType;
 };

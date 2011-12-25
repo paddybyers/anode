@@ -297,9 +297,7 @@ Handle<Value> Interface::PlatformAttrGet(Local<String> property, const AccessorI
     Attribute *attr = interface->attributes->addr(attrIdx);
     JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
     jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGet, ob, attrIdx);
-    if(jniEnv->ExceptionCheck()) {
-      jniEnv->ExceptionClear();
-      ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
+    if(env->getConv()->CheckForException(jniEnv)) {
       return Undefined();
     }
     Local<Value> val;
@@ -327,9 +325,7 @@ void Interface::PlatformAttrSet(Local<String> property, Local<Value> value, cons
     int result = interface->conv->ToJavaObject(jniEnv, value, attr->type, &jVal);
     if(result == OK) {
       jniEnv->CallStaticVoidMethod(interface->jPlatformStub, interface->jPlatformSet, ob, attrIdx, jVal);
-      if(jniEnv->ExceptionCheck()) {
-        jniEnv->ExceptionClear();
-        ThrowException(Exception::Error(String::New("FIXME: Unknown error")));
+      if(env->getConv()->CheckForException(jniEnv)) {
         return;
       }
     }
@@ -374,9 +370,8 @@ Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
     }
     if(result == OK) {
       jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformInvoke, ob, opIdx, jArgs);
-      if(jniEnv->ExceptionCheck()) {
-        jniEnv->ExceptionClear();
-        result = ErrorVM;
+      if(env->getConv()->CheckForException(jniEnv)) {
+        return Undefined();
       }
       if(result == OK) {
         result = interface->conv->ToV8Value(jniEnv, jVal, op->type, &val);

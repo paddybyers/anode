@@ -91,6 +91,7 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   classGetComponentType = jniEnv->GetMethodID(classClass, "getComponentType", "()Ljava/lang/Class;");
   classGetName          = jniEnv->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
   stringReplace         = jniEnv->GetMethodID(jni.java.lang.String.class_, "replace", "(CC)Ljava/lang/String;");
+  objectToString        = jniEnv->GetMethodID(jni.java.lang.Object.class_, "toString", "()Ljava/lang/String;");
   instHandle            = jniEnv->GetFieldID(baseClass, "instHandle", "J");
   instType              = jniEnv->GetFieldID(baseClass, "type", "I");
 
@@ -988,6 +989,25 @@ Handle<String> Conv::getV8ClassName(JNIEnv *jniEnv, jclass class_) {
   return name;
 }
 
+void Conv::ThrowV8ExceptionForThrowable(JNIEnv *jniEnv, jthrowable throwable) {
+  int result;
+  Handle<Value> val;
+  if(jniEnv->IsInstanceOf(throwable, baseClass)) {
+    result = ToV8Value(jniEnv, throwable, TYPE_OBJECT, &val);
+  } else {
+    Handle<String> excString;
+    jstring jExcString = (jstring)jniEnv->CallObjectMethod(throwable, objectToString);
+    result = ToV8String(jniEnv, jExcString, &excString);
+    if(result == OK)
+      val = Handle<Value>::Cast(excString);
+  }
+  if(result != OK)
+    val = Exception::Error(String::New("bridge: Unknown error (nested error)"));
+  
+  ThrowException(val);
+}
+
+
 void Conv::ThrowV8ExceptionForErrno(int errno) {
   switch(errno) {
     case OK:
@@ -1006,4 +1026,14 @@ void Conv::ThrowV8ExceptionForErrno(int errno) {
       sprintf(buf, "bridge: Unknown error: %d", errno);
       ThrowException(Exception::Error(String::New(buf)));
   }
+}
+  
+bool Conv::CheckForException(JNIEnv *jniEnv) {
+  if(jniEnv->ExceptionCheck()) {
+    jthrowable jExc = jniEnv->ExceptionOccurred();
+    jniEnv->ExceptionClear();
+    ThrowV8ExceptionForThrowable(jniEnv, jExc);
+    return true;
+  }
+  return false;
 }
