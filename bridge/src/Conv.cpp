@@ -999,7 +999,7 @@ void Conv::ThrowV8ExceptionForThrowable(JNIEnv *jniEnv, jthrowable throwable) {
     jstring jExcString = (jstring)jniEnv->CallObjectMethod(throwable, objectToString);
     result = ToV8String(jniEnv, jExcString, &excString);
     if(result == OK)
-      val = Handle<Value>::Cast(excString);
+      val = Local<Value>(*excString);
   }
   if(result != OK)
     val = Exception::Error(String::New("bridge: Unknown error (nested error)"));

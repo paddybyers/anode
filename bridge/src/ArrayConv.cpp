@@ -57,6 +57,8 @@ int ArrayType::PlatformNew(JNIEnv *jniEnv, Handle<Object> *val) {
     instanceTemplate->SetAccessor(env->getConv()->getArrayConv()->getSLength(), PlatformLengthGet, PlatformLengthSet);
     instanceTemplate->SetIndexedPropertyHandler(PlatformElementGet, PlatformElementSet);
     function = Persistent<Function>::New(functionTemplate->GetFunction());
+    /* set prototype to inherit from Array */
+    function->Set(String::New("prototype"), Array::New()->GetPrototype());
   }
   if(result == OK) {
     Local<Object> local = function->NewInstance();
