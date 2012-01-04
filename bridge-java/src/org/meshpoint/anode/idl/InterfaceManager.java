@@ -48,7 +48,7 @@ public class InterfaceManager {
 			return result;
 		
 		try {
-			Class<?> javaClass = classLoader.loadClass(name);
+			Class<?> javaClass = Class.forName(name, true, classLoader);
 			result = getByClass(javaClass);
 		} catch (ClassNotFoundException e) {}
 		return result;
