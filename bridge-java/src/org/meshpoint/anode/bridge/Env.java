@@ -79,6 +79,10 @@ public class Env {
 		return currentEnv.get();
 	}
 	
+	public static void setEnv(Env env) {
+		currentEnv.set(env);
+	}
+	
 	public static short getInterfaceId(Class<?> javaClass) {
 		Env env = currentEnv.get();
 		short classId = env.interfaceManager.getByClass(javaClass).getId();
