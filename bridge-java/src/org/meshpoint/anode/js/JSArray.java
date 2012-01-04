@@ -34,23 +34,23 @@ public class JSArray implements Array {
 	public int getLength() {
 		if(env.isEventThread())
 			return BridgeNative.getLength(env.getHandle(), instHandle);
-		SyncOp op = deferOp(OP.GET_LENGTH, 0, 0, null);
+		SyncOp op = deferOp(OP.GET_LENGTH, env, instHandle, 0, 0, null);
 		return (op == null) ? 0 : op.idxOrLength;
 	}
 
 	public void setLength(int length) {
 		if(env.isEventThread())
 			BridgeNative.setLength(env.getHandle(), instHandle, length);
-		deferOp(OP.SET_LENGTH, 0, length, null);
+		deferOp(OP.SET_LENGTH, env, instHandle, 0, length, null);
 	}
 
-	protected SyncOp deferOp(OP op, int elementType, int idxOrLength, Object val) {
+	protected SyncOp deferOp(OP op, Env env, long instHandle, int elementType, int idxOrLength, Object val) {
 		SyncOp syncOp = threadSyncOp.get();
 		if(syncOp == null) {
 			syncOp = new SyncOp();
 			threadSyncOp.set(syncOp);
 		}
-		return syncOp.scheduleWait(op, elementType, idxOrLength, val);
+		return syncOp.scheduleWait(op, env, instHandle, elementType, idxOrLength, val);
 	}
 
 	/*********************
@@ -61,9 +61,11 @@ public class JSArray implements Array {
 
 	protected static ThreadLocal<SyncOp> threadSyncOp = new ThreadLocal<SyncOp>();
 
-	protected class SyncOp implements SynchronousOperation {
+	protected static class SyncOp implements SynchronousOperation {
 
 		private OP op;
+		private Env env;
+		private long instHandle;
 		Object ob;
 		private int idxOrLength;
 		private int elementType;
@@ -92,8 +94,10 @@ public class JSArray implements Array {
 		@Override
 		public boolean isPending() {return isPending;}
 		
-		private SyncOp scheduleWait(OP op, int elementType, int idxOrLength, Object val) {
+		private SyncOp scheduleWait(OP op, Env env, long instHandle, int elementType, int idxOrLength, Object val) {
 			this.op = op;
+			this.env = env;
+			this.instHandle = instHandle;
 			this.elementType = elementType;
 			this.idxOrLength = idxOrLength;
 			this.ob = val;

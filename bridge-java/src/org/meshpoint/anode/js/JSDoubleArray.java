@@ -19,7 +19,7 @@ public class JSDoubleArray extends JSArray implements DoubleArray {
 		if(env.isEventThread()) {
 			return ((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, Types.TYPE_DOUBLE, index)).getDoubleValue();
 		}
-		SyncOp op = deferOp(OP.GET_ELEMENT, Types.TYPE_DOUBLE, index, null);
+		SyncOp op = deferOp(OP.GET_ELEMENT, env, instHandle, Types.TYPE_DOUBLE, index, null);
 		if(op == null) return 0;
 		return ((JSValue)op.ob).getDoubleValue();
 	}
@@ -30,7 +30,7 @@ public class JSDoubleArray extends JSArray implements DoubleArray {
 		if(env.isEventThread())
 			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_DOUBLE, index, element);
 		else
-			deferOp(OP.SET_ELEMENT, Types.TYPE_DOUBLE, index, element);
+			deferOp(OP.SET_ELEMENT, env, instHandle, Types.TYPE_DOUBLE, index, element);
 	}
 
 }

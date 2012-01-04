@@ -19,7 +19,7 @@ public class JSIntegerArray extends JSArray implements IntegerArray {
 		if(env.isEventThread()) {
 			return (int)((JSValue)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, Types.TYPE_INT, index)).getLongValue();
 		}
-		SyncOp op = deferOp(OP.GET_ELEMENT, Types.TYPE_INT, index, null);
+		SyncOp op = deferOp(OP.GET_ELEMENT, env, instHandle, Types.TYPE_INT, index, null);
 		if(op == null) return 0;
 		return (int)((JSValue)op.ob).getLongValue();
 	}
@@ -30,7 +30,7 @@ public class JSIntegerArray extends JSArray implements IntegerArray {
 		if(env.isEventThread())
 			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, Types.TYPE_INT, index, element);
 		else
-			deferOp(OP.SET_ELEMENT, Types.TYPE_INT, index, element);
+			deferOp(OP.SET_ELEMENT, env, instHandle, Types.TYPE_INT, index, element);
 	}
 
 }

@@ -19,14 +19,14 @@ public class JSObjectArray<T> extends JSArray implements ObjectArray<T> {
 	public T getElement(int index) {
 		if(env.isEventThread())
 			return (T)BridgeNative.getIndexedProperty(env.getHandle(), instHandle, componentType, index);
-		return (T)deferOp(OP.GET_ELEMENT, componentType, index, null).ob;
+		return (T)deferOp(OP.GET_ELEMENT, env, instHandle, componentType, index, null).ob;
 	}
 
 	@Override
 	public void setElement(int index, T value) {
 		if(env.isEventThread())
 			BridgeNative.setIndexedProperty(env.getHandle(), instHandle, componentType, index, value);
-		deferOp(OP.SET_ELEMENT, componentType, index, value);
+		deferOp(OP.SET_ELEMENT, env, instHandle, componentType, index, value);
 	}
 
 }

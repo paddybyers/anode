@@ -29,29 +29,29 @@ public class JSInterface {
 	protected Object __invoke(int classId, int opIdx, Object[] args) {
 		if(env.isEventThread())
 			return BridgeNative.invokeJSInterface(env.getHandle(), instHandle, classId, opIdx, args);
-		return deferOp(OP.INVOKE, classId, opIdx, null, args);
+		return deferOp(OP.INVOKE, env, instHandle, classId, opIdx, null, args);
 	}
 
 	protected Object __get(int classId, int attrIdx) {
 		if(env.isEventThread())
 			return BridgeNative.getJSInterface(env.getHandle(), instHandle, classId, attrIdx);
-		return deferOp(OP.GET, classId, attrIdx, null, null);
+		return deferOp(OP.GET, env, instHandle, classId, attrIdx, null, null);
 		
 	}
 
 	protected void __set(int classId, int attrIdx, Object val) {
 		if(env.isEventThread())
 			BridgeNative.setJSInterface(env.getHandle(), instHandle, classId, attrIdx, val);
-		deferOp(OP.SET, classId, attrIdx, val, null);
+		deferOp(OP.SET, env, instHandle, classId, attrIdx, val, null);
 	}
 
-	private Object deferOp(OP op, int classId, int idx, Object val, Object[] args) {
+	private Object deferOp(OP op, Env env, long instHandle, int classId, int idx, Object val, Object[] args) {
 		SyncOp syncOp = threadSyncOp.get();
 		if(syncOp == null) {
 			syncOp = new SyncOp();
 			threadSyncOp.set(syncOp);
 		}
-		return syncOp.scheduleWait(op, classId, idx, val, args);
+		return syncOp.scheduleWait(op, env, instHandle, classId, idx, val, args);
 	}
 
 	/*********************
@@ -62,8 +62,10 @@ public class JSInterface {
 
 	private static ThreadLocal<SyncOp> threadSyncOp = new ThreadLocal<SyncOp>();
 
-	private class SyncOp implements SynchronousOperation {
+	private static class SyncOp implements SynchronousOperation {
 
+		private Env env;
+		private long instHandle;
 		private int classId;
 		private OP op;
 		private Object[] args;
@@ -91,8 +93,10 @@ public class JSInterface {
 		@Override
 		public boolean isPending() {return isPending;}
 		
-		private Object scheduleWait(OP op, int classId, int idx, Object val, Object[] args) {
+		private Object scheduleWait(OP op, Env env, long instHandle, int classId, int idx, Object val, Object[] args) {
 			this.op = op;
+			this.env = env;
+			this.instHandle = instHandle;
 			this.classId = classId;
 			this.idx = idx;
 			this.ob = val;
