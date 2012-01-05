@@ -34,32 +34,12 @@
 		<link>
 			<name>bridge-java</name>
 			<type>2</type>
-			<location>/Users/paddy/data/work/dev/android/anode/bridge-java/src</location>
-		</link>
-		<link>
-			<name>libbridge_src</name>
-			<type>2</type>
-			<location>/Users/paddy/data/work/dev/android/anode/bridge-java/src</location>
+			<locationURI>PARENT-1-PROJECT_LOC/bridge-java/src</locationURI>
 		</link>
 		<link>
 			<name>libnode_src</name>
 			<type>2</type>
-			<locationURI>_android_libnode_9e68607/src</locationURI>
-		</link>
-		<link>
-			<name>sample_src</name>
-			<type>2</type>
-			<location>/Users/paddy/data/work/dev/android/anode/api/src</location>
-		</link>
-		<link>
-			<name>webinos_api_src</name>
-			<type>2</type>
-			<location>/Users/paddy/data/work/dev/webinos/wp4/webinos/common/android/api/src</location>
-		</link>
-		<link>
-			<name>webinos_impl_src</name>
-			<type>2</type>
-			<location>/Users/paddy/data/work/dev/webinos/wp4/webinos/common/android/impl/src</location>
+			<locationURI>PARENT-1-PROJECT_LOC/libnode/src</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
