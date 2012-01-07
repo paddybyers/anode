@@ -296,12 +296,15 @@ Handle<Value> Interface::PlatformAttrGet(Local<String> property, const AccessorI
   if(interface) {
     Attribute *attr = interface->attributes->addr(attrIdx);
     JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+    jniEnv->PushLocalFrame(256);
     jobject jVal = jniEnv->CallStaticObjectMethod(interface->jPlatformStub, interface->jPlatformGet, ob, attrIdx);
     if(env->getConv()->CheckForException(jniEnv)) {
+      jniEnv->PopLocalFrame(0);
       return Undefined();
     }
     Local<Value> val;
     int result = interface->conv->ToV8Value(jniEnv, jVal, attr->type, &val);
+    jniEnv->PopLocalFrame(0);
     if(result == OK) {
       return scope.Close(val);
     }
@@ -321,15 +324,16 @@ void Interface::PlatformAttrSet(Local<String> property, Local<Value> value, cons
   if(interface) {
     Attribute *attr = interface->attributes->addr(attrIdx);
     JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+    jniEnv->PushLocalFrame(256);
     jobject jVal;
     int result = interface->conv->ToJavaObject(jniEnv, value, attr->type, &jVal);
     if(result == OK) {
       jniEnv->CallStaticVoidMethod(interface->jPlatformStub, interface->jPlatformSet, ob, attrIdx, jVal);
-      if(env->getConv()->CheckForException(jniEnv)) {
-        return;
-      }
     }
-    if(result != OK)
+    jniEnv->PopLocalFrame(0);
+    if(result == OK)
+      env->getConv()->CheckForException(jniEnv);
+    else
       interface->conv->ThrowV8ExceptionForErrno(result);
   }
 }
@@ -345,6 +349,7 @@ Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
   if(interface) {
     Operation *op = interface->operations->addr(opIdx);
     JNIEnv *jniEnv = interface->env->getVM()->getJNIEnv();
+    jniEnv->PushLocalFrame(256);
     int result = OK;
     jobjectArray jArgs = 0;
     Local<Value> val;
@@ -380,6 +385,7 @@ Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
     if(expectedArgs > 0) {
       jniEnv->MonitorExit(jArgs);
     }
+    jniEnv->PopLocalFrame(0);
     if(result == OK && !val.IsEmpty()) {
       return scope.Close(val);
     }

@@ -208,8 +208,8 @@ Local<Value> Env::unload(Handle<String> moduleName) {
   jstring jModuleName;
   int result = Conv::ToJavaString(jniEnv, moduleName, &jModuleName);
   if(result == OK) {
-    jniEnv->CallObjectMethod(jEnv, unloadMethodId, jModuleName);
-    moduleUnloaded();
+    if(jniEnv->CallBooleanMethod(jEnv, unloadMethodId, jModuleName))
+      moduleUnloaded();
   }
 
   return Local<Value>(*Undefined());
