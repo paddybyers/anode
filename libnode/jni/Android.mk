@@ -42,8 +42,10 @@ LOCAL_LDLIBS += \
 	-lssl \
 	-lcrypto
 
+ifdef ANODE_ROOT
 LOCAL_LDFLAGS += \
-   -L $(NODE_PATH)/../openssl-android/libs/armeabi
+   -L $(ANODE_ROOT)/../openssl-android/libs/armeabi
+endif
 
 include $(BUILD_SHARED_LIBRARY)
 
