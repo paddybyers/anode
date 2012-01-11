@@ -97,9 +97,9 @@ public class PrintStreamLog implements Log {
 	
 	private void print(String severity, String tag, String msg, Throwable tr) {
 		ps.print("(" + severity + "): ");
-		if(tag != null && !tag.isEmpty())
+		if(tag != null && tag.length() != 0)
 			ps.print(tag + ": ");
-		if(msg != null && !msg.isEmpty())
+		if(msg != null && msg.length() != 0)
 			ps.print(msg);
 		ps.println();
 		if(tr != null) {
