@@ -15,12 +15,12 @@ import android.util.Log;
  */
 final class RuntimeNative {
 	
-	private static String PACKAGE_NAME = "org.meshpoint.anode";
 	private static String TAG = "anode::RuntimeNative";
-	private static String RUNTIME_LIBRARY = "libjninode.so";
+	
+	private static String RUNTIME_LIBRARY_NAME = "jninode";
+	
 	private static String BRIDGE_LIBRARY = "bridge.node";
-	private static String RUNTIME_PATH = "/data/data/" + PACKAGE_NAME + "/app";
-	private static String MODULE_PATH = "/data/data/" + PACKAGE_NAME + "/node_modules";
+	private static String BRIDGE_LIBRARY_NAME = "bridge.node";
 	
 	static final int SIGINT  = 2;
 	static final int SIGABRT = 6;
@@ -36,17 +36,22 @@ final class RuntimeNative {
 	 */
 	static void init(Context ctx, String[] argv) throws IOException {
 		try {
-			extractLib(ctx, RUNTIME_PATH, RUNTIME_LIBRARY);
-			System.load(RUNTIME_PATH + '/' + RUNTIME_LIBRARY);
-			extractLib(ctx, MODULE_PATH, BRIDGE_LIBRARY);
-			System.load(MODULE_PATH + '/' + BRIDGE_LIBRARY);
+			String packageName = ctx.getPackageName();
+			char sep = File.separatorChar;
+			
+			System.loadLibrary(RUNTIME_LIBRARY_NAME);
+			
+			// Example: `/data/data/org.mypackage.android/node_modules`
+			// TODO: make the node dynamic library not depend on assumed /data/data filesystem structure
+			String modulePath = sep + "data" + sep + "data" + sep + packageName + sep + "node_modules";
+			
+			extractLib(ctx, modulePath, BRIDGE_LIBRARY_NAME);
+			System.load(modulePath + sep + BRIDGE_LIBRARY);
+			
 			Log.v(TAG, "init: loaded libraries");
 			nodeInit(argv);
 		} catch(UnsatisfiedLinkError e) {
 			Log.v(TAG, "init: unable to load library: " + e);
-			throw e;
-		} catch (IOException e) {
-			Log.v(TAG, "init: unable to write library to file: " + e);
 			throw e;
 		}
 	}
