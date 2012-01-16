@@ -70,14 +70,14 @@ enum {
   TYPE_DOUBLE    ,
   TYPE_STRING    ,
   TYPE__OB_START = TYPE_STRING,
-  TYPE_MAP       , /*= 10 */
-  TYPE_FUNCTION  ,
+  TYPE_FUNCTION  , /*= 10 */
   TYPE_DATE      ,
   TYPE_OBJECT    = 16,
   TYPE___END     ,
   TYPE_SEQUENCE  = 32,
   TYPE_ARRAY     = 64,
-  TYPE_IDL       = 128
+  TYPE_IDL       = 128,
+  TYPE_MAP       = 256
 };
 
 typedef unsigned short classId;

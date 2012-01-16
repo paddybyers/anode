@@ -46,15 +46,14 @@ public class Types {
 	public static final int TYPE_LONG      = 7;
 	public static final int TYPE_DOUBLE    = 8;
 	public static final int TYPE_STRING    = 9;
-	public static final int TYPE_MAP       = 10;
-	public static final int TYPE_FUNCTION  = 11;
-	public static final int TYPE_DATE      = 12;
+	public static final int TYPE_FUNCTION  = 10;
+	public static final int TYPE_DATE      = 11;
 
 	public static final int TYPE_OBJECT    = 16;
 	public static final int TYPE_SEQUENCE  = 32;
 	public static final int TYPE_ARRAY     = 64;
 	public static final int TYPE_INTERFACE = 128;
-	public static final int TYPE_VALUE     = 256;
+	public static final int TYPE_MAP       = 256;
 	
 	public static boolean isInterface(int type) {
 		return (type & TYPE_INTERFACE) != 0;
