@@ -85,11 +85,19 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   classClass            = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/lang/Class"));
   baseClass             = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/java/Base"));
   dictClass             = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/idl/Dictionary"));
+  mapClass              = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/util/HashMap"));
+  setClass              = (jclass)jniEnv->NewGlobalRef(jniEnv->FindClass("java/util/Set"));
   classIsArray          = jniEnv->GetMethodID(classClass, "isArray", "()Z");
   classIsAssignableFrom = jniEnv->GetMethodID(classClass, "isAssignableFrom", "(Ljava/lang/Class;)Z");
   classIsPrimitive      = jniEnv->GetMethodID(classClass, "isPrimitive", "()Z");
   classGetComponentType = jniEnv->GetMethodID(classClass, "getComponentType", "()Ljava/lang/Class;");
   classGetName          = jniEnv->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
+  mapCtor               = jniEnv->GetMethodID(mapClass, "<init>", "()V");
+  mapGet                = jniEnv->GetMethodID(mapClass, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+  mapPut                = jniEnv->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+  mapSize               = jniEnv->GetMethodID(mapClass, "size", "()I");
+  mapKeySet             = jniEnv->GetMethodID(mapClass, "keySet", "()Ljava/util/Set;");
+  setToArray            = jniEnv->GetMethodID(setClass, "toArray", "()[Ljava/lang/Object;");
   stringReplace         = jniEnv->GetMethodID(jni.java.lang.String.class_, "replace", "(CC)Ljava/lang/String;");
   objectToString        = jniEnv->GetMethodID(jni.java.lang.Object.class_, "toString", "()Ljava/lang/String;");
   instHandle            = jniEnv->GetFieldID(baseClass, "instHandle", "J");
@@ -127,6 +135,8 @@ void Conv::dispose(JNIEnv *jniEnv) {
   jniEnv->DeleteGlobalRef(classClass);
   jniEnv->DeleteGlobalRef(baseClass);
   jniEnv->DeleteGlobalRef(dictClass);
+  jniEnv->DeleteGlobalRef(mapClass);
+  jniEnv->DeleteGlobalRef(setClass);
   
   arrayConv->dispose(jniEnv);
 }
@@ -353,6 +363,9 @@ int Conv::ToJavaObject(JNIEnv *jniEnv, Handle<Value> val, int expectedType, jobj
   if(isArray(expectedType))
     return arrayConv->ToJavaArray(jniEnv, val, getComponentType(expectedType), jVal);
   
+  if(isMap(expectedType))
+    return ToJavaMap(jniEnv, val, getComponentType(expectedType), jVal);
+  
   if(isInterface(expectedType))
     return ToJavaInterface(jniEnv, val, getClassId(expectedType), jVal);
   
@@ -470,7 +483,7 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
         jobject item;
         res = ToJavaObject(jniEnv, oVal->Get(i), componentType, &item);
         if(res != OK) break;
-          jniEnv->SetObjectArrayElement((jobjectArray)ob, i, item);
+        jniEnv->SetObjectArrayElement((jobjectArray)ob, i, item);
       }
     }
   } else {
@@ -484,7 +497,7 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
           jbyte *buf = jniEnv->GetByteArrayElements((jbyteArray)ob, 0);
           for(int i = 0; i < len; i++)
             buf[i] = (jbyte)oVal->Get(i)->Uint32Value();
-        
+          
           jniEnv->ReleaseByteArrayElements((jbyteArray)ob, buf, 0);
           break;
         }
@@ -494,7 +507,7 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
           jint *buf = jniEnv->GetIntArrayElements((jintArray)ob, 0);
           for(int i = 0; i < len; i++)
             buf[i] = oVal->Get(i)->Int32Value();
-        
+          
           jniEnv->ReleaseIntArrayElements((jintArray)ob, buf, 0);
           break;
         }
@@ -504,7 +517,7 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
           jlong *buf = jniEnv->GetLongArrayElements((jlongArray)ob, 0);
           for(int i = 0; i < len; i++)
             buf[i] = oVal->Get(i)->IntegerValue();
-        
+          
           jniEnv->ReleaseLongArrayElements((jlongArray)ob, buf, 0);
           break;
         }
@@ -515,10 +528,46 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
           if(!buf) return ErrorMem;
           for(int i = 0; i < len; i++)
             buf[i] = oVal->Get(i)->NumberValue();
-        
+          
           jniEnv->ReleaseDoubleArrayElements((jdoubleArray)ob, buf, 0);
           break;
         }
+    }
+  }
+  if(ob) {
+    *jVal = ob;
+    return OK;
+  }
+  if(jniEnv->ExceptionCheck())
+    jniEnv->ExceptionClear();
+  return ErrorVM;
+}
+
+int Conv::ToJavaMap(JNIEnv *jniEnv, Handle<Value> val, int componentType, jobject *jVal) {
+  Local<Object> oVal;
+  Local<Array> aPropertyNames;
+  if(val.IsEmpty() || val->IsNull() || val->IsUndefined()) {
+    *jVal = 0;
+    return OK;
+  }
+  if(!val->IsObject())
+    return ErrorType;
+  
+  oVal = val->ToObject();
+  aPropertyNames = oVal->GetOwnPropertyNames();
+  int len = aPropertyNames->Length();
+
+  jobject ob = jniEnv->NewObject(mapClass, mapCtor);
+  if(ob) {
+    int res = OK;
+    for(int i = 0; i < len; i++) {
+      Local<String> key = Local<String>::Cast(aPropertyNames->Get(i));
+      jstring jKey; jobject item;
+      res = ToJavaString(jniEnv, key, &jKey);
+      if(res != OK) break;
+      res = ToJavaObject(jniEnv, oVal->Get(key), componentType, &item);
+      if(res != OK) break;
+      jniEnv->CallVoidMethod(ob, mapPut, jKey, item);
     }
   }
   if(ob) {
@@ -680,6 +729,14 @@ int Conv::ToV8Value(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Value
     return result;
   }
 
+  if(isMap(expectedType)) {
+    Handle<Object> mapVal;
+    result = ToV8Map(jniEnv, jVal, getComponentType(expectedType), &mapVal);
+    if(result == OK)
+      *val = scope.Close(Handle<Value>(mapVal));
+    return result;
+  }
+  
   if(isInterface(expectedType)) {
     Handle<Object> objectVal;
     result = ToV8Interface(jniEnv, jVal, getClassId(expectedType), &objectVal);
@@ -800,43 +857,72 @@ int Conv::ToV8Sequence(JNIEnv *jniEnv, jarray jVal, int expectedType, Handle<Arr
   /* FIXME: use optimised buffers */
   switch(componentType) {
     case TYPE_BYTE: {
-        jbyteArray jBVal = (jbyteArray)jVal;
-        jbyte *elts = jniEnv->GetByteArrayElements(jBVal, 0);
-        for(int i = 0; i < length; i++) {
-          lVal->Set(i, Number::New(elts[i]));
-        }
-        jniEnv->ReleaseByteArrayElements(jBVal, elts, 0);
+      jbyteArray jBVal = (jbyteArray)jVal;
+      jbyte *elts = jniEnv->GetByteArrayElements(jBVal, 0);
+      for(int i = 0; i < length; i++) {
+        lVal->Set(i, Number::New(elts[i]));
       }
+      jniEnv->ReleaseByteArrayElements(jBVal, elts, 0);
+    }
       break;
     case TYPE_INT: {
-        jintArray jIVal = (jintArray)jVal;
-        jint *elts = jniEnv->GetIntArrayElements(jIVal, 0);
-        for(int i = 0; i < length; i++) {
-          lVal->Set(i, Number::New(elts[i]));
-        }
-        jniEnv->ReleaseIntArrayElements(jIVal, elts, 0);
+      jintArray jIVal = (jintArray)jVal;
+      jint *elts = jniEnv->GetIntArrayElements(jIVal, 0);
+      for(int i = 0; i < length; i++) {
+        lVal->Set(i, Number::New(elts[i]));
       }
+      jniEnv->ReleaseIntArrayElements(jIVal, elts, 0);
+    }
       break;
     case TYPE_LONG: {
-        jlongArray jJVal = (jlongArray)jVal;
-        jlong *elts = jniEnv->GetLongArrayElements(jJVal, 0);
-        for(int i = 0; i < length; i++) {
-          lVal->Set(i, Number::New(elts[i]));
-        }
-        jniEnv->ReleaseLongArrayElements(jJVal, elts, 0);
+      jlongArray jJVal = (jlongArray)jVal;
+      jlong *elts = jniEnv->GetLongArrayElements(jJVal, 0);
+      for(int i = 0; i < length; i++) {
+        lVal->Set(i, Number::New(elts[i]));
       }
+      jniEnv->ReleaseLongArrayElements(jJVal, elts, 0);
+    }
       break;
     case TYPE_DOUBLE: {
-        jdoubleArray jDVal = (jdoubleArray)jVal;
-        jdouble *elts = jniEnv->GetDoubleArrayElements(jDVal, 0);
-        for(int i = 0; i < length; i++) {
-          lVal->Set(i, Number::New(elts[i]));
-        }
-        jniEnv->ReleaseDoubleArrayElements(jDVal, elts, 0);
+      jdoubleArray jDVal = (jdoubleArray)jVal;
+      jdouble *elts = jniEnv->GetDoubleArrayElements(jDVal, 0);
+      for(int i = 0; i < length; i++) {
+        lVal->Set(i, Number::New(elts[i]));
       }
+      jniEnv->ReleaseDoubleArrayElements(jDVal, elts, 0);
+    }
       break;
     default:
       result = ErrorType;
+  }
+  if(result == OK) {
+    *val = lVal;
+  }
+  if(jniEnv->ExceptionCheck()) {
+    jniEnv->ExceptionClear();
+    result = ErrorVM;
+  }
+  return result;
+}
+
+int Conv::ToV8Map(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object> *val) {
+  unsigned int componentType = getComponentType(expectedType);
+  Local<Object> lVal = Local<Object>(Object::New());
+  int result = OK;
+  if(jniEnv->CallIntMethod(jVal, mapSize) > 0) {
+    jobjectArray jKeys = (jobjectArray)jniEnv->CallObjectMethod(jniEnv->CallObjectMethod(jVal, mapKeySet), setToArray);
+    int length = jniEnv->GetArrayLength(jKeys);
+    for(int i = 0; i < length; i++) {
+      jstring jKey; jobject jElt;
+      Local<String> key; Local<Value> elt;
+      jKey = (jstring)jniEnv->GetObjectArrayElement(jKeys, i);
+      jElt = jniEnv->CallObjectMethod(jVal, mapGet, jKey);
+      result = ToV8Value(jniEnv, jElt, componentType, &elt);
+      if(result != OK) break;
+      result = ToV8String(jniEnv, jKey, &key);
+      if(result != OK) break;
+      lVal->Set(key, elt);
+    }
   }
   if(result == OK) {
     *val = lVal;

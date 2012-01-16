@@ -107,6 +107,7 @@ public:
   int ToJavaSequence(JNIEnv *jniEnv, v8::Handle<v8::Value> val, int componentType, jarray *jVal);
   int ToJavaInterface(JNIEnv *jniEnv, v8::Handle<v8::Value> val, classId clsid, jobject *jVal);
   int ToJavaDict(JNIEnv *jniEnv, v8::Handle<v8::Value> val, classId clsid, jobject *jVal);
+  int ToJavaMap(JNIEnv *jniEnv, v8::Handle<v8::Value> val, int componentType, jobject *jVal);
   int ToJavaDate(JNIEnv *jniEnv, v8::Handle<v8::Value> val, jobject *jVal);
   
   /* converts to a java string */
@@ -123,6 +124,7 @@ public:
   int ToV8Sequence(JNIEnv *jniEnv, jarray jVal, int expectedType, v8::Handle<v8::Array> *val);
   int ToV8Interface(JNIEnv *jniEnv, jobject jVal, classId clsid, v8::Handle<v8::Object> *val);
   int ToV8Dict(JNIEnv *jniEnv, jobject jVal, classId clsid, v8::Handle<v8::Object> *val);
+  int ToV8Map(JNIEnv *jniEnv, jobject jVal, int expectedType, v8::Handle<v8::Object> *val);
   int ToV8String(JNIEnv *jniEnv, jstring jVal, v8::Handle<v8::String> *val);
   int ToV8Date(JNIEnv *jniEnv, jobject jVal, v8::Handle<v8::Value> *val);
   
@@ -155,6 +157,8 @@ private:
   jclass classClass;
   jclass baseClass;
   jclass dictClass;
+  jclass mapClass;
+  jclass setClass;
   jmethodID classIsArray;
   jmethodID classIsAssignableFrom;
   jmethodID classIsPrimitive;
@@ -162,6 +166,12 @@ private:
   jmethodID classGetName;
   jmethodID stringReplace;
   jmethodID objectToString;
+  jmethodID mapCtor;
+  jmethodID mapGet;
+  jmethodID mapPut;
+  jmethodID mapSize;
+  jmethodID mapKeySet;
+  jmethodID setToArray;
   jfieldID instHandle;
   jfieldID instType;
 };

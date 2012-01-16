@@ -112,6 +112,10 @@ inline bool isArray(int type) {
   return (type & TYPE_ARRAY) != 0;
 }
 
+inline bool isMap(int type) {
+  return (type & TYPE_MAP) != 0;
+}
+
 inline bool isBase(int type) {
   return (type < TYPE___END);
 }
@@ -121,7 +125,7 @@ inline bool isJavaObject(int type) {
 }
 
 inline int getComponentType(int type) {
-  return (type & (~TYPE_ARRAY & ~TYPE_SEQUENCE));
+  return (type & (~TYPE_ARRAY & ~TYPE_SEQUENCE & ~TYPE_MAP));
 }
 
 inline int getArrayType(int type) {
@@ -130,6 +134,10 @@ inline int getArrayType(int type) {
 
 inline int getSequenceType(int type) {
   return (type | TYPE_SEQUENCE);
+}
+
+inline int getMapType(int type) {
+  return (type | TYPE_MAP);
 }
 
 /******************************

@@ -5,6 +5,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import org.w3c.dom.Array;
@@ -19,7 +20,7 @@ import org.w3c.dom.ObjectArray;
  * or return value of an operation.
  * For interface types, and array<interface> types, the type
  * includes the class id as (TYPE_INTERFACE | (classid << 16))
- * or (TYPE_INTERFACE | [TYPE_ARRAY|TYPE_SEQUENCE] | (classid << 16))
+ * or (TYPE_INTERFACE | [TYPE_ARRAY|TYPE_SEQUENCE|TYPE_MAP] | (classid << 16))
  * @author paddy
  *
  */
@@ -82,6 +83,13 @@ public class Types {
 				Type[] typeArgs = paramType.getActualTypeArguments();
 				if(typeArgs.length == 1)
 					return TYPE_ARRAY | fromJavaType(interfaceManager, typeArgs[0]);
+			}
+			else if(paramType.getRawType() == HashMap.class) {
+				Type[] typeArgs = paramType.getActualTypeArguments();
+				if(typeArgs.length == 2) {
+					if(typeArgs[0] == String.class)
+						return TYPE_MAP | fromJavaType(interfaceManager, typeArgs[1]);
+				}
 			}
 			return TYPE_INVALID;
 		}
@@ -150,14 +158,13 @@ public class Types {
 	}
 	
 	public static IDLInterface baseInterface(InterfaceManager interfaceManager, int type) {
-		if((type & (TYPE_SEQUENCE | TYPE_ARRAY)) != 0)
-			return baseInterface(interfaceManager, type & ~(TYPE_SEQUENCE | TYPE_ARRAY));
+		if((type & (TYPE_SEQUENCE | TYPE_MAP | TYPE_ARRAY)) != 0)
+			return baseInterface(interfaceManager, type & ~(TYPE_SEQUENCE | TYPE_MAP | TYPE_ARRAY));
 		if(isInterface(type))
 			return interfaceManager.getById(getClassId(type));
 		return null;
 	}
 
-	public class Map {}
 	public class Function {}
 
 	/******************
@@ -174,9 +181,9 @@ public class Types {
 		Long.TYPE,
 		Double.TYPE,
 		String.class,
-		Map.class,
 		Function.class,
 		Date.class,
+		null,
 		null,
 		null,
 		null,

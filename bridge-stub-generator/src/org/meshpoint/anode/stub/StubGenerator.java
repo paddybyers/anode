@@ -92,6 +92,11 @@ public abstract class StubGenerator {
 			return "org.w3c.dom.ObjectArray<" + getType(componentType) + ">";
 		}
 		
+		if((type & Types.TYPE_MAP) > 0) {
+			int componentType = type & ~Types.TYPE_MAP;
+			return "java.util.HashMap<String, " + getType(componentType) + ">";
+		}
+		
 		/* interface types */
 		if((type & Types.TYPE_INTERFACE) > 0) {
 			IDLInterface typeIface = mgr.getById(Types.type2classid(type));
@@ -174,7 +179,7 @@ public abstract class StubGenerator {
 			return result;
 
 		/* array + interface types */
-		if((type & (Types.TYPE_SEQUENCE|Types.TYPE_ARRAY|Types.TYPE_INTERFACE)) > 0)
+		if((type & (Types.TYPE_SEQUENCE|Types.TYPE_ARRAY|Types.TYPE_MAP|Types.TYPE_INTERFACE)) > 0)
 			return result;
 		
 		/* others */
