@@ -94,7 +94,11 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   classGetName          = jniEnv->GetMethodID(classClass, "getName", "()Ljava/lang/String;");
   mapCtor               = jniEnv->GetMethodID(mapClass, "<init>", "()V");
   mapGet                = jniEnv->GetMethodID(mapClass, "get", "(Ljava/lang/Object;)Ljava/lang/Object;");
+#ifdef ANDROID
+  mapPut                = jniEnv->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)V");
+#else
   mapPut                = jniEnv->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+#endif
   mapSize               = jniEnv->GetMethodID(mapClass, "size", "()I");
   mapKeySet             = jniEnv->GetMethodID(mapClass, "keySet", "()Ljava/util/Set;");
   setToArray            = jniEnv->GetMethodID(setClass, "toArray", "()[Ljava/lang/Object;");
