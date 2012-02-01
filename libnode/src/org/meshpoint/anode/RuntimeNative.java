@@ -35,13 +35,20 @@ final class RuntimeNative {
 	 * @throws UnsatisifiedLinkError if there was a problem initialising the native library
 	 */
 	static void init(Context ctx, String[] argv) throws IOException {
+		char sep = File.separatorChar;
+		String packageName = ctx.getPackageName();
+		
+		// Example: `/data/data/org.mypackage.android/node_modules`
+		// TODO: make the node dynamic library not depend on assumed /data/data filesystem structure
+		String modulePath = sep + "data" + sep + "data" + sep + packageName + sep + "node_modules";
+		
 		try {
 			extractLib(ctx, RUNTIME_PATH, RUNTIME_LIBRARY);
 			System.load(RUNTIME_PATH + '/' + RUNTIME_LIBRARY);
 			extractLib(ctx, MODULE_PATH, BRIDGE_LIBRARY);
 			System.load(MODULE_PATH + '/' + BRIDGE_LIBRARY);
 			Log.v(TAG, "init: loaded libraries");
-			nodeInit(argv);
+			nodeInit(argv, modulePath);
 		} catch(UnsatisfiedLinkError e) {
 			Log.v(TAG, "init: unable to load library: " + e);
 			throw e;
@@ -54,7 +61,7 @@ final class RuntimeNative {
 	/**
 	 * Initialise the native node runtime
 	 */
-	static native void nodeInit(String[] argv);
+	static native void nodeInit(String[] argv, String modulePath);
 	
 	/**
 	 * Dispose the native node runtime
