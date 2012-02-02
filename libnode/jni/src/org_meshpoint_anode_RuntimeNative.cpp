@@ -55,19 +55,22 @@ static int getNativeArgs(JNIEnv *jniEnv, jobjectArray jargv, char ***pargv) {
 /*
  * Class:     org_meshpoint_anode_RuntimeNative
  * Method:    nodeInit
- * Signature: ([Ljava/lang/String;)V
+ * Signature: ([Ljava/lang/String;Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeInit
-  (JNIEnv *jniEnv, jclass, jobjectArray jargv) {
+	(JNIEnv *jniEnv, jclass, jobjectArray jargv, jstring jModulePath) {
 	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeInit: ent\n");
-	
-  /* set environment variable to support modules */
-  setenv("NODE_PATH", MODULE_PATH, 0);
-  
-  /* process node arguments */
-  char **argv;
-  int argc;
-  if((argc = getNativeArgs(jniEnv, jargv, &argv)) >= 0)
+
+	/* set environment variable to support node modules */
+	const char *modulePath = jniEnv->GetStringUTFChars(jModulePath, 0);
+	setenv("NODE_PATH", modulePath, 0);
+	jniEnv->ReleaseStringUTFChars(jModulePath, modulePath);
+	modulePath = NULL;
+
+	/* process node arguments */
+	char **argv;
+	int argc;
+	if((argc = getNativeArgs(jniEnv, jargv, &argv)) >= 0)
 	  node::Initialize(argc, argv);
 	LOGV("Java_org_meshpoint_anode_RuntimeNative_nodeInit: ret\n");
 }
