@@ -37,7 +37,7 @@ extern "C" {
  * Signature: ([Ljava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_RuntimeNative_nodeInit
-  (JNIEnv *, jclass, jobjectArray);
+  (JNIEnv *, jclass, jobjectArray, jstring jModulePath);
 
 /*
  * Class:     org_meshpoint_anode_RuntimeNative
