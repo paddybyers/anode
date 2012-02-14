@@ -23,7 +23,7 @@ public class FinalizeQueue implements SynchronousOperation {
 	 * private state
 	 ********************/
 	private Env env;
-	private static final int QUEUE_LENGTH = 256;
+	private static final int QUEUE_LENGTH = 1024;
 	private long[] handleBuffer = new long[QUEUE_LENGTH];
 	private int[] typeBuffer = new int[QUEUE_LENGTH];
 	private int count;
