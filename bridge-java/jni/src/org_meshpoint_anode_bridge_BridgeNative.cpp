@@ -201,6 +201,7 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setLength
  */
 JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSInterface
 (JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInstHandle, jint classId, jint idx, jobjectArray jArgs) {
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSInterface: ent: envHandle = %llx, instHandle = %llx, classId = %d, idx = %d, jArgs = %llx\n", jEnvHandle, jInstHandle, classId, idx, jArgs);
   Env *env = (Env *)jEnvHandle;
   Handle<Object> instHandle = asHandle(jInstHandle);
   Interface *interface = env->getInterface(classId);
@@ -210,6 +211,7 @@ JNIEXPORT jobject JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSI
     LOGV("Unable to invoke on user interface: err = %d\n", result);
     ThrowForErrno(jniEnv, result, "Unable to invoke on user interface");
   }
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_invokeJSInterface: ret\n");
   return jResult;
 }
 
@@ -286,7 +288,8 @@ JNIEXPORT jlong JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindInterfa
  * Signature: (JJIILjava/lang/String;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindAttribute
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jint attrIdx, jint type, jstring jName) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jint attrIdx, jint type, jstring jName) {
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindAttribute: ent: envHandle = %llx, interfaceHandle = %llx, attrIdx = %d, type = %x\n", jEnvHandle, jInterfaceHandle, attrIdx, type);
   Interface *interface = (Interface *)jInterfaceHandle;
   int result = interface->InitAttribute(jniEnv, attrIdx, type, jName);
   if(result != OK) {
@@ -301,7 +304,8 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindAttribut
  * Signature: (JJIILjava/lang/String;I[I)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindOperation
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jint opIdx, jint type, jstring jName, jint argCount, jintArray jArgTypes) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jint opIdx, jint type, jstring jName, jint argCount, jintArray jArgTypes) {
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindOperation: ent: envHandle = %llx, interfaceHandle = %llx, opIdx = %d, type = %x\n", jEnvHandle, jInterfaceHandle, opIdx, type);
   Interface *interface = (Interface *)jInterfaceHandle;
   jint *argTypes = jniEnv->GetIntArrayElements(jArgTypes, 0);
   int result = interface->InitOperation(jniEnv, opIdx, type, jName, argCount, argTypes);
@@ -330,9 +334,11 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_releaseInter
  * Signature: (JJLjava/lang/Class;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindUserStub
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jclass jUserStub) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jclass jUserStub) {
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindUserStub: ent: envHandle = %llx, interfaceHandle = %llx\n", jEnvHandle, jInterfaceHandle);
   Interface *interface = (Interface *)jInterfaceHandle;
   interface->InitUserStub(jniEnv, jUserStub);
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindUsertub: ret\n");
 }
 
 /*
@@ -341,9 +347,11 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindUserStub
  * Signature: (JJLjava/lang/Class;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindPlatformStub
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jclass jPlatformStub) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jclass jPlatformStub) {
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindPlatformStub: ent: envHandle = %llx, interfaceHandle = %llx\n", jEnvHandle, jInterfaceHandle);
   Interface *interface = (Interface *)jInterfaceHandle;
   interface->InitPlatformStub(jniEnv, jPlatformStub);
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindPlatformStub: ret\n");
 }
 
 /*
@@ -352,9 +360,11 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindPlatform
  * Signature: (JJLjava/lang/Class;)V
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_bindDictStub
-(JNIEnv *jniEnv, jclass, jlong /*jEnvHandle*/, jlong jInterfaceHandle, jclass jDictStub) {
+(JNIEnv *jniEnv, jclass, jlong jEnvHandle, jlong jInterfaceHandle, jclass jDictStub) {
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindDictStub: ent: envHandle = %llx, interfaceHandle = %llx\n", jEnvHandle, jInterfaceHandle);
   Interface *interface = (Interface *)jInterfaceHandle;
   interface->InitDictStub(jniEnv, jDictStub);
+  //LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_bindDictStub: ret\n");
 }
 
 /*
@@ -375,10 +385,10 @@ JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_requestEntry
  */
 JNIEXPORT void JNICALL Java_org_meshpoint_anode_bridge_BridgeNative_setContext
   (JNIEnv *jniEnv, jclass, jobject ctx) {
-	LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_setContext: ent\n");
+	//LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_setContext: ent\n");
 #ifdef ANDROID
 	AndroidVM *vm = new AndroidVM(jniEnv, ctx);
 	Env::setupEnv(vm);
 #endif
-	LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_setContext: ret\n");
+	//LOGV("Java_org_meshpoint_anode_bridge_BridgeNative_setContext: ret\n");
 }
