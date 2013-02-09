@@ -48,7 +48,7 @@ template <class T> T *TArray<T>::addr(unsigned int idx) {
 
 template <class T> int TArray<T>::put(unsigned int idx, T value) {
   if(idx >= count) {
-    int newCount = (count + increment) & -increment;
+    int newCount = (idx + increment) & -increment;
     int result = alloc(newCount);
     if(result != OK) return result;
   }
