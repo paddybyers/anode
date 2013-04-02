@@ -24,13 +24,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.IDLInterface.Attribute;
 import org.meshpoint.anode.idl.IDLInterface.Operation;
 
 public class InterfaceManager {
 
-	private static InterfaceManager mgr = new InterfaceManager(null, true);
-	private ClassLoader classLoader;
+	private static InterfaceManager mgr = new InterfaceManager(true);
 	private boolean initClasses;
 	private ArrayList<IDLInterface> interfaces;
 	private HashMap<String, IDLInterface> nameMap;
@@ -42,10 +42,7 @@ public class InterfaceManager {
 	
 	public static InterfaceManager getInstance() { return mgr; }
 
-	public InterfaceManager(ClassLoader classLoader, boolean initClasses) {
-		if(classLoader == null)
-			classLoader = this.getClass().getClassLoader();
-		this.classLoader = classLoader;
+	public InterfaceManager(boolean initClasses) {
 		this.initClasses = initClasses;
 		interfaces = new ArrayList<IDLInterface>();
 		nameMap = new HashMap<String, IDLInterface>();
@@ -53,7 +50,7 @@ public class InterfaceManager {
 	}
 	
 	ClassLoader getClassLoader() {
-		return classLoader;
+	  return Env.getCurrent().getClassLoader();
 	}
 
 	public synchronized IDLInterface getById(short id) {
@@ -68,9 +65,9 @@ public class InterfaceManager {
 		try {
 			Class<?> javaClass;
 			if(initClasses)
-				javaClass = Class.forName(name, true, classLoader);
+				javaClass = Class.forName(name, true, getClassLoader());
 			else
-				javaClass = classLoader.loadClass(name);
+				javaClass = getClassLoader().loadClass(name);
 			result = getByClass(javaClass);
 		} catch (ClassNotFoundException e) {}
 		return result;

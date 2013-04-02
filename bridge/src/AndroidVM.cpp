@@ -30,7 +30,13 @@ AndroidVM::~AndroidVM() {
     jniEnv->DeleteGlobalRef(jAndroidContext);
 }
 
-int AndroidVM::createContext(jobject jEnv, jobject jExports, jobject *jCtx) {
+int AndroidVM::createEnvContext(jobject *jCtx) {
+	int result = OK;
+	*jCtx = jAndroidContext;
+	return result;
+}
+
+int AndroidVM::createModuleContext(jobject jEnv, jobject jExports, jobject *jCtx) {
 	int result = OK;
 	*jCtx = jniEnv->NewObject(jContextClass, createContextMethodId, jEnv, jExports, jAndroidContext);
 	if(jniEnv->ExceptionCheck()) {
