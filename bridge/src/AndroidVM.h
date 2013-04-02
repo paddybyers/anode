@@ -25,7 +25,8 @@ class AndroidVM : public VM {
 public:
 	AndroidVM(JNIEnv *jniEnv, jobject jAndroidContext);
 	virtual ~AndroidVM();
-	virtual int createContext(jobject jEnv, jobject jExports, jobject *jCtx);
+	virtual int createEnvContext(jobject *jCtx);
+	virtual int createModuleContext(jobject jEnv, jobject jExports, jobject *jCtx);
 
 private:
 	jobject jAndroidContext;

@@ -147,9 +147,11 @@ int Env::initJava() {
   int result = OK;
   JNIEnv *jniEnv = vm->getJNIEnv();
   jEnvClass = (jclass)(jniEnv->NewGlobalRef(jniEnv->FindClass("org/meshpoint/anode/bridge/Env")));
-  createMethodId = jniEnv->GetStaticMethodID(jEnvClass, "create", "(J)Lorg/meshpoint/anode/bridge/Env;");
+  createMethodId = jniEnv->GetStaticMethodID(jEnvClass, "create", "(JLjava/lang/Object;)Lorg/meshpoint/anode/bridge/Env;");
   releaseMethodId = jniEnv->GetMethodID(jEnvClass, "release", "()V");
-  jEnv = jniEnv->NewGlobalRef(jniEnv->CallStaticObjectMethod(jEnvClass, createMethodId,  (jlong)this));
+  jobject jEnvCtx;
+  vm->createEnvContext(&jEnvCtx);
+  jEnv = jniEnv->NewGlobalRef(jniEnv->CallStaticObjectMethod(jEnvClass, createMethodId, (jlong)this, jEnvCtx));
   loadMethodId = jniEnv->GetMethodID(jEnvClass, "loadModule", "(Ljava/lang/String;Lorg/meshpoint/anode/bridge/ModuleContext;)Ljava/lang/Object;");
   unloadMethodId = jniEnv->GetMethodID(jEnvClass, "unloadModule", "(Ljava/lang/String;)Z");
   onEntryMethodId = jniEnv->GetMethodID(jEnvClass, "onEntry", "()V");
@@ -200,7 +202,7 @@ Local<Value> Env::load(Handle<String> moduleName, Handle<Object> moduleExports) 
 
   /* create the module context */
   jobject jCtx;
-  result = vm->createContext(jEnv, jExports, &jCtx);
+  result = vm->createModuleContext(jEnv, jExports, &jCtx);
   if(result == OK) {
     jobject jModule = jniEnv->CallObjectMethod(jEnv, loadMethodId, jModuleName, jCtx);
     if(jModule) {
