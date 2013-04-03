@@ -16,6 +16,7 @@
 
 package org.meshpoint.anode.bridge;
 
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -46,6 +47,8 @@ public class Env {
 	private static ThreadLocal<Env> currentEnv  = new ThreadLocal<Env>();
 	private Thread eventThread;
 	long envHandle;
+	private Object envContext;
+	private ClassLoader moduleClassLoader;
 	private InterfaceManager interfaceManager;
 	private List<SynchronousOperation> pendingOps;
 	private HashMap<String, ModuleContext> modules;
@@ -81,8 +84,8 @@ public class Env {
 	 * @param v8Isolate
 	 * @return
 	 */
-	static synchronized Env create(long nodeIsolate) {
-		Env result = new Env(nodeIsolate, InterfaceManager.getInstance());
+	static synchronized Env create(long nodeIsolate, Object envContext) {
+		Env result = new Env(nodeIsolate, envContext, InterfaceManager.getInstance());
 		currentEnv.set(result);
 		return result;
 	}
@@ -115,9 +118,13 @@ public class Env {
 		dispose();
 	}
 	
+	public ClassLoader getClassLoader() {
+	  return moduleClassLoader;
+	}
+	
 	public Object loadModule(String moduleClassname, ModuleContext moduleContext) {
 		try {
-			IModule moduleInst = (IModule)Class.forName(moduleClassname).newInstance();
+		  IModule moduleInst = (IModule)Class.forName(moduleClassname, true, getClassLoader()).newInstance();
 			moduleContext.setModule(moduleInst);
 			Object val = moduleInst.startModule(moduleContext);
 			if(val != null)
@@ -259,15 +266,25 @@ public class Env {
 	/********************
 	 * private
 	 ********************/
-	private Env(long envHandle, InterfaceManager interfaceManager) {
-		this.envHandle  = envHandle;
-		this.interfaceManager = interfaceManager;
-		this.eventThread = Thread.currentThread();
-		pendingOps = new ArrayList<SynchronousOperation>();
-		pendingOps.add(finalizeQueue = new FinalizeQueue(this));
-		modules = new HashMap<String, ModuleContext>();
-		boundInterfaces = new RandomAccessArray();
-	}
+  private Env(long envHandle, Object envContext,
+      InterfaceManager interfaceManager) {
+    this.envHandle = envHandle;
+    this.envContext = envContext;
+    try {
+      Class<?> clazz = Class
+          .forName("org.meshpoint.anode.bridge.ModuleClassLoader");
+      Constructor<?> ctor = clazz.getConstructor(Object.class);
+      this.moduleClassLoader = (ClassLoader) ctor.newInstance(envContext);
+    } catch (Exception e) {
+      // This is ok, we can do without a dedicated module classloader
+    }
+    this.interfaceManager = interfaceManager;
+    this.eventThread = Thread.currentThread();
+    pendingOps = new ArrayList<SynchronousOperation>();
+    pendingOps.add(finalizeQueue = new FinalizeQueue(this));
+    modules = new HashMap<String, ModuleContext>();
+    boundInterfaces = new RandomAccessArray();
+  }
 	
 	public void finalize() {dispose();}
 
