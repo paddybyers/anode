@@ -27,7 +27,8 @@ public:
 	JREVM();
 	virtual ~JREVM();
 	static int initProcess();
-  virtual int createContext(jobject jEnv, jobject jExports, jobject *jCtx);
+	virtual int createEnvContext(jobject *jCtx);
+	virtual int createModuleContext(jobject jEnv, jobject jExports, jobject *jCtx);
 
 private:
 	static char   *buildClasspath(const char *anodeRoot, size_t len);

@@ -26,7 +26,8 @@ public:
 	VM();
 	virtual    ~VM();
 	JNIEnv     *getJNIEnv();
-  virtual int createContext(jobject jEnv, jobject jExports, jobject *jCtx) = 0;
+  virtual int createEnvContext(jobject *jCtx) = 0;
+  virtual int createModuleContext(jobject jEnv, jobject jExports, jobject *jCtx) = 0;
 
 protected:
 	JNIEnv     *jniEnv;

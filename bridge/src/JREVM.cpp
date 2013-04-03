@@ -72,7 +72,13 @@ JREVM::~JREVM() {
 	}
 }
 
-int JREVM::createContext(jobject jEnv, jobject jExports, jobject *jCtx) {
+int JREVM::createEnvContext(jobject *jCtx) {
+	int result = OK;
+	*jCtx = 0;
+	return result;
+}
+
+int JREVM::createModuleContext(jobject jEnv, jobject jExports, jobject *jCtx) {
   int result = OK;
 	*jCtx = jniEnv->NewObject(jContextClass, createContextMethodId, jEnv, jExports);
   if(jniEnv->ExceptionCheck()) {
