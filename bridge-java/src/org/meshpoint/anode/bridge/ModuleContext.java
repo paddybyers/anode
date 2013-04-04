@@ -27,7 +27,7 @@ public class ModuleContext implements IModuleContext {
 	private JSObject exports;
 	private IModule module;
 	private long threadId;
-	
+
 	protected ModuleContext(Env env, JSObject exports) {
 		this.env = env;
 		this.exports = exports;
