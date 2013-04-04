@@ -5,7 +5,7 @@
  *   you may not use this file except in compliance with the License.
  *   You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *	   http://www.apache.org/licenses/LICENSE-2.0
  *
  *   Unless required by applicable law or agreed to in writing, software
  *   distributed under the License is distributed on an "AS IS" BASIS,
@@ -57,7 +57,7 @@ public class Env {
 	private boolean isDisposed;
 	private boolean entryRequested;
 	private String TAG = "Env";
-	
+
 	static {
 		try {
 			logger = (Log)Class.forName("org.meshpoint.anode.util.AndroidLog").newInstance();
@@ -70,14 +70,14 @@ public class Env {
 			logger = new PrintStreamLog(System.err);
 		}
 	}
-	
+
 	/********************
 	 * public API
 	 ********************/
 
 	public FinalizeQueue finalizeQueue;
 	public static Log logger;
-	
+
 	/**
 	 * Create an Env. Called by the bridge addon
 	 * @param nodeIsolate
@@ -89,7 +89,7 @@ public class Env {
 		currentEnv.set(result);
 		return result;
 	}
-	
+
 	/**
 	 * Get the env associated with this event thread
 	 * @return
@@ -97,11 +97,11 @@ public class Env {
 	public static Env getCurrent() {
 		return currentEnv.get();
 	}
-	
+
 	public static void setEnv(Env env) {
 		currentEnv.set(env);
 	}
-	
+
 	public static short getInterfaceId(Class<?> javaClass) {
 		Env env = currentEnv.get();
 		short classId = env.interfaceManager.getByClass(javaClass).getId();
@@ -117,14 +117,14 @@ public class Env {
 	void release() {
 		dispose();
 	}
-	
+
 	public ClassLoader getClassLoader() {
-	  return moduleClassLoader;
+		return moduleClassLoader;
 	}
-	
+
 	public Object loadModule(String moduleClassname, ModuleContext moduleContext) {
 		try {
-		  IModule moduleInst = (IModule)Class.forName(moduleClassname, true, getClassLoader()).newInstance();
+			IModule moduleInst = (IModule)Class.forName(moduleClassname, true, getClassLoader()).newInstance();
 			moduleContext.setModule(moduleInst);
 			Object val = moduleInst.startModule(moduleContext);
 			if(val != null)
@@ -159,7 +159,7 @@ public class Env {
 		}
 		return result;
 	}
-	
+
 	public InterfaceManager getInterfaceManager() {
 		return interfaceManager;
 	}
@@ -177,7 +177,7 @@ public class Env {
 	private void requestEntry() {
 		BridgeNative.requestEntry(envHandle);
 	}
-	
+
 	public void waitForOperation(SynchronousOperation op) {
 		if(isEventThread()) {
 			synchronized(op) {
@@ -205,7 +205,7 @@ public class Env {
 			pendingOps.remove(op);
 		}
 	}
-	
+
 	void onEntry() {
 		synchronized(pendingOps) {
 			entryRequested = false;
@@ -219,7 +219,7 @@ public class Env {
 			}
 		}
 	}
-	
+
 	private void cancelScheduledOps() {
 		synchronized(pendingOps) {
 			for(SynchronousOperation op : pendingOps) {
@@ -238,7 +238,7 @@ public class Env {
 	Class<?> getJSObjectClass() {
 		return JSObject.class;
 	}
-	
+
 	Class<?> getStubClass(short classId, int mode) {
 		Class<?> result = null;
 		IDLInterface iface = interfaceManager.getById(classId);
@@ -251,7 +251,7 @@ public class Env {
 		}
 		return result;
 	}
-	
+
 	public BoundInterface bindInterface(short classId) {
 		int idx = InterfaceManager.classId2Idx(classId);
 		BoundInterface result;
@@ -266,26 +266,26 @@ public class Env {
 	/********************
 	 * private
 	 ********************/
-  private Env(long envHandle, Object envContext,
-      InterfaceManager interfaceManager) {
-    this.envHandle = envHandle;
-    this.envContext = envContext;
-    try {
-      Class<?> clazz = Class
-          .forName("org.meshpoint.anode.bridge.ModuleClassLoader");
-      Constructor<?> ctor = clazz.getConstructor(Object.class);
-      this.moduleClassLoader = (ClassLoader) ctor.newInstance(envContext);
-    } catch (Exception e) {
-      // This is ok, we can do without a dedicated module classloader
-    }
-    this.interfaceManager = interfaceManager;
-    this.eventThread = Thread.currentThread();
-    pendingOps = new ArrayList<SynchronousOperation>();
-    pendingOps.add(finalizeQueue = new FinalizeQueue(this));
-    modules = new HashMap<String, ModuleContext>();
-    boundInterfaces = new RandomAccessArray();
-  }
-	
+	private Env(long envHandle, Object envContext, InterfaceManager interfaceManager) {
+		this.envHandle = envHandle;
+		this.envContext = envContext;
+		try {
+			Class<?> clazz = Class
+					.forName("org.meshpoint.anode.bridge.ModuleClassLoader");
+			Constructor<?> ctor = clazz.getConstructor(Object.class);
+			this.moduleClassLoader = (ClassLoader) ctor.newInstance(envContext);
+		} catch (Exception e) {
+			logger.e(TAG, "Exception attempting to instance module classloader", e);
+			/* This is ok, we can do without a dedicated module classloader */
+		}
+		this.interfaceManager = interfaceManager;
+		this.eventThread = Thread.currentThread();
+		pendingOps = new ArrayList<SynchronousOperation>();
+		pendingOps.add(finalizeQueue = new FinalizeQueue(this));
+		modules = new HashMap<String, ModuleContext>();
+		boundInterfaces = new RandomAccessArray();
+	}
+
 	public void finalize() {dispose();}
 
 	private void dispose() {
@@ -334,6 +334,6 @@ public class Env {
 			}
 			elements[idx] = elt;
 		}
-		
+
 	}
 }
