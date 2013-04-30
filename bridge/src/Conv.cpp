@@ -25,7 +25,7 @@ using namespace v8;
 using namespace bridge;
 
 Conv::Conv(Env *env, JNIEnv *jniEnv) {
-  LOGV("Conv::Conv(): ent: this = 0x%p, env = 0x%p\n", this, env);
+  //LOGV("Conv::Conv(): ent: this = 0x%p, env = 0x%p\n", this, env);
   this->env = env;
   arrayConv = new ArrayConv(env, this, env->getVM()->getJNIEnv());
 
@@ -119,7 +119,7 @@ Conv::Conv(Env *env, JNIEnv *jniEnv) {
   instHandle            = jniEnv->GetFieldID(baseClass, "instHandle", "J");
   instType              = jniEnv->GetFieldID(baseClass, "type", "I");
 
-  LOGV("Conv::Conv(): ret\n");
+  //LOGV("Conv::Conv(): ret\n");
   if(jniEnv->ExceptionCheck()) {
     LOGV("Conv::Conv(): JNI error\n");
     jniEnv->ExceptionClear();
@@ -951,20 +951,13 @@ int Conv::ToV8Map(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object>
 }
 
 int Conv::ToV8Interface(JNIEnv *jniEnv, jobject jVal, classId clsid, Handle<Object> *val) {
-LOGV("ToV8Interface 1\n");
   int result = UnwrapObject(jniEnv, jVal, val);
-LOGV("ToV8Interface 2\n");
   if(result == ErrorNotfound) {
-LOGV("ToV8Interface 3\n");
     Handle<Object> vInst;
     Interface *interface = env->getInterface(clsid);
-LOGV("ToV8Interface 4\n");
     result = interface->PlatformCreate(jniEnv, jVal, &vInst);
-LOGV("ToV8Interface 5\n");
     if(result == OK) {
-LOGV("ToV8Interface 6\n");
       result = BindToJavaObject(jniEnv, jVal, vInst, interface);
-LOGV("ToV8Interface 7\n");
       if(result == OK)
         *val = vInst;
     }
