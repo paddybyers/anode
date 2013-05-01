@@ -16,12 +16,15 @@
 
 package org.meshpoint.anode.bridge;
 
+import android.util.Log;
+
 
 public class FinalizeQueue implements SynchronousOperation {
 	
 	/********************
 	 * private state
 	 ********************/
+	private final String TAG = FinalizeQueue.class.getCanonicalName();
 	private Env env;
 	private static final int QUEUE_LENGTH = 1024;
 	private long[] handleBuffer = new long[QUEUE_LENGTH];
@@ -56,6 +59,7 @@ public class FinalizeQueue implements SynchronousOperation {
 	@Override
 	public synchronized void run() {
 		for(int i = 0; i < count; i++) {
+			//Log.v(TAG, "Finalizing; instHandle = " + handleBuffer[i] + "; type = " + typeBuffer[i]);
 			BridgeNative.releaseObjectHandle(env.envHandle, handleBuffer[i], typeBuffer[i]);
 		}
 		count = 0;
