@@ -35,6 +35,7 @@ int Interface::Create(JNIEnv *jniEnv, Env *env, Interface *parent, jobject jInte
 }
 
 void Interface::dispose(JNIEnv *jniEnv) {
+  //LOGV("Interface::dispose: classId = %d\n", class_);
   env->putInterface(class_, 0);
   hiddenKey.Dispose();
   function.Dispose();
@@ -56,15 +57,16 @@ int Interface::Init(JNIEnv *jniEnv, Env *env, Interface *parent, jobject jInterf
   this->declaredClass = (jclass)jniEnv->NewGlobalRef(declaredClass);
   this->jInterface    = jInterface;
   this->class_        = class_;
+  hiddenKey           = Persistent<String>::New(Conv::getTypeKey(getInterfaceType(class_)));
+  sClassName          = Persistent<String>::New(conv->getV8ClassName(jniEnv, declaredClass));  
+
+  jPlatformStub = jUserStub = jDictStub = 0;
+
+  //LOGV("Interface::Init; this = %p; classId = %d; hiddenKey = %p\n", this, class_, hiddenKey);
   this->attributes    = TArray<Attribute>::New(attrCount);
   this->operations    = TArray<Operation>::New(opCount);
   if(!attributes || !operations) return ErrorMem;
 
-  hiddenKey = Persistent<String>::New(Conv::getTypeKey(getInterfaceType(class_)));
-  sClassName = Persistent<String>::New(conv->getV8ClassName(jniEnv, declaredClass));
-  
-  jPlatformStub = jUserStub = jDictStub = 0;
-  
   env->putInterface(class_, this);
   return OK;
 }

@@ -308,6 +308,7 @@ int Conv::UnwrapInterface(JNIEnv *jniEnv, Handle<Object> val, classId class_, jo
 
 int Conv::UnwrapObject(JNIEnv *jniEnv, Handle<Object> val, Handle<String> key, jobject *jVal) {
   int result = ErrorNotfound;
+  //LOGV("UnwrapObject; getting hidden value; key = %p\n", key);
   Local<Value> hiddenVal = val->GetHiddenValue(key);
   if(!hiddenVal.IsEmpty() && !hiddenVal->IsUndefined()) {
     jobject extRef = (jobject)External::Unwrap(hiddenVal);
@@ -1058,14 +1059,17 @@ void Conv::releaseV8Handle(JNIEnv *jniEnv, Persistent<Object> val, int type) {
     interface = env->getInterface(getClassId(type));
     sHiddenKey = interface->getHiddenKey();
   }
-  Local<Value> hiddenVal = val->GetHiddenValue(sHiddenKey);
-  if(!hiddenVal.IsEmpty() && !hiddenVal->IsUndefined()) {
-    jobject extRef = (jobject)External::Unwrap(hiddenVal);
-    jniEnv->DeleteGlobalRef(extRef);
-    val->DeleteHiddenValue(sHiddenKey);
-    if(interface) {
-      while((interface = interface->getParent())) {
-        val->DeleteHiddenValue(interface->getHiddenKey());
+  //LOGV("releaseV8Handle; interface = %p; getting hidden value; sHiddenKey = %p\n", interface, sHiddenKey);
+  if(!sHiddenKey.IsEmpty()) {
+    Local<Value> hiddenVal = val->GetHiddenValue(sHiddenKey);
+    if(!hiddenVal.IsEmpty() && !hiddenVal->IsUndefined()) {
+      jobject extRef = (jobject)External::Unwrap(hiddenVal);
+      jniEnv->DeleteGlobalRef(extRef);
+      val->DeleteHiddenValue(sHiddenKey);
+      if(interface) {
+        while((interface = interface->getParent())) {
+          val->DeleteHiddenValue(interface->getHiddenKey());
+        }
       }
     }
   }
