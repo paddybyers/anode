@@ -19,12 +19,16 @@ package org.meshpoint.anode.js;
 import org.meshpoint.anode.bridge.BridgeNative;
 import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.bridge.SynchronousOperation;
+import org.meshpoint.anode.idl.Types;
+
+import android.util.Log;
 
 public class JSInterface {
 
 	/*********************
 	 * private state
 	 *********************/
+	private static final String TAG = JSInterface.class.getCanonicalName();
 	long instHandle; /* (long)Persistent<Object>* */
 	protected Env env = Env.getCurrent();
 
@@ -36,7 +40,8 @@ public class JSInterface {
 	}
 
 	public void release(int classId) {
-		env.finalizeQueue.put(instHandle, classId);
+		//Log.v(TAG, "Putting for finalization; this class = " + this.getClass().getName() + "; instHandle = " + instHandle + "; classId = " + classId);
+		env.finalizeQueue.put(instHandle, Types.classid2Type(classId));
 	}
 
 	/*********************
