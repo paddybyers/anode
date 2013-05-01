@@ -19,11 +19,14 @@ package org.meshpoint.anode.java;
 import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.Types;
 
+import android.util.Log;
+
 public class Base {
 
 	/*********************
 	 * private state
 	 *********************/
+	private static final String TAG = Base.class.getCanonicalName();
 	long instHandle; /* (long)Persistent<Object>* */
 	protected Env env;
 	protected int type;
@@ -46,8 +49,10 @@ public class Base {
 	}
 
 	public void finalize() {
-		if(instHandle != 0)
+		if(instHandle != 0) {
+			//Log.v(TAG, "Putting for finalization; this class = " + this.getClass().getName() + "; instHandle = " + instHandle + "; type = " + type);
 			env.finalizeQueue.put(instHandle, type);
+		}
 	}
 	
 	public Env getEnv() {
