@@ -88,6 +88,7 @@ public class Types {
 		return type2classid(type);
 	}
 	
+	public static int classid2Type(int classid) { return TYPE_INTERFACE | (classid << 16); }
 	public static int classid2Type(short classid) { return TYPE_INTERFACE | (((int)classid) << 16); }
 	public static short type2classid(int type) { return (short)(type >> 16); }
 	
