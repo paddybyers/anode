@@ -22,6 +22,8 @@ import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.type.ICollection;
 import org.meshpoint.anode.type.IIndexedCollection;
 
+import android.util.Log;
+
 /**
  * An object that is a wrapper of a native JS object
  * @author paddy
@@ -32,7 +34,7 @@ public class JSObject implements ICollection, IIndexedCollection<Object> {
 	/*********************
 	 * private state
 	 *********************/
-
+	private static final String TAG = JSObject.class.getCanonicalName();
 	long instHandle; /* (long)Persistent<Object>* */
 	Env env;
 
@@ -46,6 +48,7 @@ public class JSObject implements ICollection, IIndexedCollection<Object> {
 	}
 
 	public void finalize() {
+		//Log.v(TAG, "Putting for finalization; this class = " + this.getClass().getName() + "; instHandle = " + instHandle + "; classId = " + -1);
 		env.finalizeQueue.put(instHandle, -1);
 	}
 

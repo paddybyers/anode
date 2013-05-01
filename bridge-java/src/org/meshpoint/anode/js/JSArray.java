@@ -21,12 +21,15 @@ import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.bridge.SynchronousOperation;
 import org.w3c.dom.Array;
 
+import android.util.Log;
+
 public class JSArray implements Array {
 
 	/*********************
 	 * private state
 	 *********************/
 
+	private static final String TAG = JSArray.class.getCanonicalName();
 	long instHandle; /* (long)Persistent<Object>* */
 	Env env;
 
@@ -40,6 +43,7 @@ public class JSArray implements Array {
 	}
 
 	protected void dispose(int type) {
+		//Log.v(TAG, "Putting for finalization; this class = " + this.getClass().getName() + "; instHandle = " + instHandle + "; type = " + type);
 		env.finalizeQueue.put(instHandle, type);
 	}
 
