@@ -190,11 +190,13 @@ int Interface::DictImport(JNIEnv *jniEnv, Handle<Object> val, jobject jVal) {
     result = conv->ToJavaObject(jniEnv, member, attributes->addr(i)->type, &jMember);
     if(result != OK) break;
     jniEnv->SetObjectArrayElement(args, i, jMember);
+    jniEnv->DeleteLocalRef(jMember);
   }
   if(result == OK) {
     jniEnv->CallStaticVoidMethod(jDictStub, jDictImport, jVal, args);
   }
   jniEnv->MonitorExit(args);
+  jniEnv->DeleteLocalRef(args);
   if(result == OK && parent != 0) {
     result = parent->DictImport(jniEnv, val, jVal);
   }
@@ -282,10 +284,12 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
     jobject jMember = jniEnv->GetObjectArrayElement(args, i);
     Local<Value> member;
     result = conv->ToV8Value(jniEnv, jMember, attributes->addr(i)->type, &member);
+    jniEnv->DeleteLocalRef(jMember);
     if(result != OK) break;
     val->Set(attributes->addr(i)->name, member);
   }
   jniEnv->MonitorExit(args);
+  jniEnv->DeleteLocalRef(args);
   if(result == OK && parent != 0) {
     result = parent->DictExport(jniEnv, jVal, val);
   }
@@ -383,13 +387,15 @@ Handle<Value> Interface::PlatformOpInvoke(const Arguments& args) {
       for(int i = 0; i < argsToProcess; i++) {
         result = interface->conv->ToJavaObject(jniEnv, args[i], op->argTypes[i], &jItem);
         if(result != OK) break;
-        jniEnv->SetObjectArrayElement(jArgs, i, jItem);    
+        jniEnv->SetObjectArrayElement(jArgs, i, jItem);
+        jniEnv->DeleteLocalRef(jItem);
       }
       if(result == OK) {
         for(int i = argsToProcess; i < expectedArgs; i++) {
           result = interface->conv->ToJavaObject(jniEnv, Undefined(), op->argTypes[i], &jItem);
           if(result != OK) break;
           jniEnv->SetObjectArrayElement(jArgs, i, jItem);
+          jniEnv->DeleteLocalRef(jItem);
         }
       }
     }
