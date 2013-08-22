@@ -316,7 +316,7 @@ int Conv::UnwrapObject(JNIEnv *jniEnv, Handle<Object> val, Handle<String> key, j
       jobject localRef = jniEnv->NewLocalRef(extRef);
       if(localRef == 0) {
         /* the Java object died */
-        jniEnv->DeleteGlobalRef(extRef);
+        jniEnv->DeleteWeakGlobalRef(extRef);
         val->DeleteHiddenValue(key);
       } else {
         /* the java object is alive */
@@ -1034,15 +1034,24 @@ int Conv::BindToJavaObject(JNIEnv *jniEnv, jobject jLocal, Handle<Object> val, I
   return result;
 }
 
-/* called from v8 when Weak Persistent references
+/* called from v8 when V8 Weak Persistent references
  * to Java objects are eligible for collection */
 void Conv::releaseJavaRef(Persistent<Value> instHandle, void *jGlobalRef) {
   jobject ob = (jobject)jGlobalRef;
   Env *env = Env::getEnv_nocheck();
   JNIEnv *jniEnv = Env::getEnv_nocheck()->getVM()->getJNIEnv();
   jniEnv->SetLongField(ob, env->getConv()->instHandle, 0);
-  jniEnv->DeleteGlobalRef(ob);
+  Conv::deleteGlobalRef(jniEnv, ob);
   instHandle.Dispose();
+}
+
+/* called to delete a global ref when we dont know whether it's a weak or strong ref */
+void Conv::deleteGlobalRef(JNIEnv *jniEnv, jobject jGlobalRef) {
+  if(jniEnv->GetObjectRefType(jGlobalRef) == JNIWeakGlobalRefType) {
+    jniEnv->DeleteWeakGlobalRef(jGlobalRef);
+  } else {
+    jniEnv->DeleteGlobalRef(jGlobalRef);
+  }
 }
 
 /* called by the Java environment for objects that have been finalized */
@@ -1065,7 +1074,7 @@ void Conv::releaseV8Handle(JNIEnv *jniEnv, Persistent<Object> val, int type) {
     Local<Value> hiddenVal = val->GetHiddenValue(sHiddenKey);
     if(!hiddenVal.IsEmpty() && !hiddenVal->IsUndefined()) {
       jobject extRef = (jobject)External::Unwrap(hiddenVal);
-      jniEnv->DeleteGlobalRef(extRef);
+      Conv::deleteGlobalRef(jniEnv, extRef);
       val->DeleteHiddenValue(sHiddenKey);
       if(interface) {
         while((interface = interface->getParent())) {
