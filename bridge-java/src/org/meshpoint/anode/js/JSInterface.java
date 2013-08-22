@@ -21,8 +21,6 @@ import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.bridge.SynchronousOperation;
 import org.meshpoint.anode.idl.Types;
 
-import android.util.Log;
-
 public class JSInterface {
 
 	/*********************

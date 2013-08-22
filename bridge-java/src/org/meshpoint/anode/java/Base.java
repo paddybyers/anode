@@ -19,8 +19,6 @@ package org.meshpoint.anode.java;
 import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.idl.Types;
 
-import android.util.Log;
-
 public class Base {
 
 	/*********************

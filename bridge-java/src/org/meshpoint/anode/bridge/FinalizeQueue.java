@@ -16,9 +16,6 @@
 
 package org.meshpoint.anode.bridge;
 
-import android.util.Log;
-
-
 public class FinalizeQueue implements SynchronousOperation {
 	
 	/********************

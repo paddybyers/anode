@@ -22,8 +22,6 @@ import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.type.ICollection;
 import org.meshpoint.anode.type.IIndexedCollection;
 
-import android.util.Log;
-
 /**
  * An object that is a wrapper of a native JS object
  * @author paddy
