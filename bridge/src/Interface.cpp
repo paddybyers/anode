@@ -206,6 +206,10 @@ int Interface::UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobj
   TryCatch tryCatch;
   Operation *op = operations->addr(opIdx);
   int result = OK;
+  jobject ob = 0;
+  // This fails because passing references from one frame to the parent frame is broken:
+  // https://code.google.com/p/android/issues/detail?id=15119
+  //jniEnv->PushLocalFrame(512);
   for(int i = 0; result == OK && i < op->argCount; i++) {
       result = conv->ToV8Value(jniEnv, jniEnv->GetObjectArrayElement(jArgs, i), op->argTypes[i], &op->vArgs[i]);
   }
@@ -222,13 +226,11 @@ int Interface::UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobj
       }
     }
     if(!vRes.IsEmpty() && op->type != TYPE_UNDEFINED) {
-      jobject ob;
       result = conv->ToJavaObject(jniEnv, vRes, op->type, &ob);
-      if(result == OK) {
-        *jResult = ob;
-      }
     }
   }
+  //*jResult = jniEnv->PopLocalFrame(ob);
+  *jResult = ob;
   if(tryCatch.HasCaught()) {
     result = ErrorJS;
     tryCatch.Reset();
