@@ -859,6 +859,7 @@ int Conv::ToV8Sequence(JNIEnv *jniEnv, jarray jVal, int expectedType, Handle<Arr
       Local<Value> elt;
       jobject jElt = jniEnv->GetObjectArrayElement(jOVal, i);
       result = ToV8Value(jniEnv, jElt, componentType, &elt);
+      jniEnv->DeleteLocalRef(jElt);
       if(result != OK) break;
       lVal->Set(i, elt);
     }
