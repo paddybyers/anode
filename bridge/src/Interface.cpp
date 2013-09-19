@@ -213,7 +213,9 @@ int Interface::UserInvoke(JNIEnv *jniEnv, Handle<Object> target, int opIdx, jobj
   // https://code.google.com/p/android/issues/detail?id=15119
   //jniEnv->PushLocalFrame(512);
   for(int i = 0; result == OK && i < op->argCount; i++) {
-      result = conv->ToV8Value(jniEnv, jniEnv->GetObjectArrayElement(jArgs, i), op->argTypes[i], &op->vArgs[i]);
+      jobject jMember = jniEnv->GetObjectArrayElement(jArgs, i);
+      result = conv->ToV8Value(jniEnv, jMember, op->argTypes[i], &op->vArgs[i]);
+      jniEnv->DeleteLocalRef(jMember);
   }
   if(result == OK) {
     Handle<Value> vRes;
@@ -278,7 +280,7 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
   jobjectArray args = (jobjectArray)jniEnv->CallStaticObjectMethod(jDictStub, jDictGetArgs);
   if(!args) return ErrorVM;
   jniEnv->MonitorEnter(args);
-  jniEnv->CallStaticObjectMethod(jDictStub, jDictExport, jVal);
+  jobject ensureNotLeakedRef = jniEnv->CallStaticObjectMethod(jDictStub, jDictExport, jVal);
   int result = OK;
   for(int i = 0; i < attributes->getLength(); i++) {
     jobject jMember = jniEnv->GetObjectArrayElement(args, i);
@@ -289,6 +291,7 @@ int Interface::DictExport(JNIEnv *jniEnv, jobject jVal, Handle<Object> val) {
     val->Set(attributes->addr(i)->name, member);
   }
   jniEnv->MonitorExit(args);
+  jniEnv->DeleteLocalRef(ensureNotLeakedRef);
   jniEnv->DeleteLocalRef(args);
   if(result == OK && parent != 0) {
     result = parent->DictExport(jniEnv, jVal, val);

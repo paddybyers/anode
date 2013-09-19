@@ -501,6 +501,7 @@ int Conv::ToJavaSequence(JNIEnv *jniEnv, Handle<Value> val, int componentType, j
         res = ToJavaObject(jniEnv, oVal->Get(i), componentType, &item);
         if(res != OK) break;
         jniEnv->SetObjectArrayElement((jobjectArray)ob, i, item);
+        jniEnv->DeleteLocalRef(item);
       }
     }
   } else {
@@ -936,11 +937,14 @@ int Conv::ToV8Map(JNIEnv *jniEnv, jobject jVal, int expectedType, Handle<Object>
       jKey = (jstring)jniEnv->GetObjectArrayElement(jKeys, i);
       jElt = jniEnv->CallObjectMethod(jVal, mapGet, jKey);
       result = ToV8Value(jniEnv, jElt, componentType, &elt);
+      jniEnv->DeleteLocalRef(jElt);
       if(result != OK) break;
       result = ToV8String(jniEnv, jKey, &key);
+      jniEnv->DeleteLocalRef(jKey);
       if(result != OK) break;
       lVal->Set(key, elt);
     }
+    jniEnv->DeleteLocalRef(jKeys);
   }
   if(result == OK) {
     *val = lVal;
