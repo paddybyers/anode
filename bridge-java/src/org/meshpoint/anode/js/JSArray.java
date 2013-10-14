@@ -21,8 +21,6 @@ import org.meshpoint.anode.bridge.Env;
 import org.meshpoint.anode.bridge.SynchronousOperation;
 import org.w3c.dom.Array;
 
-import android.util.Log;
-
 public class JSArray implements Array {
 
 	/*********************

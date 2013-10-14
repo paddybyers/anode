@@ -30,7 +30,8 @@ import org.meshpoint.anode.idl.IDLInterface.Operation;
 
 public class InterfaceManager {
 
-	private static InterfaceManager mgr = new InterfaceManager(true);
+	private static InterfaceManager mgr = new InterfaceManager(null, true);
+	private ClassLoader classLoader;
 	private boolean initClasses;
 	private ArrayList<IDLInterface> interfaces;
 	private HashMap<String, IDLInterface> nameMap;
@@ -42,7 +43,8 @@ public class InterfaceManager {
 	
 	public static InterfaceManager getInstance() { return mgr; }
 
-	public InterfaceManager(boolean initClasses) {
+	public InterfaceManager(ClassLoader classLoader, boolean initClasses) {
+		this.classLoader = classLoader;
 		this.initClasses = initClasses;
 		interfaces = new ArrayList<IDLInterface>();
 		nameMap = new HashMap<String, IDLInterface>();
@@ -50,7 +52,7 @@ public class InterfaceManager {
 	}
 	
 	ClassLoader getClassLoader() {
-	  return Env.getCurrent().getClassLoader();
+		return (classLoader != null) ? classLoader : Env.getCurrent().getClassLoader();
 	}
 
 	public synchronized IDLInterface getById(short id) {
