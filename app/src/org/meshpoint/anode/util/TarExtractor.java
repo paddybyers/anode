@@ -24,8 +24,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
-import org.kamranzafar.jtar.TarEntry;
-import org.kamranzafar.jtar.TarInputStream;
+import org.xeustechnologies.jtar.TarEntry;
+import org.xeustechnologies.jtar.TarInputStream;
 
 public class TarExtractor implements ModuleUtils.Unpacker {
 
