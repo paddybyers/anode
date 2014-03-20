@@ -95,7 +95,7 @@ public class Runtime {
 	 */
 	public static class IllegalStateException extends Exception {
 		private static final long serialVersionUID = -8553913470826899835L;
-		IllegalStateException(String msg) {super(msg);}
+		public IllegalStateException(String msg) {super(msg);}
 	}
 
 	/**
