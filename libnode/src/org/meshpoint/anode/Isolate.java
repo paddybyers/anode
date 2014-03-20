@@ -35,12 +35,12 @@ public class Isolate {
 	 * private state
 	 **************************/
 	
-	private Context ctx;
-	private long handle;
+	private final Context ctx;
+	private final long handle;
 	private int state;
 	private int exitval;
-	private RuntimeThread runner;
-	private Set<StateListener> listeners = new HashSet<StateListener>();
+	private final RuntimeThread runner;
+	private final Set<StateListener> listeners = new HashSet<StateListener>();
 
 	/**************************
 	 * public API
@@ -106,6 +106,22 @@ public class Isolate {
 		}
 	}
 
+	/**
+	 * Get the exit code for this isolate if in the stopped state
+	 * @return
+	 * @throws IllegalStateException
+	 */
+	public int getExitval() throws IllegalStateException {
+		synchronized(runner) {
+			if(state == Runtime.STATE_STOPPED)
+				return exitval;
+
+			throw new IllegalStateException(
+					"Attempting to access exit code when not in STOPPED state"
+				);
+		}
+	}
+
 	/**************************
 	 * private
 	 **************************/
@@ -118,12 +134,18 @@ public class Isolate {
 	}
 	
 	private void setState(int state) {
-		/* note that this is only ever called with the runner already locked */
-		this.state = state;
-		runner.notify();
+		Log.v(TAG, "stateState: state = " + state);
+		synchronized(runner) {
+			this.state = state;
+			runner.notifyAll();
+		}
 		synchronized(listeners) {
 			for(StateListener listener : listeners) {
-				listener.stateChanged(state);
+				try {
+					listener.stateChanged(state);
+				} catch(Throwable t) {
+					Log.e(TAG, "Unexpected exception calling state listener", t);
+				}
 			}
 		}
 	}
@@ -164,16 +186,13 @@ public class Isolate {
 				Log.v(TAG, "Isolate.run(): setting context");
 				BridgeNative.setContext(ctx);
 				Log.v(TAG, "Isolate.run(): set context");
-				synchronized(this) {
-					setState(Runtime.STATE_STARTED);
-				}
-				int exitval = RuntimeNative.start(handle, argv);
-				synchronized(this) {
-					setState(Runtime.STATE_STOPPED);
-					Isolate.this.exitval = exitval;
-				}
+				setState(Runtime.STATE_STARTED);
+				exitval = RuntimeNative.start(handle, argv);
+				setState(Runtime.STATE_STOPPED);
 			} catch(Throwable t) {
-				t.printStackTrace();
+				Log.e(TAG, "Isolate.run(): exception", t);
+				exitval = 1;
+				setState(Runtime.STATE_STOPPED);
 			}
 		}
 	}
