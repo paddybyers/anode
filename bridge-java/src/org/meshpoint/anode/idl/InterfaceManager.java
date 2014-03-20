@@ -103,7 +103,7 @@ public class InterfaceManager {
 	private IDLInterface defineClass(Class<?> javaClass) {
 		String canonicalName = javaClass.getCanonicalName().intern();
 		/* terminate when at Object or some other framework class */
-		if(canonicalName.startsWith("java.lang") || canonicalName.startsWith("org.meshpoint.anode"))
+		if(canonicalName.startsWith("java.lang") || canonicalName.startsWith("org.meshpoint.anode."))
 			return null;
 
 		/* add to manager, and resolve parent */
