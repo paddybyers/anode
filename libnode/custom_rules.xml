@@ -14,10 +14,10 @@
 		</subant>
 	</target>
 
-	<target name="copy-bridge-dep">
+	<target name="copy-bridge-dep" depends="build-bridge-dep">
 		<copy file="${bridge.jar}" todir="${jar.libs.dir}" />
 	</target>
 
 	<target name="-pre-clean" depends="clean-bridge-dep" />
-	<target name="-pre-compile" depends="build-bridge-dep,copy-bridge-dep" />
+	<target name="-pre-compile" depends="copy-bridge-dep" />
 </project>
