@@ -3,11 +3,9 @@
 
   <property name="build.dir" value="out"/>
   <property name="classes.dir" value="out/classes"/>
-  <property name="lib.dir" value="lib"/>
+  <property name="libs.dir" value="libs"/>
 
-  <path id="classpath">
-	<fileset dir="${lib.dir}" includes="**/*.jar"/>
-  </path>
+  <path id="classpath"/>
 
   <target name="clean">
 	<delete dir="${classes.dir}"/>
