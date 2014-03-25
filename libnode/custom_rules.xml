@@ -25,5 +25,4 @@
 
 	<target name="-pre-clean" depends="clean-bridge-dep" />
 	<target name="-pre-compile" depends="copy-bridge-dep" />
-	<target name="nodeps" />
 </project>
