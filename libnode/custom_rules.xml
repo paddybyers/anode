@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project name="bridge-java-custom">
-	<property name="bridge.dir" value="../bridge-java"/>
-	<property name="bridge.jar" value="${bridge.dir}/out/bridge-java.jar"/>
+	<property name="bridge.dir" value="../bridge-java" />
+	<property name="bridge.jar" value="${bridge.dir}/out/bridge-java.jar" />
 
 	<target name="clean-bridge-dep">
-        <delete file="${bridge.jar}"/>
+		<delete file="${bridge.jar}" />
 	</target>
 
 	<target name="build-bridge-dep">
@@ -15,9 +15,9 @@
 	</target>
 
 	<target name="copy-bridge-dep">
-		<copy file="${bridge.jar}" todir="${jar.libs.dir}"/>
+		<copy file="${bridge.jar}" todir="${jar.libs.dir}" />
 	</target>
 
-	<target name="-pre-clean" depends="clean-bridge-dep"/>
-	<target name="-pre-build" depends="build-bridge-dep,copy-bridge-dep"/>
+	<target name="-pre-clean" depends="clean-bridge-dep" />
+	<target name="-pre-compile" depends="build-bridge-dep,copy-bridge-dep" />
 </project>
