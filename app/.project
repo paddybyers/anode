@@ -30,16 +30,4 @@
 		<nature>com.android.ide.eclipse.adt.AndroidNature</nature>
 		<nature>org.eclipse.jdt.core.javanature</nature>
 	</natures>
-	<linkedResources>
-		<link>
-			<name>bridge-java</name>
-			<type>2</type>
-			<locationURI>PARENT-1-PROJECT_LOC/bridge-java/src</locationURI>
-		</link>
-		<link>
-			<name>libnode_src</name>
-			<type>2</type>
-			<locationURI>PARENT-1-PROJECT_LOC/libnode/src</locationURI>
-		</link>
-	</linkedResources>
 </projectDescription>

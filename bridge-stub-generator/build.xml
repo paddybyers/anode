@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="stubgen" default="jar" basedir=".">
+
+	<property name="build.dir" value="out" />
+	<property name="classes.dir" value="out/classes" />
+	<property name="libs.dir" value="libs" />
+	<property name="bridge.dir" value="../bridge-java"/>
+	<property name="bridge.jar" value="${bridge.dir}/out/bridge-java.jar"/>
+
+	<path id="classpath">
+		<fileset dir="${libs.dir}" includes="**/*.jar" />
+	</path>
+
+	<target name="clean-bridge-dep">
+        <delete file="${bridge.jar}"/>
+	</target>
+
+	<target name="build-bridge-dep">
+		<subant failonerror="true">
+			<fileset dir="${bridge.dir}" includes="build.xml" />
+			<target name="jar" />
+		</subant>
+	</target>
+
+	<target name="copy-bridge-dep">
+		<mkdir dir="${libs.dir}"/>
+		<copy file="${bridge.jar}" todir="${libs.dir}"/>
+	</target>
+
+	<target name="clean" depends="clean-bridge-dep">
+		<delete dir="${classes.dir}" />
+		<delete file="${build.dir}/stubgen.jar" />
+	</target>
+
+	<target name="compile" depends="build-bridge-dep,copy-bridge-dep">
+		<mkdir dir="${classes.dir}" />
+		<javac srcdir="src" destdir="${classes.dir}" classpathref="classpath"
+			includeantruntime="false" />
+	</target>
+
+	<target name="jar" depends="compile">
+		<jar destfile="${build.dir}/stubgen.jar">
+			<manifest>
+				<attribute name="Main-Class" value="org.meshpoint.anode.stub.util.StubGen" />
+				<attribute name="Class-Path" value="." />
+			</manifest>
+			<fileset dir="${classes.dir}" />
+			<zipgroupfileset dir="${libs.dir}" includes="**/*.jar" />
+		</jar>
+	</target>
+</project>

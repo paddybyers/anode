@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="bridge-java-custom">
+	<property name="bridge.dir" location="../bridge-java" />
+	<property name="libs.dir" location="libs" />
+	<property name="bridge.jar" value="${bridge.dir}/out/bridge-java.jar" />
+	<property name="bridge.local.jar" value="${libs.dir}/bridge-java.jar" />
+
+	<target name="clean-bridge-dep">
+		<delete file="${bridge.local.jar}" />
+	</target>
+
+	<target name="build-bridge-dep">
+		<subant failonerror="true">
+			<fileset dir="${bridge.dir}" includes="build.xml" />
+			<target name="jar" />
+		</subant>
+	</target>
+
+	<target name="copy-bridge-dep" depends="build-bridge-dep">
+		<copy file="${bridge.jar}" tofile="${bridge.local.jar}" />
+		<path id="project.all.jars.path">
+			<pathelement location="${bridge.local.jar}" />
+		</path>
+	</target>
+
+	<target name="-pre-clean" depends="clean-bridge-dep" />
+	<target name="-pre-compile" depends="copy-bridge-dep" />
+</project>

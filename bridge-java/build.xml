@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+  <project name="bridge-java" default="jar" basedir=".">
+
+  <property name="build.dir" value="out"/>
+  <property name="classes.dir" value="out/classes"/>
+  <property name="libs.dir" value="libs"/>
+
+  <path id="classpath"/>
+
+  <target name="clean">
+	<delete dir="${classes.dir}"/>
+	<delete file="${build.dir}/bridge-java.jar"/>
+  </target>
+
+  <target name="compile">
+	<mkdir dir="${classes.dir}"/>
+	<javac srcdir="src" destdir="${classes.dir}" classpathref="classpath" includeantruntime="false"/>
+  </target>
+
+  <target name="jar" depends="compile">
+	<jar destfile="${build.dir}/bridge-java.jar">
+	  <manifest>
+		<attribute name="Class-Path" value="."/>
+	  </manifest>
+	  <fileset dir="${classes.dir}"/>
+	</jar>
+  </target>
+</project>

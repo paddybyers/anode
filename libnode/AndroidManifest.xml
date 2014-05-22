@@ -3,5 +3,5 @@
       package="org.meshpoint.anode"
       android:versionCode="1"
       android:versionName="1.0">
-    <uses-sdk android:minSdkVersion="10" />
+    <uses-sdk android:minSdkVersion="17" android:targetSdkVersion="18"/>
 </manifest>
