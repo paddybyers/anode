@@ -14,14 +14,16 @@ app/gen/
 libnode/gen/
 libnode/bin/
 bridge-java/bin/
+bridge-java/out/
 bridge-stub-generator/bin/
 
 # shared libraries
 app/assets/
 
 # Local configuration file (sdk path, etc)
-app/local.properties
-app/project.properties
+local.properties
+project.properties
+proguard-project.txt
 
 # ndk-build files
 libs/
