@@ -151,6 +151,9 @@ public class AnodeActivity extends Activity implements StateListener {
 		stopButton.setEnabled(state == Runtime.STATE_STARTED);
 		/* exit the activity if the runtime has exited */
 		if(state == Runtime.STATE_STOPPED) {
+			AnodeService.removeInstance(instance);
+			isolate.removeStateListener(this);
+			isolate = null;
 			finish();
 		}
 	}
